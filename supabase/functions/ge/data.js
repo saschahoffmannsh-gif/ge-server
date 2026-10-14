@@ -25,39 +25,88 @@ GE.BUILD = {
  eux:{n:'EU-X Radarphalanx',c:[20000,40000,20000],f:2,moon:1,req:{moon_base:1},d:'Scannt Flottenbewegungen im Umkreis von (Stufe² − 1) Systemen.'},
  wormhole:{n:'Wurmlochgenerator',c:[2000000,4000000,2000000],f:2,moon:1,req:{moon_base:1,hyper:7},d:'Sprungtor: verlegt Schiffe sofort zwischen Monden.'}
 };
-// ===== v41 Freischalt-/Stufen-Tabelle (Fortschrittsbremse) =====
-// Gilt für den NÄCHSTEN Ausbau auf Stufe L (bestehende Stufen bleiben erhalten). Wird von Client UND Server (Spielstand-Prüfung) benutzt.
-//  Gebäude           | Freischaltung (Basis-req)            | Stufen-Regel für Stufe L
-//  ------------------+--------------------------------------+-------------------------------------------------------------
-//  alle (außer Robo) | –                                    | L ≤ 3 + 2·Roboterfabrik  (Roboterfabrik = Hauptgebäude)
-//  Roboterfabrik     | –                                    | Kraftwerk ≥ L, Metallmine ≥ L; ab L6 Computertechnik ≥ L−4
-//  Metallmine        | –                                    | Kraftwerk ≥ L−2; ab L10 Energietechnik ≥ ⌊L/4⌋
-//  Kristallmine      | –                                    | Kraftwerk ≥ L−1; ab L10 Energietechnik ≥ ⌊L/4⌋
-//  Gasförderung      | –                                    | Kraftwerk ≥ L;   ab L10 Energietechnik ≥ ⌊L/4⌋
-//  Kraftwerk         | –                                    | max(Metall-, Kristallmine) ≥ L−3; ab L8 Energietechnik ≥ ⌊(L−6)/2⌋
-//  Lager             | –                                    | max(Mine) ≥ 2·L−1
-//  Forschungslabor   | Kapitel 2                            | L ≤ Roboterfabrik + 2; ab L6 Energietechnik ≥ L−3
-//  Raumschiffwerft   | Roboterfabrik 2, Kapitel 3           | L ≤ Roboterfabrik + 2; ab L5 Verbrennungstriebwerk ≥ L−4
-//  Radaranlage       | Werft 1, Kapitel 4                   | –
-//  Galactonit-Zentrum| Labor 3, Kapitel 5                   | –
-//  Sternentor        | Hyperraumtechnik 7, Werft 10, Kap. 6 | –
-//  Allianzdepot      | Kapitel 7                            | –
-//  Nanitenfabrik     | Roboterfabrik 8, Computertechnik 8   | L ≤ Roboterfabrik − 7
-//  Terraformer       | Roboterfabrik 8, Energietechnik 8    | –
-// Zusätzlich für JEDEN Ausbau: kein einzelner Kostenanteil darf die Lagerkapazität übersteigen („Lager zu klein“).
-// Forschung: Stufe L verlangt Forschungslabor ≥ ⌈L/2⌉ (plus die Basis-Voraussetzungen in GE.TECH[id].req).
+// ===== v42 Stufen-Tabelle (Fortschrittsbremse) =====
+// Gilt für JEDEN Ausbauschritt auf Stufe L (nicht nur fürs Freischalten). Client (Bau-/Forschungsknöpfe) UND Server
+// (Spielstand-Prüfung, E.validateSave) benutzen dieselbe Tabelle. Bestehende Stufen bleiben erhalten, aber der NÄCHSTE Schritt
+// muss die Regel erfüllen. Zusätzlich gilt immer: kein Kostenanteil > Lagerkapazität („Lager zu klein“).
+//  Gebäude            | Regel für Stufe L
+//  -------------------+----------------------------------------------------------------------------------------
+//  alle (außer Robo)  | Roboterfabrik ≥ ⌈(L−3)/2⌉        (Roboterfabrik = Hauptgebäude, L ≤ 3 + 2·Robo)
+//  Roboterfabrik      | Kraftwerk ≥ L, Metallmine ≥ L; ab L4 Computertechnik ≥ L−3
+//  Metallmine         | Kraftwerk ≥ L−2; Roboterfabrik ≥ ⌈L/2⌉−1; ab L6 Lager ≥ ⌊L/3⌋; ab L8 Energietechnik ≥ ⌊L/3⌋
+//  Kristallmine       | Kraftwerk ≥ L−1, Metallmine ≥ L−2; Robo ≥ ⌈L/2⌉−1; ab L6 Lager ≥ ⌊L/3⌋; ab L8 Energietechnik ≥ ⌊L/3⌋
+//  Gasförderung       | Kraftwerk ≥ L, Kristallmine ≥ L−2; Robo ≥ ⌈L/2⌉−1; ab L6 Lager ≥ ⌊L/3⌋; ab L8 Energietechnik ≥ ⌊L/3⌋
+//  Kraftwerk          | Metall- oder Kristallmine ≥ L−3; ab L6 Energietechnik ≥ ⌊(L−4)/2⌋
+//  Lager              | eine Mine ≥ 2·L−1
+//  Forschungslabor    | Roboterfabrik ≥ L−2; ab L4 Energietechnik ≥ L−2
+//  Raumschiffwerft    | Roboterfabrik 2 (Basis), Robo ≥ L−2; ab L3 Verbrennungstriebwerk ≥ L−2
+//  Nanitenfabrik      | Robo 8 + Computer 8 (Basis); Robo ≥ L+7, Computertechnik ≥ L+7
+//  Radaranlage        | Werft 1 (Basis); Werft ≥ L, Spionagetechnik ≥ ⌈L/2⌉
+//  Allianzdepot       | Roboterfabrik ≥ L
+//  Galactonit-Zentrum | Labor 3 (Basis); Labor ≥ L+2
+//  Terraformer        | Robo 8 + Energie 8 (Basis); Robo ≥ L+7, Energietechnik ≥ L+7
+//  Sternentor         | Hyperraum 7 + Werft 10 (Basis); Hyperraumtechnik ≥ L+6
+// Kapitel-Freischaltungen (Bauen/Forschen-Tabs etc.) kommen zusätzlich aus campaign.js.
 GE.LVRULE={
- _all:(L,b)=>[['robotics',Math.ceil((L-3)/2)]],
- robotics:(L)=>[['power',L],['metal_mine',L]].concat(L>=6?[['computer',L-4]]:[]),
- metal_mine:(L)=>[['power',L-2]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
- crystal_mine:(L)=>[['power',L-1]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
- gas_mine:(L)=>[['power',L]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
- power:(L)=>[['@mine2',L-3]].concat(L>=8?[['energy',Math.floor((L-6)/2)]]:[]),
+ _all:(L)=>[['robotics',Math.ceil((L-3)/2)]],
+ robotics:(L)=>[['power',L],['metal_mine',L]].concat(L>=4?[['computer',L-3]]:[]),
+ metal_mine:(L)=>[['power',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
+ crystal_mine:(L)=>[['power',L-1],['metal_mine',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
+ gas_mine:(L)=>[['power',L],['crystal_mine',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
+ power:(L)=>[['@mine2',L-3]].concat(L>=6?[['energy',Math.floor((L-4)/2)]]:[]),
  store:(L)=>[['@mine',2*L-1]],
- lab:(L)=>[['robotics',L-2]].concat(L>=6?[['energy',L-3]]:[]),
- shipyard:(L)=>[['robotics',L-2]].concat(L>=5?[['combustion',L-4]]:[]),
- nanite:(L)=>[['robotics',L+7]]
+ lab:(L)=>[['robotics',L-2]].concat(L>=4?[['energy',L-2]]:[]),
+ shipyard:(L)=>[['robotics',L-2]].concat(L>=3?[['combustion',L-2]]:[]),
+ nanite:(L)=>[['robotics',L+7],['computer',L+7]],
+ radar:(L)=>[['shipyard',L],['espionage',Math.ceil(L/2)]],
+ alliance:(L)=>[['robotics',L]],
+ galacto:(L)=>[['lab',L+2]],
+ terraformer:(L)=>[['robotics',L+7],['energy',L+7]],
+ stargate:(L)=>[['hyper',L+6]]
 };
+// Forschung: Stufe L verlangt IMMER Forschungslabor ≥ max(Basis-Labor, ⌈L/2⌉) plus die Basis-req aus GE.TECH und diese
+// mit der Stufe wachsenden Abhängigkeiten (GE-ähnlicher Technologiebaum):
+//  Energietechnik     | ab L4 Computertechnik ≥ L−3
+//  Lasertechnik       | Energie ≥ max(2, ⌈L/2⌉)
+//  Ionentechnik       | Laser ≥ L+4, Energie ≥ L+3
+//  Plasmatechnik      | Energie ≥ L+7, Laser ≥ L+9, Ionen ≥ L+4
+//  Hyperraumtechnik   | Energie ≥ L+4, Schild ≥ L+4
+//  Verbrennung        | Energie ≥ ⌈(L−1)/2⌉
+//  Impuls             | Energie ≥ ⌈L/2⌉, Verbrennung ≥ L+1
+//  Hyperraumantrieb   | Hyperraumtechnik ≥ L+2, Impuls ≥ L+3
+//  Computertechnik    | Energie ≥ ⌈L/2⌉
+//  Spionage           | Computer ≥ ⌈L/2⌉, Energie ≥ ⌈L/3⌉
+//  Astrophysik        | Spionage ≥ L+3, Impuls ≥ L+2, Computer ≥ ⌈L/2⌉+1
+//  Waffen             | Energie ≥ ⌈L/2⌉, Laser ≥ ⌈L/2⌉
+//  Schild             | Energie ≥ L+2, Waffen ≥ L−1
+//  Panzerung          | Waffen ≥ L−1, Energie ≥ ⌈L/3⌉
+//  Ultratemperatur    | Energie ≥ L+5
+//  Antigravitation    | Hyperraumtechnik ≥ L+4, Schild ≥ L+5
+//  Legierungsortung   | Spionage ≥ L+4
+//  Dynamische Energie | Energie ≥ L+4, Verbrennung ≥ L
+//  Discoverer         | Galactonit-Zentrum ≥ L
+GE.TRULE={
+ energy:(L)=>L>=4?[['computer',L-3]]:[],
+ laser:(L)=>[['energy',Math.max(2,Math.ceil(L/2))]],
+ ion:(L)=>[['laser',L+4],['energy',L+3]],
+ plasma:(L)=>[['energy',L+7],['laser',L+9],['ion',L+4]],
+ hyper:(L)=>[['energy',L+4],['shielding',L+4]],
+ combustion:(L)=>[['energy',Math.ceil((L-1)/2)]],
+ impulse:(L)=>[['energy',Math.ceil(L/2)],['combustion',L+1]],
+ hyperdrive:(L)=>[['hyper',L+2],['impulse',L+3]],
+ computer:(L)=>[['energy',Math.ceil(L/2)]],
+ espionage:(L)=>[['computer',Math.ceil(L/2)],['energy',Math.ceil(L/3)]],
+ astro:(L)=>[['espionage',L+3],['impulse',L+2],['computer',Math.ceil(L/2)+1]],
+ weapons:(L)=>[['energy',Math.ceil(L/2)],['laser',Math.ceil(L/2)]],
+ shielding:(L)=>[['energy',L+2],['weapons',L-1]],
+ armour:(L)=>[['weapons',L-1],['energy',Math.ceil(L/3)]],
+ ultra:(L)=>[['energy',L+5]],
+ antigrav:(L)=>[['hyper',L+4],['shielding',L+5]],
+ alloy:(L)=>[['espionage',L+4]],
+ dynpower:(L)=>[['energy',L+4],['combustion',L]],
+ discoverer:(L)=>[['galacto',L]]
+};
+// Schiffe & Verteidigung: Basis-req in GE.SHIP/GE.DEF (Werft-Stufe + Forschung wie in GE), werden bei jedem Bauauftrag geprüft.
 GE.PLANET_B=['metal_mine','crystal_mine','gas_mine','power','store','robotics','nanite','shipyard','lab','radar','alliance','galacto','terraformer','stargate'];
 GE.MOON_B=['moon_base','robotics','shipyard','pioneer','eux','wormhole'];
 // Panorama-Hotspots (Bilder aus webapp/assets/b)
