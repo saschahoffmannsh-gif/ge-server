@@ -86,6 +86,15 @@ E.fieldsUsed=pl=>Object.entries(pl.b).reduce((a,[k,b])=>a+(k==='terraformer'?0:b
 E.fieldsMax=pl=>pl.moon?1+3*E.lv(pl,'moon_base'):pl.fields+5*E.lv(pl,'terraformer')+(pl.xf||0);
 // Voraussetzungen
 E.reqOk=function(req,pl){if(!req)return true;for(const k in req){const need=req[k];const have=GE.TECH[k]?E.tl(k)+(k==='espionage'&&cmdActive('technocrat')?0:0):E.lv(pl,k);if(have<need)return false}return true};
+// v41: Stufen-Regeln (siehe GE.LVRULE in data.js). tech optional (für Server-Prüfung), sonst S.tech
+E.lvReqs=function(pl,id,L,tech){const out=[];const R=GE.LVRULE;if(!R||pl.moon)return out;const T=tech||S.tech||{};
+ const lvOf=k=>k==='@mine'?Math.max(pl.b.metal_mine||0,pl.b.crystal_mine||0,pl.b.gas_mine||0):k==='@mine2'?Math.max(pl.b.metal_mine||0,pl.b.crystal_mine||0):GE.TECH[k]?(T[k]||0):(pl.b[k]||0);
+ const nm=k=>k==='@mine'?'eine Mine':k==='@mine2'?'Metall- oder Kristallmine':(GE.TECH[k]||GE.BUILD[k]).n;
+ const rules=(id!=='robotics'&&R._all?R._all(L):[]).concat(R[id]?R[id](L):[]);
+ for(const [k,need] of rules){if(need<=0)continue;const have=lvOf(k);out.push({id:k,n:nm(k),need,have,ok:have>=need,tech:!!GE.TECH[k]})}return out};
+E.lvBlock=function(pl,id,L,tech){const b=E.lvReqs(pl,id,L,tech).filter(x=>!x.ok);return b.length?'Benötigt: '+b.map(x=>x.n+' '+x.need).join(', '):null};
+E.storeOk=(pl,c)=>{const cap=E.storeCap(pl);return c.every(v=>v<=cap)};
+E.techLabNeed=L=>Math.ceil(L/2);
 E.reqList=function(req,pl){const out=[];if(!req)return out;for(const k in req){const isT=!!GE.TECH[k];const have=isT?E.tl(k):E.lv(pl,k);out.push({id:k,n:(isT?GE.TECH[k]:GE.BUILD[k]).n,need:req[k],have,ok:have>=req[k],tech:isT})}return out};
 // ---------- Produktion ----------
 E.temp=pl=>pl.temp;
@@ -134,7 +143,7 @@ E.canBuild=function(pl,id){
  if(E.fieldsUsed(pl)+pl.bq.filter(q=>!q.demo&&q.id!=='terraformer').length>=E.fieldsMax(pl)&&id!=='moon_base'&&id!=='terraformer')return 'Keine freien Felder';
  if((id==='shipyard'||id==='nanite')&&pl.sq.length)return 'Werft ist beschäftigt';
  if(id==='lab'&&S.rq&&S.rq.pid===pl.id)return 'Forschung läuft';
- const lv=E.nextLevel(pl,id); if(!canPay(pl,E.bCost(id,lv,pl)))return 'Zu wenig Rohstoffe';
+ const lv=E.nextLevel(pl,id);{const lb=E.lvBlock(pl,id,lv);if(lb)return lb}{const c0=E.bCost(id,lv,pl);if(!pl.moon&&!E.storeOk(pl,c0))return 'Lager zu klein'} if(!canPay(pl,E.bCost(id,lv,pl)))return 'Zu wenig Rohstoffe';
  return null;
 };
 E.build=function(pid,id){
@@ -165,6 +174,7 @@ E.canResearch=function(pl,id){const d=GE.TECH[id];if(S.rq)return 'Es läuft bere
  if(!E.lv(pl,'lab'))return 'Forschungslabor benötigt';
  if(pl.bq.some(q=>q.id==='lab'))return 'Labor wird ausgebaut';
  if(!E.reqOk(d.req,pl))return 'Voraussetzungen fehlen';
+ {const L=E.nextTL(id),need=E.techLabNeed(L);if(E.lv(pl,'lab')<need)return 'Benötigt: Forschungslabor '+need;if(!E.storeOk(pl,E.tCost(id,L,pl)))return 'Lager zu klein'}
  if(!canPay(pl,E.tCost(id,E.nextTL(id),pl)))return 'Zu wenig Rohstoffe';return null};
 E.research=function(pid,id){const pl=S.planets[pid];const err=E.canResearch(pl,id);if(err)return err;
  const lv=E.nextTL(id),c=E.tCost(id,lv,pl);pay(pl,c);const dur=E.tTime(id,lv,pl)*1000;
@@ -195,7 +205,7 @@ function progressYard(pl,t){
    let st=sqEnd(q);for(const n of pl.sq){n.start=st;st=sqEnd(n)}}else break;}
 }
 // ---------- Beschleunigen (1 DM je angefangene 15 Min) ----------
-E.FREE_MS=10*MIN; // wie im Original: Restzeit unter 10 Min. gratis fertigstellen
+E.FREE_MS=5*MIN; // wie im Original: Restzeit unter 10 Min. gratis fertigstellen
 E.speedCost=ms=>ms<=E.FREE_MS?0:Math.max(1,Math.ceil(Math.pow((ms-E.FREE_MS)/MIN,.9)*.75));
 E.isFree=ms=>ms>0&&ms<=E.FREE_MS;
 E.speedupBuild=function(pid){const pl=S.planets[pid];const q=pl.bq[0];if(!q)return;const rem=q.end-now();const c=E.speedCost(rem);
@@ -592,5 +602,31 @@ E.setPct=function(pid,id,v){S.planets[pid].pct[id]=v;emit('change')};
 E.createAlly=function(name,tag){if(!E.maxB('alliance'))return 'Allianzdepot benötigt';name=String(name||'').trim();tag=String(tag||'').trim().toUpperCase().slice(0,5);if(name.length<3||tag.length<2)return 'Name (min. 3) und Kürzel (min. 2) angeben';S.ally={name,tag,created:now()};emit('change');return null};
 E.abandon=function(pid){if(pid===S.home)return 'Der Heimatplanet kann nicht aufgegeben werden';const pl=S.planets[pid];if(S.fleets.some(f=>f.from===pid))return 'Flotten dieses Planeten sind unterwegs';
  S.colonized=S.colonized||{};const del=[pid];if(pl.moonId)del.push(pl.moonId);for(const d of del){delete S.planets[d];S.order=S.order.filter(x=>x!==d)}if(del.includes(S.cur))S.cur=S.home;emit('change');return null};
+// ===== v41: Spielstand-Prüfung (Server rechnet nach und lehnt unmögliche Sprünge ab) =====
+// prev/next = komplette Spielstände, dtMs = vom SERVER gemessene Zeit seit dem letzten akzeptierten Stand.
+// Geprüft (nur Zuwächse – bestehende Stufen bleiben unangetastet):
+//  1) Jede neue Gebäude-/Forschungsstufe erfüllt die Stufen-Regeln (GE.LVRULE, Labor-Stufe, Basis-req) und passt ins Lager.
+//  2) Bauzeit: Summe der Bauzeiten (abzgl. Gratis-Fertigstellung) je Planet ≤ verstrichene Zeit × Bauschleifen + mit DM gekaufte Zeit.
+//  3) Dunkle Materie wächst höchstens um die erreichbaren Belohnungen; Rohstoffe: Kosten ≤ Vorrat + Produktion + Belohnungen (großzügig).
+E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
+ try{S=next;const dt=Math.max(0,dtMs);const days=dt/864e5;
+  const dmGain=(+next.dm||0)-(+prev.dm||0);const dmAllow=80+60*days;if(dmGain>dmAllow)errs.push(`DM +${Math.round(dmGain)} (erlaubt ${Math.round(dmAllow)})`);
+  const dmSpent=Math.max(0,(+prev.dm||0)+dmAllow-(+next.dm||0));const dmMs=Math.pow(dmSpent/0.75,1/0.9)*60e3;
+  const tech0=prev.tech||{},tech1=next.tech||{};const qMax=2;let costAll=0,resPrev=0,prodH=0,timeT=0;
+  for(const id of next.order||[]){const p1=next.planets[id],p0=prev.planets&&prev.planets[id];if(!p1||!p0||p1.moon)continue;
+   resPrev+=(p0.r.m||0)+(p0.r.k||0)+(p0.r.g||0);try{const pi=E.prodInfo(p1);prodH+=Math.max(0,pi.m)+Math.max(0,pi.k)+Math.max(0,pi.g)}catch(e){prodH+=1e5}
+   let tB=0;const sim={...p1,b:{...p0.b},bq:[]};
+   for(const b of Object.keys(p1.b||{})){const a=p0.b[b]||0,z=p1.b[b]||0;if(z<=a)continue;
+    for(let L=a+1;L<=z;L++){const blk=E.lvBlock({...sim,b:{...p1.b,[b]:L-1}},b,L,tech1);if(blk)errs.push(`${b} ${L}: ${blk}`);
+     const d=GE.BUILD[b];if(d&&!E.reqOk(d.req,{...sim,b:{...p1.b}}))errs.push(`${b} ${L}: Voraussetzungen`);
+     const c=E.bCost(b,L,p1);costAll+=c[0]+c[1]+c[2];if(!E.storeOk(p1,c))errs.push(`${b} ${L}: Lager zu klein`);
+     tB+=Math.max(0,E.bTime(p1,b,L)*1000-E.FREE_MS)}}
+   if(tB>dt*qMax+dmMs+120e3)errs.push(`Bauzeit ${Math.round(tB/60e3)} min in ${Math.round(dt/60e3)} min`)}
+  const home=next.planets[next.home]||next.planets[next.order[0]];
+  for(const t of Object.keys(tech1)){const a=tech0[t]||0,z=tech1[t]||0;if(z<=a||!GE.TECH[t])continue;const labMax=Math.max(...(next.order||[]).map(i=>(next.planets[i].b||{}).lab||0));
+   for(let L=a+1;L<=z;L++){if(labMax<E.techLabNeed(L))errs.push(`${t} ${L}: Labor ${E.techLabNeed(L)}`);const c=E.tCost(t,L,home);costAll+=c[0]+c[1]+c[2];timeT+=Math.max(0,E.tTime(t,L,home)*1000-E.FREE_MS)}}
+  if(timeT>dt+dmMs+120e3)errs.push(`Forschungszeit ${Math.round(timeT/60e3)} min in ${Math.round(dt/60e3)} min`);
+  const allow=resPrev+prodH*(dt/36e5)*1.5+300000+costAll*0.1;if(costAll>allow)errs.push(`Kosten ${Math.round(costAll)} > möglich ${Math.round(allow)}`);
+ }finally{S=keep}return errs};
 root.ENGINE=E; if(typeof module!=='undefined')module.exports=E;
 })(typeof window!=='undefined'?window:globalThis);

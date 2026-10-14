@@ -53,6 +53,17 @@ async function universe(t = Date.now()) {
 // ---------- Hilfen Stufe 2/3 ----------
 async function event(name_l: string, data: unknown) { must(await db.from("ge_event").insert({ name_l, data })); }
 async function chatSys(ch: string, txt: string) { must(await db.from("ge_chat").insert({ ch, name: "System", txt, t: Date.now() })); }
+async function gunzip(b64: string) { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); }
+// v41 Chat: Säubern, Längen-Limit, Rate-Limit (DB-basiert, gilt über alle Instanzen)
+function clean(t: string) { return String(t || "").replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().slice(0, 200); }
+async function rateOk(name: string) { const since = Date.now() - 60e3; const rows = must(await db.from("ge_chat").select("t").eq("name", name).gt("t", since).order("t", { ascending: false }).limit(8)) as any[];
+  if (rows.length && Date.now() - rows[0].t < 2500) return "Zu schnell – kurz warten"; if (rows.length >= 8) return "Zu viele Nachrichten – bitte 1 Minute warten"; return null; }
+async function strength(names: string[]) { const out: Record<string, number> = {}; if (!names.length) return out;
+  const rows = must(await db.from("ge_pub").select("data").in("name_l", [...new Set(names.map(norm))])) as any[];
+  for (const r of rows) { const p = r.data.pts || {}; out[r.data.name] = Math.floor((p.b || 0) + (p.t || 0) + (p.f || 0) + (p.d || 0)); } return out; }
+const dmCh = (x: string, y: string) => "dm:" + [norm(x), norm(y)].sort().join("|");
+async function markRead(me: string, ch: string, id: number) { const k = "dmr:" + me; const v = ((await meta(k)) || {}) as Record<string, number>; if ((v[ch] || 0) >= id) return; v[ch] = id; must(await db.from("ge_meta").upsert({ k, v })); }
 async function myAlly(name: string) { const rows = must(await db.from("ge_ally").select("*")) as any[]; return rows.find((r) => r.members.some((m: any) => m.n === name)) || null; }
 async function personal(a: any) {
   const inc = must(await db.from("ge_fleet").select("id,mission,data,arrive,from_l").eq("to_l", a.name_l).eq("status", "out")) as any[];
@@ -143,7 +154,15 @@ Deno.serve(async (req) => {
     if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
     if (P === "/api/save" && req.method === "POST") {
       const b = await req.json(); if (typeof b.z !== "string" || b.z.length > 5_000_000) return err("Ungültiger Spielstand");
-      must(await db.from("ge_save").upsert({ name_l: a.name_l, z: b.z, t: +b.t || Date.now() })); return J({ ok: true });
+      // v41: Server rechnet nach – unmögliche Sprünge (Stufen-Regeln, Bauzeit, DM, Kosten) werden abgelehnt
+      let nx: any; try { nx = JSON.parse(await gunzip(b.z)); } catch (_e) { return err("Spielstand unlesbar"); }
+      if (+nx.t > Date.now() + 5 * 60e3) return J({ error: "Spielstand aus der Zukunft", code: "reject" }, 409);
+      const prev = must(await db.from("ge_save").select("z,t,updated").eq("name_l", a.name_l).maybeSingle()) as any;
+      if (prev) { try { const pv = JSON.parse(await gunzip(prev.z)); E.load(pv); E.load(nx); const dt = Date.now() - (Date.parse(prev.updated) || 0);
+          const errs: string[] = E.validateSave(pv, nx, dt);
+          if (errs.length) { console.log("save reject", a.name_l, errs.slice(0, 5)); return J({ error: "Spielstand abgelehnt: " + errs.slice(0, 3).join("; "), code: "reject", reasons: errs.slice(0, 20) }, 409); }
+        } catch (e) { console.log("validate fail", (e as Error).message); } }
+      must(await db.from("ge_save").upsert({ name_l: a.name_l, z: b.z, t: +b.t || Date.now(), updated: new Date().toISOString() })); return J({ ok: true });
     }
     if (P === "/api/pub" && req.method === "POST") {
       const b = await req.json(); const num = (x: unknown) => Math.max(0, Math.floor(+(x as number) || 0));
@@ -226,14 +245,47 @@ Deno.serve(async (req) => {
     if (P === "/api/ally/descr" && req.method === "POST") { const b = await req.json(); const al = await myAlly(a.name); if (!al || al.founder !== a.name) return err("Nur der Gründer", 403); must(await db.from("ge_ally").update({ descr: String(b.descr || "").slice(0, 300) }).eq("tag", al.tag)); return J({ ok: true }); }
     if (P === "/api/chat" && req.method === "GET") {
       const u = new URL(req.url); const ch = u.searchParams.get("ch") || "global"; const since = +(u.searchParams.get("since") || 0);
-      if (ch.startsWith("ally:")) { const al = await myAlly(a.name); if (!al || "ally:" + al.tag !== ch) return err("Kein Zugriff", 403); }
+      if (ch.startsWith("ally:")) { const al = await myAlly(a.name); if (!al || "ally:" + al.tag !== ch) return err("Kein Zugriff", 403); } else if (ch !== "global") return err("Kein Zugriff", 403);
       const rows = must(await db.from("ge_chat").select("id,name,txt,t").eq("ch", ch).gt("id", since).order("id", { ascending: false }).limit(60)) as any[];
-      return J({ msgs: rows.reverse() });
+      const msgs = rows.reverse(); return J({ msgs, pw: await strength(msgs.map((m: any) => m.name).filter((n: string) => n !== "System")) });
     }
     if (P === "/api/chat" && req.method === "POST") {
-      const b = await req.json(); const ch = String(b.ch || "global"); const txt = String(b.txt || "").trim().slice(0, 300); if (!txt) return err("Leer");
+      const b = await req.json(); const ch = String(b.ch || "global"); const txt = clean(b.txt); if (!txt) return err("Leer");
+      { const rl = await rateOk(a.name); if (rl) return err(rl, 429); }
       if (ch.startsWith("ally:")) { const al = await myAlly(a.name); if (!al || "ally:" + al.tag !== ch) return err("Kein Zugriff", 403); } else if (ch !== "global") return err("Kanal unbekannt");
       must(await db.from("ge_chat").insert({ ch, name: a.name, txt, t: Date.now() })); return J({ ok: true });
+    }
+    // ---------- v41: Privatchat (nur echte Spieler; Bots/NPC können weder empfangen noch antworten) ----------
+    if (P === "/api/dm" && req.method === "POST") {
+      const b = await req.json(); const to = norm(b.to); const txt = clean(b.txt); if (!txt) return err("Leer"); if (to === a.name_l) return err("Nicht an dich selbst");
+      const r = must(await db.from("ge_acct").select("name").eq("name_l", to).maybeSingle()) as any; if (!r) return err("Dieser Spieler ist ein Bot und kann keine Nachrichten empfangen", 404);
+      { const rl = await rateOk(a.name); if (rl) return err(rl, 429); }
+      const row = must(await db.from("ge_chat").insert({ ch: dmCh(a.name, r.name), name: a.name, txt, t: Date.now() }).select("id").single()) as any;
+      await markRead(a.name_l, dmCh(a.name, r.name), row.id); return J({ ok: true, id: row.id });
+    }
+    if (P === "/api/dm" && req.method === "GET") {
+      const u = new URL(req.url); const w = norm(u.searchParams.get("with") || ""); const since = +(u.searchParams.get("since") || 0);
+      const r = must(await db.from("ge_acct").select("name").eq("name_l", w).maybeSingle()) as any; if (!r) return J({ msgs: [], bot: true });
+      const ch = dmCh(a.name, r.name); const rows = (must(await db.from("ge_chat").select("id,name,txt,t").eq("ch", ch).gt("id", since).order("id", { ascending: false }).limit(80)) as any[]).reverse();
+      if (rows.length) await markRead(a.name_l, ch, rows[rows.length - 1].id); return J({ msgs: rows, name: r.name });
+    }
+    if (P === "/api/inbox") {
+      const me = a.name_l; const q = async (pat: string) => must(await db.from("ge_chat").select("id,ch,name,txt,t").like("ch", pat).order("id", { ascending: false }).limit(300)) as any[];
+      const esc = (x: string) => x.replace(/[%_\\]/g, (c) => "\\" + c); const rows = [...await q(`dm:${esc(me)}|%`), ...await q(`dm:%|${esc(me)}`)].filter((m) => m.ch.slice(3).split("|").includes(me)).sort((x, y) => y.id - x.id);
+      const rd = ((await meta("dmr:" + me)) || {}) as Record<string, number>; const conv = new Map<string, any>();
+      for (const m of rows) { const other = m.ch.slice(3).split("|").find((x: string) => x !== me) || me; let c = conv.get(other); if (!c) { c = { with_l: other, last: { name: m.name, txt: m.txt, t: m.t }, unread: 0 }; conv.set(other, c); }
+        if (m.id > (rd[m.ch] || 0) && norm(m.name) !== me) c.unread++; }
+      const list = [...conv.values()]; const names = must(await db.from("ge_acct").select("name,name_l").in("name_l", list.map((c) => c.with_l).concat([""]))) as any[];
+      for (const c of list) c.with = (names.find((n) => n.name_l === c.with_l) || {}).name || c.with_l;
+      const pw = await strength(list.map((c) => c.with)); for (const c of list) c.pw = pw[c.with] || 0;
+      return J({ convs: list, unread: list.reduce((x, c) => x + c.unread, 0) });
+    }
+    if (P === "/api/profile") {
+      const n = norm(new URL(req.url).searchParams.get("name") || ""); const acct = must(await db.from("ge_acct").select("name,home,created").eq("name_l", n).maybeSingle()) as any;
+      if (!acct) { const npc = NPCS.find((x: any) => norm(x.n) === n); if (!npc) return err("Unbekannt", 404); const sm = summary(npc, stateAt(npc, Date.now(), CFG.speed, npcCache)) as any;
+        return J({ name: sm.n, real: false, tag: sm.tag || null, home: sm.home, pts: sm.pts }); }
+      const pub = must(await db.from("ge_pub").select("data").eq("name_l", n).maybeSingle()) as any; const d = pub ? pub.data : {};
+      return J({ name: acct.name, real: true, tag: d.tag || null, ally: d.ally || null, home: d.home || acct.home, pts: d.pts || {}, planets: (d.planets || []).filter((p: any) => !p.moon).length, seen: d.t || null, since: acct.created });
     }
     return err("Unbekannt", 404);
   } catch (e) { return err("Serverfehler: " + (e as Error).message, 500); }

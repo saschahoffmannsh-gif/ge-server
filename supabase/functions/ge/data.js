@@ -25,6 +25,39 @@ GE.BUILD = {
  eux:{n:'EU-X Radarphalanx',c:[20000,40000,20000],f:2,moon:1,req:{moon_base:1},d:'Scannt Flottenbewegungen im Umkreis von (Stufe² − 1) Systemen.'},
  wormhole:{n:'Wurmlochgenerator',c:[2000000,4000000,2000000],f:2,moon:1,req:{moon_base:1,hyper:7},d:'Sprungtor: verlegt Schiffe sofort zwischen Monden.'}
 };
+// ===== v41 Freischalt-/Stufen-Tabelle (Fortschrittsbremse) =====
+// Gilt für den NÄCHSTEN Ausbau auf Stufe L (bestehende Stufen bleiben erhalten). Wird von Client UND Server (Spielstand-Prüfung) benutzt.
+//  Gebäude           | Freischaltung (Basis-req)            | Stufen-Regel für Stufe L
+//  ------------------+--------------------------------------+-------------------------------------------------------------
+//  alle (außer Robo) | –                                    | L ≤ 3 + 2·Roboterfabrik  (Roboterfabrik = Hauptgebäude)
+//  Roboterfabrik     | –                                    | Kraftwerk ≥ L, Metallmine ≥ L; ab L6 Computertechnik ≥ L−4
+//  Metallmine        | –                                    | Kraftwerk ≥ L−2; ab L10 Energietechnik ≥ ⌊L/4⌋
+//  Kristallmine      | –                                    | Kraftwerk ≥ L−1; ab L10 Energietechnik ≥ ⌊L/4⌋
+//  Gasförderung      | –                                    | Kraftwerk ≥ L;   ab L10 Energietechnik ≥ ⌊L/4⌋
+//  Kraftwerk         | –                                    | max(Metall-, Kristallmine) ≥ L−3; ab L8 Energietechnik ≥ ⌊(L−6)/2⌋
+//  Lager             | –                                    | max(Mine) ≥ 2·L−1
+//  Forschungslabor   | Kapitel 2                            | L ≤ Roboterfabrik + 2; ab L6 Energietechnik ≥ L−3
+//  Raumschiffwerft   | Roboterfabrik 2, Kapitel 3           | L ≤ Roboterfabrik + 2; ab L5 Verbrennungstriebwerk ≥ L−4
+//  Radaranlage       | Werft 1, Kapitel 4                   | –
+//  Galactonit-Zentrum| Labor 3, Kapitel 5                   | –
+//  Sternentor        | Hyperraumtechnik 7, Werft 10, Kap. 6 | –
+//  Allianzdepot      | Kapitel 7                            | –
+//  Nanitenfabrik     | Roboterfabrik 8, Computertechnik 8   | L ≤ Roboterfabrik − 7
+//  Terraformer       | Roboterfabrik 8, Energietechnik 8    | –
+// Zusätzlich für JEDEN Ausbau: kein einzelner Kostenanteil darf die Lagerkapazität übersteigen („Lager zu klein“).
+// Forschung: Stufe L verlangt Forschungslabor ≥ ⌈L/2⌉ (plus die Basis-Voraussetzungen in GE.TECH[id].req).
+GE.LVRULE={
+ _all:(L,b)=>[['robotics',Math.ceil((L-3)/2)]],
+ robotics:(L)=>[['power',L],['metal_mine',L]].concat(L>=6?[['computer',L-4]]:[]),
+ metal_mine:(L)=>[['power',L-2]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
+ crystal_mine:(L)=>[['power',L-1]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
+ gas_mine:(L)=>[['power',L]].concat(L>=10?[['energy',Math.floor(L/4)]]:[]),
+ power:(L)=>[['@mine2',L-3]].concat(L>=8?[['energy',Math.floor((L-6)/2)]]:[]),
+ store:(L)=>[['@mine',2*L-1]],
+ lab:(L)=>[['robotics',L-2]].concat(L>=6?[['energy',L-3]]:[]),
+ shipyard:(L)=>[['robotics',L-2]].concat(L>=5?[['combustion',L-4]]:[]),
+ nanite:(L)=>[['robotics',L+7]]
+};
 GE.PLANET_B=['metal_mine','crystal_mine','gas_mine','power','store','robotics','nanite','shipyard','lab','radar','alliance','galacto','terraformer','stargate'];
 GE.MOON_B=['moon_base','robotics','shipyard','pioneer','eux','wormhole'];
 // Panorama-Hotspots (Bilder aus webapp/assets/b)
@@ -126,7 +159,7 @@ GE.PTYPES=[
 
 // Aries-Tutorial (29 Aufgaben, Belohnungen gem. Wiki)
 GE.TASKS = [
- {t:'Das erste Geschenk',d:'Hole dir dein Willkommensgeschenk ab.',r:{m:100,k:65,g:35,dm:23,cmd:['commander',30]}},
+ {t:'Das erste Geschenk',d:'Hole dir dein Willkommensgeschenk ab.',r:{m:100,k:65,g:35,dm:23,cmd:['commander',3]}},
  {t:'Erste Minen',d:'Baue eine Metallmine und eine Kristallmine.',r:{m:400,k:200}},
  {t:'Mehr Metall',d:'Baue die Metallmine auf Stufe 2 aus.',r:{m:200,k:100}},
  {t:'Energie!',d:'Baue das Kraftwerk auf Stufe 2 aus.',r:{m:300,k:150}},
