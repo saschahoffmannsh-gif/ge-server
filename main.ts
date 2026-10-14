@@ -42,7 +42,7 @@ async function freeHome(): Promise<number[]> {
   for (let i = 0; i < 500; i++) { const s = 1 + Math.floor(Math.random() * 30), p = 4 + Math.floor(Math.random() * 9); if (!taken.has(`1:${s}:${p}`)) return [1, s, p]; }
   return [1, 31 + Math.floor(Math.random() * 400), 7];
 }
-const pubAcct = (a: Acct) => ({ name: a.name, home: a.home, speed: CFG.speed, epoch: CFG.epoch });
+const pubAcct = (a: Acct) => ({ name: a.name, home: a.home, speed: CFG.speed, epoch: CFG.epoch, seed: CFG.seed });
 
 // Spielstand in 60-KB-Teilen (KV-Wertlimit 64 KB)
 const CH = 60000;
