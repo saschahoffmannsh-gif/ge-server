@@ -4,3 +4,11 @@ create table if not exists ge_save(name_l text primary key references ge_acct(na
 create table if not exists ge_meta(k text primary key, v jsonb);
 alter table ge_acct enable row level security; alter table ge_pub enable row level security; alter table ge_save enable row level security; alter table ge_meta enable row level security;
 create extension if not exists pg_cron; create extension if not exists pg_net;
+create table if not exists ge_fleet(id bigserial primary key, from_l text not null, to_l text, to_npc text, mission text not null, data jsonb not null, arrive bigint not null, status text not null default 'out', result jsonb, created timestamptz default now());
+create index if not exists ge_fleet_to on ge_fleet(to_l,status); create index if not exists ge_fleet_from on ge_fleet(from_l,status);
+create table if not exists ge_event(id bigserial primary key, name_l text not null, data jsonb not null, acked boolean not null default false, created timestamptz default now());
+create index if not exists ge_event_n on ge_event(name_l,acked);
+create table if not exists ge_ally(tag text primary key, name text not null, founder text not null, descr text default '', members jsonb not null default '[]', apps jsonb not null default '[]', created bigint not null);
+create table if not exists ge_chat(id bigserial primary key, ch text not null, name text not null, txt text not null, t bigint not null);
+create index if not exists ge_chat_ch on ge_chat(ch,id);
+alter table ge_fleet enable row level security; alter table ge_event enable row level security; alter table ge_ally enable row level security; alter table ge_chat enable row level security;
