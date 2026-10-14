@@ -1,0 +1,1 @@
+{ "tasks": { "dev": "deno run -A --unstable-kv --unstable-cron main.ts" }, "unstable": ["kv", "cron"] }
