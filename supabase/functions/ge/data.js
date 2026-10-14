@@ -8,15 +8,12 @@ GE.BUILD = {
  metal_mine:{n:'Metallmine',c:[60,15,0],f:1.5,img:'Bergbau',d:'Fördert Metall aus der Planetenkruste. Grundlage jeder Wirtschaft.',prod:'m'},
  crystal_mine:{n:'Kristallmine',c:[48,24,0],f:1.6,img:'Schmiede',d:'Baut Kristall ab – in Galaxy Empire der Engpass-Rohstoff.',prod:'k'},
  gas_mine:{n:'Gasförderung',c:[225,75,0],f:1.5,img:'Raffinerie',d:'Gewinnt Gas aus der Atmosphäre. Kalte Planeten fördern mehr.',prod:'g'},
- solar:{n:'Solarkraftwerk',c:[75,30,0],f:1.5,img:'Kraftwerk',d:'Erzeugt Energie für Minen und Anlagen.',prod:'e'},
- fusion:{n:'Fusionskraftwerk',c:[900,360,180],f:1.8,req:{gas_mine:5,energy:3},d:'Erzeugt viel Energie, verbraucht dafür Gas. Energietechnik steigert die Leistung.',prod:'e'},
+ power:{n:'Kraftwerk',c:[75,30,0],f:1.5,img:'Kraftwerk',d:'Erzeugt Energie für Minen und Anlagen. Energietechnik steigert die Leistung.',prod:'e'},
  robotics:{n:'Roboterfabrik',c:[400,120,200],f:2,img:'Roboter_Labor',d:'Roboter beschleunigen den Bau aller Gebäude.'},
  nanite:{n:'Nanitenfabrik',c:[400000,200000,60000],f:2,img:'KI_Center',req:{robotics:8,computer:8},d:'Halbiert pro Stufe die Bauzeit von Gebäuden, Schiffen und Verteidigung.'},
  shipyard:{n:'Raumschiffwerft',c:[400,200,100],f:2,img:'Werft',req:{robotics:2},d:'Baut Schiffe und Verteidigungsanlagen. Jede Stufe verkürzt die Bauzeit.'},
  lab:{n:'Forschungslabor',c:[200,400,200],f:2,img:'Forschung',d:'Ermöglicht Forschung. Höhere Stufen erforschen schneller und schalten Technologien frei.'},
- metal_store:{n:'Metallspeicher',c:[1000,0,0],f:2,img:'Lager',grp:'store',d:'Erhöht die Lagerkapazität für Metall.'},
- crystal_store:{n:'Kristallspeicher',c:[1000,500,0],f:2,img:'Lager',grp:'store',d:'Erhöht die Lagerkapazität für Kristall.'},
- gas_store:{n:'Gastank',c:[1000,1000,0],f:2,img:'Lager',grp:'store',d:'Erhöht die Lagerkapazität für Gas.'},
+ store:{n:'Lager',c:[1000,500,250],f:2,img:'Lager',grp:'store',d:'Ein Lager für alle Rohstoffe: erhöht die Kapazität für Metall, Kristall und Gas.'},
  radar:{n:'Radaranlage',c:[20000,20000,1000],f:2,req:{shipyard:1},d:'Erkennt anrückende feindliche Flotten. Höhere Stufen zeigen Ankunft und Schiffstypen.'},
  alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,img:'Allianzzentrum',d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz.'},
  galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit. Jede Stufe schaltet einen Sockel für Edelsteine frei.'},
@@ -28,14 +25,14 @@ GE.BUILD = {
  eux:{n:'EU-X Radarphalanx',c:[20000,40000,20000],f:2,moon:1,req:{moon_base:1},d:'Scannt Flottenbewegungen im Umkreis von (Stufe² − 1) Systemen.'},
  wormhole:{n:'Wurmlochgenerator',c:[2000000,4000000,2000000],f:2,moon:1,req:{moon_base:1,hyper:7},d:'Sprungtor: verlegt Schiffe sofort zwischen Monden.'}
 };
-GE.PLANET_B=['metal_mine','crystal_mine','gas_mine','solar','fusion','robotics','nanite','shipyard','lab','metal_store','crystal_store','gas_store','radar','alliance','galacto','terraformer','stargate'];
+GE.PLANET_B=['metal_mine','crystal_mine','gas_mine','power','store','robotics','nanite','shipyard','lab','radar','alliance','galacto','terraformer','stargate'];
 GE.MOON_B=['moon_base','robotics','shipyard','pioneer','eux','wormhole'];
 // Panorama-Hotspots (Bilder aus webapp/assets/b)
-GE.PANO={Bergbau:'metal_mine',Schmiede:'crystal_mine',Raffinerie:'gas_mine',Kraftwerk:'solar',Roboter_Labor:'robotics',KI_Center:'nanite',Werft:'shipyard',Forschung:'lab',Lager:'@store',Allianzzentrum:'alliance',Waffen:'galacto',Verteidigung:'@defense'};
+GE.PANO={Bergbau:'metal_mine',Schmiede:'crystal_mine',Raffinerie:'gas_mine',Kraftwerk:'power',Roboter_Labor:'robotics',KI_Center:'nanite',Werft:'shipyard',Forschung:'lab',Lager:'store',Allianzzentrum:'alliance',Waffen:'galacto',Verteidigung:'@defense'};
 
 // Forschung: cat basic/adv/combat
 GE.TECH = {
- energy:{n:'Energietechnik',cat:'Basis',c:[0,800,400],req:{lab:1},d:'Steigert die Leistung von Fusionskraftwerken. Voraussetzung vieler Technologien.'},
+ energy:{n:'Energietechnik',cat:'Basis',c:[0,800,400],req:{lab:1},d:'Steigert die Leistung des Kraftwerks. Voraussetzung vieler Technologien.'},
  laser:{n:'Lasertechnik',cat:'Basis',c:[200,100,0],req:{lab:1,energy:2},d:'Gebündeltes Licht – Grundlage der Laserwaffen.'},
  ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
  hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
@@ -132,14 +129,14 @@ GE.TASKS = [
  {t:'Das erste Geschenk',d:'Hole dir dein Willkommensgeschenk ab.',r:{m:100,k:65,g:35,dm:23,cmd:['commander',30]}},
  {t:'Erste Minen',d:'Baue eine Metallmine und eine Kristallmine.',r:{m:400,k:200}},
  {t:'Mehr Metall',d:'Baue die Metallmine auf Stufe 2 aus.',r:{m:200,k:100}},
- {t:'Energie!',d:'Baue das Solarkraftwerk auf Stufe 2 aus.',r:{m:300,k:150}},
+ {t:'Energie!',d:'Baue das Kraftwerk auf Stufe 2 aus.',r:{m:300,k:150}},
  {t:'Gas fördern',d:'Baue eine Gasförderung.',r:{m:250,k:100,g:200}},
  {t:'Produktion steuern',d:'Stelle die Produktion der Gasförderung auf 60 % (Gebäude antippen → Regler).',r:{m:3000,k:2000,g:1000,gal:10}},
  {t:'Roboter',d:'Baue die Roboterfabrik auf Stufe 2.',r:{m:4000,k:1000,g:800}},
  {t:'Werft & Abwehr',d:'Baue eine Raumschiffwerft und einen Raketenwerfer.',r:{m:4000,k:3000,g:2600,ships:{rl:1}}},
  {t:'Beschleunigen',d:'Beschleunige einen Bau oder eine Forschung mit Dunkler Materie.',r:{dm:5}},
  {t:'Space Store',d:'Öffne den Space Store.',r:{m:4000,k:4000,g:4000}},
- {t:'Lagerhaltung',d:'Baue Metallspeicher, Kristallspeicher und Gastank.',r:{m:2000,k:2000,g:2000}},
+ {t:'Lagerhaltung',d:'Baue das Lager für alle Rohstoffe.',r:{m:2000,k:2000,g:2000}},
  {t:'Dein Name',d:'Benenne deinen Planeten um (Planetenname oben antippen).',r:{m:1000,k:1500}},
  {t:'Gemeinsam stark',d:'Baue ein Allianzdepot und gründe eine Allianz.',r:{m:1000,dm:3}},
  {t:'Wissenschaft',d:'Forschungslabor auf Stufe 2 und Energietechnik erforschen.',r:{m:8000,k:8000,g:4000}},

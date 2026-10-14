@@ -21,7 +21,7 @@ const poolPick=k=>GE.PLANET_POOL[hash('img'+k)%GE.PLANET_POOL.length];E.poolPick
 
 // ---------- Neues Spiel ----------
 function newPlanet(id,name,g,s,p,fields,type){
- return {id,name,g,s,p,fields,type,temp:tempOf(p),b:{},pct:{metal_mine:100,crystal_mine:100,gas_mine:100,solar:100,fusion:100,ss:100},
+ return {id,name,g,s,p,fields,type,temp:tempOf(p),b:{},pct:{metal_mine:100,crystal_mine:100,gas_mine:100,power:100,ss:100},
   r:{m:0,k:0,g:0},ships:{},def:{},bq:[],sq:[],gems:[],moonId:null};
 }
 function tempOf(p){return Math.round(220-(p-1)*25+ (p*7%11) )}
@@ -43,7 +43,12 @@ E.newGame=function(opts={}){
 };
 E.load=function(obj){S=obj;migrate();return S};
 E.state=()=>S;
-function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];}
+function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];migrate34();}
+// v34: 15 Bauplätze – Solar+Fusion → Kraftwerk, 3 Speicher → Lager
+function migrate34(){for(const id in (S.planets||{})){const p=S.planets[id];if(!p||!p.b)continue;const b=p.b;const mx=(a)=>Math.max(0,...a.map(k=>b[k]||0));
+ if(!p.moon&&(b.solar!=null||b.fusion!=null||b.metal_store!=null||b.crystal_store!=null||b.gas_store!=null)){const pw=Math.max(b.power||0,mx(['solar','fusion'])),st=Math.max(b.store||0,mx(['metal_store','crystal_store','gas_store']));['solar','fusion','metal_store','crystal_store','gas_store'].forEach(k=>delete b[k]);if(pw)b.power=pw;if(st)b.store=st;p.pads=null;p.padsV=0}
+ if(p.pct){const v=p.pct.solar!=null?p.pct.solar:p.pct.fusion;if(p.pct.power==null)p.pct.power=v!=null?v:100;delete p.pct.solar;delete p.pct.fusion}
+ if(Array.isArray(p.bq)){const R={solar:'power',fusion:'power',metal_store:'store',crystal_store:'store',gas_store:'store'};const seen=new Set();p.bq=p.bq.filter(q=>{if(R[q.id]){q.id=R[q.id];if(seen.has(q.id)||(q.lv!=null&&q.lv<=(b[q.id]||0)))return false}seen.add(q.id);return true})}}}
 function addLog(txt,kind){S.log.unshift({t:now(),txt,kind:kind||'info'});if(S.log.length>80)S.log.length=80;emit('log',txt)}
 E.addLog=addLog;
 E.planet=id=>S.planets[id||S.cur];
@@ -84,13 +89,13 @@ E.reqOk=function(req,pl){if(!req)return true;for(const k in req){const need=req[
 E.reqList=function(req,pl){const out=[];if(!req)return out;for(const k in req){const isT=!!GE.TECH[k];const have=isT?E.tl(k):E.lv(pl,k);out.push({id:k,n:(isT?GE.TECH[k]:GE.BUILD[k]).n,need:req[k],have,ok:have>=req[k],tech:isT})}return out};
 // ---------- Produktion ----------
 E.temp=pl=>pl.temp;
-E.storeCap=(pl,r)=>{const id={m:'metal_store',k:'crystal_store',g:'gas_store'}[r];const L=E.lv(pl,id);return 5000*Math.floor(2.5*Math.exp(20*L/33))};
+E.storeCap=(pl,r)=>{const L=E.lv(pl,'store');return 5000*Math.floor(2.5*Math.exp(20*L/33))};
 E.prodInfo=function(pl){
  if(pl.moon)return{m:0,k:0,g:0,eProd:0,eUse:0,f:1,parts:{}};
  const L=id=>E.lv(pl,id), P=id=>(pl.pct[id]??100)/100, T=pl.temp;
  const eb=(1+0.02*E.tl('ultra'))*(1+buff('energy'));
- const solar=20*L('solar')*Math.pow(1.1,L('solar'))*P('solar')*eb;
- const fusion=30*L('fusion')*Math.pow(1.05+0.01*E.tl('energy'),L('fusion'))*P('fusion')*eb;
+ const solar=30*L('power')*Math.pow(1.1+0.004*E.tl('energy'),L('power'))*P('power')*eb;
+ const fusion=0;
  const sats=(pl.ships.ss||0)*Math.max(5,(T+160)/6)*P('ss')*eb;
  const eProd=solar+fusion+sats;
  const um=10*L('metal_mine')*Math.pow(1.1,L('metal_mine'))*P('metal_mine');
@@ -101,7 +106,7 @@ E.prodInfo=function(pl){
  const pl_=E.tl('plasma');
  const m=(30+30*L('metal_mine')*Math.pow(1.1,L('metal_mine'))*P('metal_mine')*f*geo*(1+0.01*pl_+gemBonus(pl,'m')));
  const k=(15+20*L('crystal_mine')*Math.pow(1.1,L('crystal_mine'))*P('crystal_mine')*f*geo*(1+0.0066*pl_+gemBonus(pl,'k')));
- const gasCons=10*L('fusion')*Math.pow(1.1,L('fusion'))*P('fusion');
+ const gasCons=0;
  const g=10*L('gas_mine')*Math.pow(1.1,L('gas_mine'))*(1.44-0.004*T)*P('gas_mine')*f*geo*(1+0.0033*pl_+gemBonus(pl,'g'))-gasCons;
  const sp=S.speed;
  return {m:m*sp,k:k*sp,g:g*sp,eProd,eUse,f,parts:{solar,fusion,sats,um,uk,ug,gasCons:gasCons*sp}};
@@ -539,9 +544,9 @@ E.strengthen=function(gid){const g=S.gal.gems.find(x=>x.id===gid);if(g.star>=5)r
 // ---------- Tutorial ----------
 const anyColony=()=>E.colonies()>0;
 const COND=[
- ()=>true,()=>E.maxB('metal_mine')>=1&&E.maxB('crystal_mine')>=1,()=>E.maxB('metal_mine')>=2,()=>E.maxB('solar')>=2,()=>E.maxB('gas_mine')>=1,
+ ()=>true,()=>E.maxB('metal_mine')>=1&&E.maxB('crystal_mine')>=1,()=>E.maxB('metal_mine')>=2,()=>E.maxB('power')>=2,()=>E.maxB('gas_mine')>=1,
  ()=>S.order.some(id=>S.planets[id].pct.gas_mine===60&&E.lv(S.planets[id],'gas_mine')>0),()=>E.maxB('robotics')>=2,()=>E.maxB('shipyard')>=1&&(S.built.rl||0)>=1,()=>!!S.flags.speedup,()=>!!S.flags.store,
- ()=>E.maxB('metal_store')>=1&&E.maxB('crystal_store')>=1&&E.maxB('gas_store')>=1,()=>!!S.flags.rename,()=>E.maxB('alliance')>=1&&!!S.ally,()=>E.maxB('lab')>=2&&E.tl('energy')>=1,
+ ()=>E.maxB('store')>=1,()=>!!S.flags.rename,()=>E.maxB('alliance')>=1&&!!S.ally,()=>E.maxB('lab')>=2&&E.tl('energy')>=1,
  ()=>E.maxB('shipyard')>=2&&E.tl('combustion')>=2&&(S.built.sc||0)>=1,()=>!!S.flags.spyDeportees,()=>!!S.flags.atkPurged,()=>E.tl('astro')>=1&&!!S.flags.nebula,
  ()=>!!S.flags.named,()=>!!S.flags.exported,()=>anyColony()&&E.tl('astro')>=2,()=>!!S.flags.transportCol,()=>!!S.flags.deployCol,()=>!!S.flags.atkInactive,()=>!!S.flags.recycled,
  ()=>E.maxB('radar')>=1,()=>E.maxB('galacto')>=1&&E.tl('discoverer')>=1,()=>!!S.flags.fused,()=>!!S.flags.equipped];
