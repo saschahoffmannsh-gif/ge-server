@@ -16,7 +16,7 @@ GE.BUILD = {
  store:{n:'Lager',c:[1000,500,250],f:2,img:'Lager',grp:'store',d:'Ein Lager für alle Rohstoffe: erhöht die Kapazität für Metall, Kristall und Gas.'},
  radar:{n:'Radaranlage',c:[20000,20000,1000],f:2,req:{shipyard:1},d:'Erkennt anrückende feindliche Flotten. Höhere Stufen zeigen Ankunft und Schiffstypen.'},
  alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,img:'Allianzzentrum',req:{robotics:1},d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz.'},
- galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit. Jede Stufe schaltet einen Sockel für Edelsteine frei.'},
+ galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit: ab Stufe 1 kann auf diesem Planeten ein Galactonit-Kern (5 Steine) eingesetzt werden.'},
  terraformer:{n:'Terraformer',c:[0,50000,100000],f:2,req:{robotics:8,energy:8},d:'Formt die Planetenkruste um: +5 Bauplätze (Felder) je Stufe. Belegt selbst kein Feld – auch auf vollen Planeten baubar.'},
  stargate:{n:'Sternentor',c:[2000000,4000000,2000000],f:2,req:{hyper:7,shipyard:10},d:'Verlegt Flotten ohne Flugzeit zwischen eigenen Planeten mit Sternentor.'},
  // Mond
@@ -98,7 +98,7 @@ GE.TECH = {
  weapons:{n:'Waffentechnik',cat:'Kampf',c:[800,200,0],f:1.75,req:{lab:4},d:'+10 % Angriffskraft aller Einheiten je Stufe.'},
  shielding:{n:'Schildtechnik',cat:'Kampf',c:[200,600,0],f:1.75,req:{lab:6,energy:3},d:'+10 % Schildstärke aller Einheiten je Stufe.'},
  armour:{n:'Strength (Panzerung)',cat:'Kampf',c:[1000,0,0],f:1.75,req:{lab:2},d:'+10 % Hüllenstruktur aller Einheiten je Stufe.'},
- discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],f:1.85,req:{galacto:1},d:'Erhöht die Chance, bei NPC-Angriffen Galactonit-Splitter zu finden (+5 % je Stufe).'}
+ discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],f:1.85,req:{galacto:1},d:'Galactonit-Forschung (Voraussetzung im Missionslog). Galactonit selbst entsteht nur in PvP-Trümmerfeldern.'}
 };
 
 // Schiffe: c, hull(Struktur), sh, at, sp, cargo, fuel, drive
@@ -156,6 +156,11 @@ GE.ITEMS = {
  engine1:{n:'Triebwerkssystem Lv1',d:'+10 % Flottengeschwindigkeit für 24 h',buff:'speed',v:0.10},
  engine2:{n:'Triebwerkssystem Lv2',d:'+20 % Flottengeschwindigkeit für 24 h',buff:'speed',v:0.20}
 };
+GE.CORES = {
+ at:{n:'Angriffskern',d:'+20 % Angriff (Flotten von diesem Planeten und seine Verteidigung)',stats:['at'],v:0.20},
+ def:{n:'Schutzkern',d:'+20 % Schild und Panzerung (Schiffe und Verteidigung dieses Planeten)',stats:['sh','hull'],v:0.20},
+ prod:{n:'Förderkern',d:'+15 % Metall-, Kristall- und Gasproduktion dieses Planeten',stats:['m','k','g'],v:0.15}
+};
 GE.GEMS = {
  flame:{n:'Flammender Kristall',d:'Angriff',col:'#ff6a3d',stat:'at'},
  conc:{n:'Konzentrierter Kristall',d:'Panzerung',col:'#c9a36b',stat:'hull'},
@@ -179,7 +184,7 @@ GE.TASKS = [
  {t:'Mehr Metall',d:'Baue die Metallmine auf Stufe 2 aus.',r:{m:200,k:100}},
  {t:'Energie!',d:'Baue das Kraftwerk auf Stufe 2 aus.',r:{m:300,k:150}},
  {t:'Gas fördern',d:'Baue eine Gasförderung.',r:{m:250,k:100,g:200}},
- {t:'Produktion steuern',d:'Stelle die Produktion der Gasförderung auf 60 % (Gebäude antippen → Regler).',r:{m:3000,k:2000,g:1000,gal:10}},
+ {t:'Produktion steuern',d:'Stelle die Produktion der Gasförderung auf 60 % (Gebäude antippen → Regler).',r:{m:3000,k:2000,g:1000}},
  {t:'Roboter',d:'Baue die Roboterfabrik auf Stufe 2.',r:{m:4000,k:1000,g:800}},
  {t:'Werft & Abwehr',d:'Baue eine Raumschiffwerft und einen Raketenwerfer.',r:{m:4000,k:3000,g:2600,ships:{rl:1}}},
  {t:'Beschleunigen',d:'Beschleunige einen Bau oder eine Forschung mit Dunkler Materie.',r:{dm:5}},
@@ -200,9 +205,9 @@ GE.TASKS = [
  {t:'Raubzug',d:'Greife einen inaktiven Spielerplaneten an.',r:{m:30000,k:25000,g:30000,ships:{hf:2}}},
  {t:'Recycling',d:'Recycle ein Trümmerfeld.',r:{g:10000}},
  {t:'Frühwarnung',d:'Baue eine Radaranlage.',r:{m:50000,k:50000,g:50000,ships:{rl:15}}},
- {t:'Galactonit',d:'Galactonit-Forschungszentrum bauen und Discoverer Stufe 1 erforschen.',r:{k:15000,g:15000,gal:10}},
- {t:'Fusion',d:'Verschmelze Galactonit-Splitter zu einem Edelstein.',r:{gal:1}},
- {t:'Ausrüsten',d:'Setze einen Galactonit-Edelstein in einen Sockel ein.',r:{gal:40,gen:40,dm:5}}
+ {t:'Galactonit',d:'Galactonit-Forschungszentrum bauen und Discoverer Stufe 1 erforschen.',r:{k:15000,g:15000}},
+ {t:'Fusion',d:'Verschmelze 5 Galactonit-Steine zu einem Kern.',r:{dm:2}},
+ {t:'Ausrüsten',d:'Setze einen Galactonit-Edelstein in einen Sockel ein.',r:{dm:5}}
 ];
 GE.FAKE_NAMES=['Nyx','Vortex','Kraken','Orion77','StarLord','Helix','Nova','Zephyr','Titan','Aurora','Raven','Cobalt','Draco','Lyra','Phoenix','Spectre','Atlas','Valkyr','Quasar','Nebulon','Ragnar','Sol','Kestrel','Ion','Vega','Rigel','Hydra','Ember','Talon','Xeno','Odin','Jinx','Morpheus','Echo','Blitz','Mira','Corsair','Saber','Onyx','Pulsar'];
 GE.ALLY_TAGS=['DARK','GEF','NOVA','ORB','PAX','RED','SOL','VOID','WOLF','XEN'];

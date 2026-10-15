@@ -30,9 +30,9 @@ E.typeOf=typeOf;
 E.newGame=function(opts={}){
  const seed=opts.seed||((Math.random()*1e9)|0);
  const r=srng(seed); const s=1+Math.floor(r()*E.SYS), p=4+Math.floor(r()*9);
- S={v:3,rv:3,dmLed:0,voucher:0,nebT:[],nebDM:[],nebL:{n:0,r:0,ships:{},res:{m:0,k:0,g:0}},seed,speed:opts.speed||10,t:now(),created:now(),cmdName:'Kommandant',ally:null,
+ S={v:3,rv:4,dmLed:0,voucher:0,nebT:[],nebDM:[],nebL:{n:0,r:0,ships:{},res:{m:0,k:0,g:0}},seed,speed:opts.speed||10,t:now(),created:now(),cmdName:'Kommandant',ally:null,
   planets:{},order:[],home:'P1',cur:'P1',nextId:2,
-  tech:{},rq:null,dm:0,gal:{shards:{},gems:[],energy:0,nextGem:1},items:{},buffs:[],cmd:{},
+  tech:{},rq:null,dm:0,gal:{v:2,st:0,base:0,src:{},lost:0,shards:{},gems:[],energy:0,nextGem:1},items:{},buffs:[],cmd:{},
   fleets:[],nextFleet:1,reports:[],nextRep:1,debris:{},npc:{},neb:{},
   task:0,flags:{},built:{},pts:{b:0,t:0},log:[],raids:true,nextRaid:0,lastGift:0,settings:{raids:true}};
  const hp=newPlanet('P1','Heimatplanet',1,s,p,178,'heimatwelt'); hp.r={m:500,k:500,g:0};
@@ -43,7 +43,7 @@ E.newGame=function(opts={}){
 };
 E.load=function(obj){S=obj;migrate();return S};
 E.state=()=>S;
-function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];migrate34();migrateV2();migrateV3();}
+function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];migrate34();migrateV2();migrateV3();migrateV4();}
 // Progression v1 (rv 2): idempotent; keine rückwirkenden Gutschriften, bezahlte Aufträge behalten ihren Preis
 function migrateV2(){if(S.rv>=2)return;S.rv=2;if(S.dmLed==null)S.dmLed=0;if(S.voucher==null)S.voucher=0;
  const n=S.order.filter(id=>S.planets[id]&&!S.planets[id].moon).length;if(n>8)S.grandP=n;
@@ -51,6 +51,9 @@ function migrateV2(){if(S.rv>=2)return;S.rv=2;if(S.dmLed==null)S.dmLed=0;if(S.vo
  if(S.flags.nebula||S.flags.nebN)S.flags.expSafeDone=1;if((S.flags.npcWins||0)>0)S.flags.trainWin=1;
  if(S.created==null)S.created=S.t||now()}
 // Nebel v2 (rv 3): neue Zähler, keine Rückwirkung – laufende Flotten behalten ihre Regelversion
+// Galactonit v2: Splitter/Edelsteine → Steine (Wert bleibt erhalten: 1 Splitter = 1 Stein, Edelstein n★ = 3·2^(n−1)), Sockel geleert
+function migrateV4(){if(S.rv>=4&&S.gal&&S.gal.v>=2)return;S.rv=Math.max(4,+S.rv||0);const g=S.gal=S.gal||{};if(!(g.v>=2)){let n=0;for(const c in g.shards||{})n+=Math.max(0,+g.shards[c]||0);for(const x of g.gems||[])n+=3*Math.pow(2,Math.max(1,+x.star||1)-1);
+ g.v=2;g.base=Math.floor(n);g.st=Math.floor(n);g.src={};g.lost=0;g.shards={};g.gems=[];for(const id of S.order||[]){const p=S.planets[id];if(p){p.gems=[];if(p.core===undefined)p.core=null}}}}
 function migrateV3(){if(S.rv>=3)return;S.rv=3;if(!Array.isArray(S.nebT))S.nebT=[];if(!S.nebL)S.nebL={n:0,r:0,ships:{},res:{m:0,k:0,g:0}};if(!Array.isArray(S.nebDM))S.nebDM=[]}
 // v34: 15 Bauplätze – Solar+Fusion → Kraftwerk, 3 Speicher → Lager
 function migrate34(){for(const id in (S.planets||{})){const p=S.planets[id];if(!p||!p.b)continue;const b=p.b;const mx=(a)=>Math.max(0,...a.map(k=>b[k]||0));
@@ -68,7 +71,7 @@ const cmdActive=k=>(S.cmd[k]||0)>now();
 E.cmdActive=cmdActive;
 function buff(kind){if(E._nb)return 0;let v=0;for(const b of S.buffs)if(b.buff===kind&&b.end>now())v=Math.max(v,b.v);return v}
 E.buff=buff;
-function gemBonus(pl,stat){if(!pl)return 0;let v=0;for(const gid of pl.gems){const g=S.gal.gems.find(x=>x.id===gid);if(g&&GE.GEMS[g.col].stat===stat)v+=0.02*g.star}return v}
+function gemBonus(pl,stat){if(!pl||!pl.core)return 0;const C=GE.CORES[pl.core];if(!C)return 0;return C.stats.includes(stat)?C.v:0}
 E.gemBonus=gemBonus;
 
 // ---------- Kosten & Zeiten ----------
@@ -428,7 +431,7 @@ E.simulate=function(A,D,opt){
   const r=E.simulate({...A,units:sc(A.units)},{...D,units:sc(D.units)},{raw:1});const up=o=>{const x={};for(const i in o)x[i]=Math.round(o[i]/k);return x};
   const fix=(st,en)=>{const o={};for(const i in st){o[i]=Math.min(st[i],Math.round((en[i]||0)/k))}return o};
   const endA=fix(A.units,r.endA),endD=fix(D.units,r.endD);const loss=(st,en)=>{const o={};for(const i in st){const l=st[i]-(en[i]||0);if(l>0)o[i]=l}return o};
-  return{...r,startA:{...A.units},startD:{...D.units},endA,endD,lossA:loss(A.units,endA),lossD:loss(D.units,endD),debris:{m:Math.round(r.debris.m/k),k:Math.round(r.debris.k/k)},valA:r.valA/k,valD:r.valD/k,rounds:r.rounds.map(x=>({...x,a:up(x.a),d:up(x.d)})),scaled:k}}
+  return{...r,startA:{...A.units},startD:{...D.units},endA,endD,lossA:loss(A.units,endA),lossD:loss(D.units,endD),debris:{m:Math.round(r.debris.m/k),k:Math.round(r.debris.k/k)},moonChance:E.moonPct((r.debris.m+r.debris.k)/k),shipLoss:r.shipLoss/k,valA:r.valA/k,valD:r.valD/k,rounds:r.rounds.map(x=>({...x,a:up(x.a),d:up(x.d)})),scaled:k}}
  // A,D: {units:{id:n}, tech:{weapons,shielding,armour}, bonus:{at,sh,hull}}
  const ids=[],side=[],hull=[],sh=[],hmax=[],shmax=[],atk=[];
  function addSide(S_,sd){for(const id in S_.units){const n=S_.units[id];if(!(n>0))continue;const d=GE.SHIP[id]||GE.DEF[id];const t=S_.tech||{};const b=S_.bonus||{};
@@ -456,14 +459,15 @@ E.simulate=function(A,D,opt){
  if(!countShips(startD)&&nA)res='a';
  const lossA={},lossD={};for(const k in startA)if(startA[k]-(endA[k]||0))lossA[k]=startA[k]-(endA[k]||0);for(const k in startD)if(startD[k]-(endD[k]||0))lossD[k]=startD[k]-(endD[k]||0);
  let dm=0,dk=0;for(const L of[lossA,lossD])for(const k in L)if(GE.SHIP[k]){dm+=L[k]*GE.SHIP[k].c[0]*0.3;dk+=L[k]*GE.SHIP[k].c[1]*0.3}
- const val=L=>{let v=0;for(const k in L){const d=GE.SHIP[k]||GE.DEF[k];v+=L[k]*(d.c[0]+d.c[1]+d.c[2])}return v};
- return{startA,startD,endA,endD,rounds,winner:res,lossA,lossD,debris:{m:Math.round(dm),k:Math.round(dk)},valA:val(lossA),valD:val(lossD),moonChance:Math.min(20,Math.floor((dm+dk)/400000))};
+ const val=L=>{let v=0;for(const k in L){const d=GE.SHIP[k]||GE.DEF[k];v+=L[k]*(d.c[0]+d.c[1]+d.c[2])}return v};const sval=L=>{let v=0;for(const k in L){const d=GE.SHIP[k];if(d)v+=L[k]*(d.c[0]+d.c[1]+d.c[2])}return v};
+ return{startA,startD,endA,endD,rounds,winner:res,lossA,lossD,debris:{m:Math.round(dm),k:Math.round(dk)},valA:val(lossA),valD:val(lossD),moonChance:E.moonPct(dm+dk),shipLoss:sval(lossA)+sval(lossD)};
 };
 function splitUnits(o){const ships={},def={};for(const k in o)(GE.DEF[k]?def:ships)[k]=o[k];return{ships,def}}
 function lootCalc(res,cap){const av={m:res.m/2,k:res.k/2,g:res.g/2};const out={m:0,k:0,g:0};let c=cap;
  out.m=Math.min(av.m,c/3);c-=out.m;out.k=Math.min(av.k,c/2);c-=out.k;out.g=Math.min(av.g,c);c-=out.g;
  const m2=Math.min(av.m-out.m,c/2);out.m+=m2;c-=m2;const k2=Math.min(av.k-out.k,c);out.k+=k2;c-=k2;
  for(const r in out)out[r]=Math.floor(out[r]);return out}
+E.addMoon=function(pl){if(!pl||pl.moon||pl.moonId)return null;const id='P'+(S.nextId++);const m=newPlanet(id,'Mond',pl.g,pl.s,pl.p,1,'moon');m.moon=true;m.parent=pl.id;m.temp=pl.temp-40;pl.moonId=id;S.planets[id]=m;S.order.push(id);return m};
 E.lootCalc=lootCalc;E.splitUnits=(...a)=>splitUnits(...a);E.packBattle=(...a)=>packBattle(...a);
 function attackArrive(f){const to=f.to;const sl=E.slot(to.g,to.s,to.p);const st=E.target(to.g,to.s,to.p);const k=ck(to.g,to.s,to.p);
  if(!st){report('info','Angriff abgebrochen',{text:'Dieser Planet steht unter Anfängerschutz.'});return}
@@ -481,14 +485,14 @@ function attackArrive(f){const to=f.to;const sl=E.slot(to.g,to.s,to.p);const st=
   {const left=E.npcLeft(),pv=E.pve();for(const r in loot){loot[r]=Math.max(0,Math.min(loot[r],left[r]));pv.npc[r]+=loot[r]}}
   if(E.isTrain(to.g,to.s,to.p,sl))f.trainW=1;
   for(const r in loot){st.r[r]-=loot[r];f.cargo[r]+=loot[r]}
-  if(sl.kind==='npc'){const ch=0.35+0.05*E.tl('discoverer')+0.05*sl.lv;if(Math.random()<ch){const n=ri(1,sl.lv+1);shards={};const cols=Object.keys(GE.GEMS);for(let i=0;i<n;i++){const c=cols[ri(0,cols.length-1)];shards[c]=(shards[c]||0)+1;S.gal.shards[c]=(S.gal.shards[c]||0)+1}}}}
+  }
  st.t=now();
  if(B.debris.m+B.debris.k>0){const d=S.debris[k]||(S.debris[k]={m:0,k:0});d.m+=B.debris.m;d.k+=B.debris.k}
  if(sl.kind==='npc'&&sl.lv===2)S.flags.atkPurged=1;if(sl.kind==='npc')S.flags.npcWins=(S.flags.npcWins||0)+1; if(sl.kind==='inactive')S.flags.atkInactive=1;
  S.pts.fightA=(S.pts.fightA||0);
  report('combat',`Kampf bei ${sl.name} [${to.g}:${to.s}:${to.p}]`,{battle:packBattle(B,'Du',sl.kind==='npc'?`${sl.name} (NPC Lv${sl.lv})`:`${sl.player} (inaktiv)`,{loot,shards,rebuilt,coord:to,attackerIsMe:true})});
 }
-function packBattle(B,nameA,nameD,extra){return{nameA,nameD,startA:B.startA,startD:B.startD,endA:B.endA,endD:B.endD,rounds:B.rounds.map(r=>({a:r.a,d:r.d,sa:r.sa,sd:r.sd})),winner:B.winner,lossA:B.lossA,lossD:B.lossD,debris:B.debris,valA:B.valA,valD:B.valD,...extra}}
+function packBattle(B,nameA,nameD,extra){return{nameA,nameD,startA:B.startA,startD:B.startD,endA:B.endA,endD:B.endD,rounds:B.rounds.map(r=>({a:r.a,d:r.d,sa:r.sa,sd:r.sd})),winner:B.winner,lossA:B.lossA,lossD:B.lossD,debris:B.debris,valA:B.valA,valD:B.valD,moonChance:B.moonChance,...extra}}
 // ---------- Nebel v2 „Nebelwirtschaft – 25 Erkundungen“ (Regelversion 2, ersetzt Budget/Quoten/Spiegelgefecht) ----------
 // Konstanten zentral; Client und Server nutzen dieselbe engine.js. Laufende Flotten ohne nv bleiben bei Regelversion 1.
 E.NEB2={V:2,MAX:25,WIN:864e5,HOLD:30*MIN,DM_MAX:40,DM:[2,6],
@@ -591,7 +595,7 @@ function nebulaResolve(f){
  const unstable=false;const pv=E.pve();
  // Budget-Anteil dieses Starts (beim Start reserviert); alte Flotten ohne Anteil: Anteil des aktuellen Fensters
  const share=f.safe?null:(f.share||E.nebShare(Math.min(E.NEB_MAX,Math.max(4,pv.n))));
- let W={res:30+(E.tl('espionage')>=6?8:0),wreck:9,ast:6,dm:10,ships:7+Math.min(25,Math.log10(probes+1)*5),items:6,gal:7,pirates:4+combatShare*14,aliens:2+combatShare*6,none:12,delay:6,early:3,black:1};
+ let W={res:30+(E.tl('espionage')>=6?8:0),wreck:9,ast:6,dm:10,ships:7+Math.min(25,Math.log10(probes+1)*5),items:6,gal:0,pirates:4+combatShare*14,aliens:2+combatShare*6,none:12,delay:6,early:3,black:1};
  if(unstable){W.res*=0.3;W.wreck*=0.3;W.ast*=0.3;W.none+=25}
  let sum=0;for(const k in W)sum+=W[k];let x=Math.random()*sum,out='none';for(const k in W){x-=W[k];if(x<=0){out=k;break}}
  if(f.safe)out='safe';
@@ -617,7 +621,6 @@ function nebulaResolve(f){
     {const left={...(share||{m:0,k:0,g:0})};for(const id of Object.keys(got)){const c=GE.SHIP[id].c;let n=got[id];n=Math.min(n,...['m','k','g'].map((r,j)=>c[j]>0?Math.floor(left[r]/c[j]):Infinity));if(n>0){got[id]=n;['m','k','g'].forEach((r,j)=>left[r]-=n*c[j])}else delete got[id]}}
     if(!Object.keys(got).length){text='Eine verlassene Rebellenstation – leider ohne flugfähige Schiffe.';break}
     for(const id in got)f.ships[id]=(f.ships[id]||0)+got[id];rec.ships=got;text=`Eine verlassene Rebellenstation! Deine Flotte bringt ${Object.entries(got).map(([k,v])=>fmtN(v)+'× '+GE.SHIP[k].n).join(', ')} mit nach Hause.`;break}
-  case 'gal':{const cols=Object.keys(GE.GEMS);const n=ri(1,3)+Math.floor(E.tl('discoverer')/2);const got={};for(let i=0;i<n;i++){const c=cols[ri(0,cols.length-1)];got[c]=(got[c]||0)+1;S.gal.shards[c]=(S.gal.shards[c]||0)+1}rec.shards=got;text=`Im Nebel schimmerte ein Galactonit-Feld. Deine Crew barg ${Object.entries(got).map(([c,k])=>k+'× '+GE.GEMS[c].n).join(', ')} (Splitter).`;break}
   case 'items':{const lv2=Math.random()<0.2;const types=['armor','energy','power','engine'];const it=types[ri(0,3)]+(lv2?'2':'1');const n=lv2?1:ri(1,10);S.items[it]=(S.items[it]||0)+n;rec.items={[it]:n};text=`Im Nebel trieben Container mit Ausrüstung: ${n}× ${GE.ITEMS[it].n}.`;break}
   case 'pirates':case 'aliens':{const ali=out==='aliens';const enemy={};for(const id in ships){const n=Math.ceil(ships[id]*rnd(0.1,0.35));if(n>0)enemy[id]=n}
     const tf=ali?1.3:0.7;const myT=E.techOf();const et={weapons:Math.round(myT.weapons*tf),shielding:Math.round(myT.shielding*tf),armour:Math.round(myT.armour*tf)};
@@ -666,7 +669,7 @@ function raidArrive(f){const pl=S.planets[f.target];S.fleets=S.fleets.filter(x=>
  pl.def={...sp.def};for(const d in rebuilt)pl.def[d]=(pl.def[d]||0)+rebuilt[d];
  let loot={m:0,k:0,g:0};if(B.winner==='a'){loot=lootCalc(pl.r,E.cargoCap(B.endA));for(const r in loot)pl.r[r]-=loot[r]}
  const k=ck(pl.g,pl.s,pl.p);if(B.debris.m+B.debris.k>0){const d=S.debris[k]||(S.debris[k]={m:0,k:0});d.m+=B.debris.m;d.k+=B.debris.k}
- let moon=false;if(!pl.moonId&&Math.random()*100<B.moonChance){moon=true;const id='P'+(S.nextId++);const m=newPlanet(id,'Mond',pl.g,pl.s,pl.p,1,'moon');m.moon=true;m.parent=pl.id;m.temp=pl.temp-40;pl.moonId=id;S.planets[id]=m;S.order.push(id)}
+ let moon=false;if(!pl.moonId&&Math.random()*100<B.moonChance){moon=!!E.addMoon(pl)}
  report('combat',`Piratenangriff auf ${pl.name} [${pl.g}:${pl.s}:${pl.p}]`,{battle:packBattle(B,'Piraten',pl.name+' (Du)',{loot,rebuilt,coord:{g:pl.g,s:pl.s,p:pl.p},attackerIsMe:false,moon})});
  if(moon)addLog('Aus den Trümmern hat sich ein Mond gebildet!','warn');}
 // ---------- Kommandanten, Items, Shop, Galactonit ----------
@@ -674,7 +677,6 @@ E.hireCmd=function(k,days){const d=GE.COMMANDERS[k];const p=days===30?d.p30:d.p7
 E.useItem=function(it){if(!(S.items[it]>0))return 'Nicht vorhanden';const d=GE.ITEMS[it];S.items[it]--;if(!S.items[it])delete S.items[it];
  S.buffs=S.buffs.filter(b=>b.end>now());S.buffs.push({buff:d.buff,v:d.v,end:now()+24*HOUR/S.speed,it});emit('change');return null};
 E.STORE=[
- {id:'shards',n:'Galactonit-Splitter ×5',d:'5 zufällige Galactonit-Splitter',dm:10,shards:5},
  {id:'armor1',n:GE.ITEMS.armor1.n,d:GE.ITEMS.armor1.d,dm:8,item:'armor1'},
  {id:'power1',n:GE.ITEMS.power1.n,d:GE.ITEMS.power1.d,dm:8,item:'power1'},
  {id:'energy1',n:GE.ITEMS.energy1.n,d:GE.ITEMS.energy1.d,dm:6,item:'energy1'},
@@ -686,24 +688,28 @@ E.buy=function(id,pid){const it=E.STORE.find(x=>x.id===id);if(S.dm<it.dm)return 
  if(it.xfield&&(tp.moon||(tp.xf||0)>=15))return tp.moon?'Nur auf Planeten möglich':'Maximum erreicht (+15 Felder)';if(it.xslot&&(S.xslot||0)>=3)return 'Maximum erreicht (3 Zusatzslots)';S.dm-=it.dm;
  if(it.xfield)tp.xf=(tp.xf||0)+it.xfield;if(it.xslot)S.xslot=(S.xslot||0)+1;if(it.gen)S.gal.energy+=it.gen;
  if(it.give)giveRes(S.planets[pid||S.cur],it.give);if(it.item)S.items[it.item]=(S.items[it.item]||0)+1;
- if(it.shards){const cols=Object.keys(GE.GEMS);for(let i=0;i<it.shards;i++){const c=cols[ri(0,cols.length-1)];S.gal.shards[c]=(S.gal.shards[c]||0)+1}}emit('change');return null};
+ emit('change');return null};
 // Progression v1: einmal je 24-h-Fenster: 5 DM + 0,5 h Referenzproduktion
 E.giftReady=()=>!E.pve().gift;
 E.giftNext=()=>E.winEnd();
 E.giftReward=function(){const b=E.budget('gift');return{m:b.m,k:b.k,g:b.g,dm:5}};
 E.claimGift=function(paid){if(!E.giftReady())return 'Heute schon abgeholt';E.pve().gift=1;S.lastGift=now();if(!paid){const r=E.giftReward();E.addDM(r.dm);giveRes(S.planets[S.home],{m:r.m,k:r.k,g:r.g})}addLog('Tagesgeschenk erhalten: 5 DM und Rohstoffe','gift');emit('change');return null};
-E.fuseShards=function(col){if(!E.maxB('galacto'))return 'Galactonit-Forschungszentrum benötigt';if((S.gal.shards[col]||0)<3)return '3 Splitter derselben Farbe nötig';
- S.gal.shards[col]-=3;const g={id:S.gal.nextGem++,col,star:1};S.gal.gems.push(g);S.flags.fused=1;emit('change');return null};
-E.fuseGems=function(col,star){if(star>=5)return 'Maximal 5 Sterne';if(E.maxB('galacto')<star+1)return `Forschungszentrum Stufe ${star+1} benötigt`;
- const free=S.gal.gems.filter(g=>g.col===col&&g.star===star&&!equippedOn(g.id));if(free.length<2)return 'Zwei freie Edelsteine gleicher Farbe und Stufe nötig';
- S.gal.gems=S.gal.gems.filter(g=>g!==free[0]&&g!==free[1]);S.gal.gems.push({id:S.gal.nextGem++,col,star:star+1});S.flags.fused=1;emit('change');return null};
-function equippedOn(gid){for(const id of S.order)if(S.planets[id].gems.includes(gid))return id;return null}
-E.equippedOn=equippedOn;
-E.sockets=pl=>Math.min(6,E.lv(pl,'galacto'));
-E.equip=function(pid,gid){const pl=S.planets[pid];if(equippedOn(gid))return 'Bereits eingesetzt';if(pl.gems.length>=E.sockets(pl))return 'Kein freier Sockel (Forschungszentrum ausbauen)';pl.gems.push(gid);S.flags.equipped=1;emit('change');return null};
-E.unequip=function(pid,gid){if(S.dm<2)return 'Ausbauen kostet 2 DM';S.dm-=2;const pl=S.planets[pid];pl.gems=pl.gems.filter(x=>x!==gid);emit('change');return null};
-E.decompose=function(gid){if(equippedOn(gid))return 'Erst ausbauen';const g=S.gal.gems.find(x=>x.id===gid);S.gal.gems=S.gal.gems.filter(x=>x!==g);S.gal.energy+=5*Math.pow(3,g.star-1);emit('change');return null};
-E.strengthen=function(gid){const g=S.gal.gems.find(x=>x.id===gid);if(g.star>=5)return 'Maximal 5 Sterne';const c=20*g.star;if(S.gal.energy<c)return `Benötigt ${c} Galactonit-Energie`;S.gal.energy-=c;g.star++;emit('change');return null};
+// ---------- Galactonit v2: Steine nur aus PvP-Trümmerfeldern, 5 Steine → 1 Kern je Planet ----------
+E.GAL={CORE:5,MIN_LOSS:1e5,PAIR:7*24*3600e3,TUT:1,CHANGE_LOSS:0.5};
+E.moonPct=d=>Math.min(20,Math.floor(Math.max(0,+d||0)/100000));
+// Serverseitig: Galactonit-Wurf nach einem PvP-Kampf (einmal je Kampf). Rückgabe {a,d} Steine
+E.galRoll=function(B,moon,rnd){rnd=rnd||Math.random;if(!(B.shipLoss>=E.GAL.MIN_LOSS))return{a:0,d:0,why:'loss'};if(!(rnd()*100<B.moonChance))return{a:0,d:0,why:'roll'};return moon?{a:2,d:4}:{a:1,d:2}};
+E.galSum=g=>{let n=+(g&&g.base)||0;for(const k in (g&&g.src)||{})n+=Math.max(0,+g.src[k]||0);return n};
+E.galGrant=function(key,n){const g=S.gal;n=Math.max(0,Math.floor(+n||0));if(!n||g.src[key]!=null)return false;g.src[key]=n;g.st+=n;emit('change');return true};
+E.cores=st=>{st=st||S;let n=0;for(const id of st.order||[]){const p=st.planets[id];if(p&&p.core)n++}return n};
+E.makeCore=function(pid,fx){const pl=S.planets[pid];if(!pl||pl.moon)return 'Nur auf Planeten';if(!GE.CORES[fx])return 'Effekt unbekannt';if(pl.core)return 'Dieser Planet hat schon einen Kern';
+ if(E.lv(pl,'galacto')<1)return 'Galactonit-Forschungszentrum auf diesem Planeten benötigt';if(S.gal.st<E.GAL.CORE)return `${E.GAL.CORE} Galactonit-Steine nötig`;
+ S.gal.st-=E.GAL.CORE;pl.core=fx;S.flags.fused=1;S.flags.equipped=1;addLog(`Galactonit-Kern auf ${pl.name}: ${GE.CORES[fx].n}`,'ok');emit('change');return null};
+// Effekt wechseln: 50 % Chance, dass der Kern dabei zerbricht
+E.changeCore=function(pid,fx){const pl=S.planets[pid];if(!pl||!pl.core)return 'Kein Kern';if(!GE.CORES[fx]||fx===pl.core)return 'Anderen Effekt wählen';
+ if(Math.random()<E.GAL.CHANGE_LOSS){pl.core=null;S.gal.lost=(S.gal.lost||0)+1;emit('change');return 'broken'}pl.core=fx;emit('change');return null};
+E.sockets=pl=>pl&&!pl.moon&&E.lv(pl,'galacto')>=1?1:0;
+E.equippedOn=()=>null;
 // ---------- Tutorial ----------
 const anyColony=()=>E.colonies()>0;
 const COND=[
@@ -714,12 +720,12 @@ const COND=[
  ()=>!!S.flags.named,()=>!!S.flags.exported,()=>anyColony()&&E.tl('astro')>=2,()=>!!S.flags.transportCol,()=>!!S.flags.deployCol,()=>!!S.flags.atkInactive,()=>!!S.flags.recycled,
  ()=>E.maxB('radar')>=1,()=>E.maxB('galacto')>=1&&E.tl('discoverer')>=1,()=>!!S.flags.fused,()=>!!S.flags.equipped];
 E.COND=COND;
-E.giveReward=function(r){const pl=S.planets[S.home];giveRes(pl,r);if(r.dm)E.addDM(r.dm);if(r.voucher)S.voucher=(S.voucher||0)+r.voucher;if(r.gal){const cols=Object.keys(GE.GEMS);for(let i=0;i<r.gal;i++){const c=cols[i%cols.length];S.gal.shards[c]=(S.gal.shards[c]||0)+1}}
+E.giveReward=function(r){const pl=S.planets[S.home];giveRes(pl,r);if(r.dm)E.addDM(r.dm);if(r.voucher)S.voucher=(S.voucher||0)+r.voucher;if(r.gal)E.galGrant('tut',1);
  if(r.gen)S.gal.energy+=r.gen;if(r.cmd)S.cmd[r.cmd[0]]=Math.max(now(),S.cmd[r.cmd[0]]||0)+r.cmd[1]*24*HOUR;
  if(r.ships)for(const id in r.ships){if(GE.DEF[id])pl.def[id]=(pl.def[id]||0)+r.ships[id];else pl.ships[id]=(pl.ships[id]||0)+r.ships[id]}emit('change')};
 E.taskDone=()=>S.task<GE.TASKS.length&&COND[S.task]();
 E.claimTask=function(){if(!E.taskDone())return 'Aufgabe noch nicht erfüllt';const T=GE.TASKS[S.task];const r=T.r;const pl=S.planets[S.home];
- giveRes(pl,r);if(r.dm)E.addDM(r.dm);if(r.gal){const cols=Object.keys(GE.GEMS);for(let i=0;i<r.gal;i++){const c=cols[i%cols.length];S.gal.shards[c]=(S.gal.shards[c]||0)+1}}
+ giveRes(pl,r);if(r.dm)E.addDM(r.dm);if(r.gal)E.galGrant('tut',1);
  if(r.gen)S.gal.energy+=r.gen;if(r.cmd)S.cmd[r.cmd[0]]=Math.max(now(),S.cmd[r.cmd[0]]||0)+r.cmd[1]*24*HOUR;
  if(r.ships)for(const id in r.ships){if(GE.DEF[id])pl.def[id]=(pl.def[id]||0)+r.ships[id];else pl.ships[id]=(pl.ships[id]||0)+r.ships[id]}
  addLog(`Aries: Aufgabe „${T.t}“ abgeschlossen – Belohnung erhalten!`,'task');S.task++;emit('task',S.task);emit('change');return null};
@@ -762,8 +768,18 @@ E.abandon=function(pid){if(pid===S.home)return 'Der Heimatplanet kann nicht aufg
 //  1) Jede neue Gebäude-/Forschungsstufe erfüllt die Stufen-Regeln (GE.LVRULE, Labor-Stufe, Basis-req) und passt ins Lager.
 //  2) Bauzeit: Summe der Bauzeiten (abzgl. Gratis-Fertigstellung) je Planet ≤ verstrichene Zeit × Bauschleifen + mit DM gekaufte Zeit.
 //  3) Dunkle Materie wächst höchstens um die erreichbaren Belohnungen; Rohstoffe: Kosten ≤ Vorrat + Produktion + Belohnungen (großzügig).
-E.validateSave=function(prev,next,dtMs,extraDM){extraDM=Math.max(0,+extraDM||0);const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
- try{S=next;const dt=Math.max(0,dtMs);const t0=+prev.t||0;const days=dt/864e5;
+E.validateSave=function(prev,next,dtMs,extraDM,galLed){extraDM=Math.max(0,+extraDM||0);const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
+ try{// Galactonit v2: Steine nur aus Server-Ledger (PvP) + einmal 1 Tutorial-Stein; Bestand + 5 je Kern (aktiv + zerbrochen) ≤ Basis + Quellen
+  {const g0=prev.gal||{},g1=next.gal||{};if(g1.v>=2){const s0=g0.src||{},s1=g1.src||{};
+   if(g0.v>=2&&(+g1.base||0)>(+g0.base||0))errs.push('Galactonit-Basis erhöht');if(g0.v>=2&&(+g1.lost||0)<(+g0.lost||0))errs.push('Galactonit-Kernverlust zurückgesetzt');
+   for(const k in s0)if(s1[k]==null)errs.push('Galactonit-Quelle '+k+' entfernt');
+   for(const k in s1){if(s0[k]!=null){if(+s1[k]!==+s0[k])errs.push('Galactonit-Quelle '+k+' geändert');continue}
+    if(k==='tut'){if(+s1[k]>E.GAL.TUT)errs.push('Galactonit Tutorial > 1');continue}
+    if(galLed&&!(galLed[k]!=null&&+galLed[k]===+s1[k]))errs.push('Galactonit '+k+' nicht vom Server belegt');else if(!galLed)errs.push('Galactonit '+k+' ohne Ledger')}
+   if(Object.values(s1).some(x=>!(+x>=0)))errs.push('Galactonit-Quelle ungültig');
+   const have=(+g1.st||0)+E.GAL.CORE*(E.cores(next)+(+g1.lost||0));const can=E.galSum(g1);if((+g1.st||0)<0||have>can)errs.push(`Galactonit ${have} > belegt ${can}`);
+   for(const id of next.order||[]){const p=next.planets[id];if(p&&p.core&&(!GE.CORES[p.core]||p.moon))errs.push('Galactonit-Kern ungültig')}}}
+S=next;const dt=Math.max(0,dtMs);const t0=+prev.t||0;const days=dt/864e5;
   // Progression v1: DM-Ledger statt Zeitgutschrift – nur verdiente DM (dmLed) dürfen den Bestand erhöhen bzw. Beschleunigung bezahlen
   const earnRaw=Math.max(0,(+next.dmLed||0)-(+prev.dmLed||0)-extraDM),earnCap=60+50*Math.ceil(days+1e-9);if(earnRaw>earnCap)errs.push(`DM-Ledger +${Math.round(earnRaw)} (erlaubt ${Math.round(earnCap)})`);let earned=Math.min(earnRaw,earnCap)+extraDM; // Admin-Geschenke (serverseitig belegt) zählen vollif(!(+prev.rv>=2))earned=Math.max(earned,Math.min(Math.max(0,(+next.dm||0)-(+prev.dm||0)),80+60*days)); // Übergang: Stand vor der Migration
   const dmGain=(+next.dm||0)-(+prev.dm||0);if(dmGain>earned+5)errs.push(`DM +${Math.round(dmGain)} (verdient ${Math.round(earned)})`);

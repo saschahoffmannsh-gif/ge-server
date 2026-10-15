@@ -82,6 +82,8 @@ function npcTarget(id: string) { // NPC-Spieler: Rohstoffe aus dem Wirtschaftsmo
   for (const [k, w] of [["rl", .5], ["ll", .35], ["hl", .15]] as [string, number][]) { const c = GE.DEF[k].c; const n = Math.floor((D + 4000) * w / (c[0] + c[1] + c[2])); if (n > 0) def[k] = n; }
   const tl = Math.floor(st.L.l * 0.8); return { x, st, r: { m: st.m, k: st.k, g: st.g }, ships, def, tech: { weapons: tl, shielding: tl, armour: tl, espionage: Math.floor(st.L.l / 2) } };
 }
+async function patchPlanets(l: string, to: any) { const p = must(await db.from("ge_pub").select("data").eq("name_l", l).single()) as any; const pl = p.data.planets || (p.data.planets = []);
+  if (!pl.some((q: any) => q.moon && q.g === to.g && q.s === to.s && q.p === to.p)) { pl.push({ g: to.g, s: to.s, p: to.p, name: "Mond", type: "moon", moon: true }); must(await db.from("ge_pub").update({ data: p.data }).eq("name_l", l)); } }
 async function patchSnap(l: string, to: any, fn: (sn: any) => void) { const p = must(await db.from("ge_pub").select("data").eq("name_l", l).single()) as any; const sn = (p.data.snap || []).find((q: any) => q.g === to.g && q.s === to.s && q.p === to.p && !q.moon); if (!sn) return; sn.r = sn.r || {}; sn.ships = sn.ships || {}; sn.def = sn.def || {}; fn(sn); must(await db.from("ge_pub").update({ data: p.data }).eq("name_l", l)); }
 // Progression v1: Punkte serverseitig aus dem zuletzt akzeptierten Spielstand; Anfängerschutz 7 Tage + max. 5× Entwicklungsabstand
 const PROT_MS = 7 * 24 * 3600e3, DEV_RATIO = 5;
@@ -103,10 +105,11 @@ async function resolve(row: any): Promise<any> {
   if (!claim.length) { const r = must(await db.from("ge_fleet").select("result,status").eq("id", row.id).single()) as any; return r.result; }
   const d = row.data; const to = d.to; let result: any;
   try {
-    let def: any, defName = "", defL: string | null = null;
+    let def: any, defName = "", defL: string | null = null, defCore: string | null = null, defHasMoon = false;
     if (row.to_npc) { const T = npcTarget(row.to_npc); const hits = ((await meta("npchits")) || {})[row.to_npc]; if (hits) { const f = Math.max(0, 1 - (Date.now() - hits.t) / (12 * 3600e3 / CFG.speed)); for (const r of ["m", "k", "g"]) T.r[r as "m"] = Math.max(0, T.r[r as "m"] - (hits[r] || 0) * f); } def = T; defName = T.x.n; }
     else { defL = row.to_l; const p = must(await db.from("ge_pub").select("data").eq("name_l", row.to_l).single()) as any; const sn = (p.data.snap || []).find((q: any) => q.g === to.g && q.s === to.s && q.p === to.p && !q.moon);
-      if (!sn) throw new Error("Planet nicht mehr vorhanden"); def = { r: { ...sn.r }, ships: { ...sn.ships }, def: { ...sn.def }, tech: p.data.tech || {} }; defName = p.data.name; }
+      if (!sn) throw new Error("Planet nicht mehr vorhanden"); def = { r: { ...sn.r }, ships: { ...sn.ships }, def: { ...sn.def }, tech: p.data.tech || {} }; defName = p.data.name; defCore = sn.core || null;
+      defHasMoon = (p.data.planets || []).some((q: any) => q.moon && q.g === to.g && q.s === to.s && q.p === to.p); }
     if (defL && row.mission !== "transport") { const blk = await pvpBlock(row.from_l, defL); if (blk) throw new Error(blk); }
     if (row.mission === "transport") {
       await patchSnap(defL!, to, (sn: any) => { for (const r of ["m", "k", "g"]) sn.r[r] = (sn.r[r] || 0) + (+d.cargo[r] || 0); });
@@ -121,18 +124,32 @@ async function resolve(row: any): Promise<any> {
       if (defL) await event(defL, { kind: "spied", from: d.from, to, lost: data.lost });
       result = { kind: "spy", spy: data, lostProbes: data.lost };
     } else {
-      const B = E.simulate({ units: d.ships, tech: d.tech }, { units: { ...def.ships, ...def.def }, tech: def.tech });
+      // Galactonit v2: Kern-Boni aus den veröffentlichten Planetendaten (Angreifer: Startplanet, Verteidiger: Zielplanet)
+      const cb = (c: string | null, _dfd: boolean) => { const C = c && (GE as any).CORES[c]; const o: any = {}; if (!C) return o; for (const st of C.stats) if (st === "at" || st === "sh" || st === "hull") o[st] = C.v; return o; };
+      let atkCore: string | null = null; if (defL && d.fromC) { const ap = must(await db.from("ge_pub").select("data").eq("name_l", row.from_l).maybeSingle()) as any; const asn = (ap?.data?.snap || []).find((q: any) => q.g === d.fromC.g && q.s === d.fromC.s && q.p === d.fromC.p); atkCore = asn?.core || null; }
+      const B = E.simulate({ units: d.ships, tech: d.tech, bonus: cb(atkCore, false) }, { units: { ...def.ships, ...def.def }, tech: def.tech, bonus: cb(defCore, true) });
+      // Mond + Galactonit-Wurf (nur echte Spieler, einmal je Kampf)
+      let moon = false, galA = 0, galD = 0, galWhy = "";
+      if (defL) { moon = !defHasMoon && Math.random() * 100 < B.moonChance;
+        const pk = "galpair:" + [row.from_l, defL].sort().join("|"); const pr = (await meta(pk)) as any;
+        if (B.shipLoss < E.GAL.MIN_LOSS) galWhy = "zu wenig zerstörte Schiffe für Galactonit (< 100.000)";
+        else if (pr && Date.now() - (+pr.t || 0) < E.GAL.PAIR) galWhy = "Galactonit für dieses Spielerpaar erst wieder ab " + new Date((+pr.t) + E.GAL.PAIR).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+        else { const g = E.galRoll(B, moon); galA = g.a; galD = g.d; if (!galA) galWhy = "kein Galactonit gefunden";
+          if (galA) { must(await db.from("ge_meta").upsert({ k: pk, v: { t: Date.now(), f: row.id } }));
+            for (const [l, key, n] of [[row.from_l, "a" + row.id, galA], [defL, "d" + row.id, galD]] as [string, string, number][]) { const k = "gal:" + l; const v = ((await meta(k)) || {}) as any; v[key] = n; must(await db.from("ge_meta").upsert({ k, v })); } } }
+        if (moon) await patchPlanets(defL, to); }
+      const gx = { pvp: !!defL, moon, galWhy };
       const sp = E.splitUnits(B.endD); const rebuilt: any = {}; for (const k in B.lossD) if (GE.DEF[k]) { const rb = Math.round(B.lossD[k] * 0.7); if (rb) rebuilt[k] = rb; }
       let loot = { m: 0, k: 0, g: 0 };
       if (B.winner === "a") { const used = (d.cargo.m || 0) + (d.cargo.k || 0) + (d.cargo.g || 0); loot = E.lootCalc(def.r, Math.max(0, E.cargoCap(B.endA) - used)); }
       const lossShips: any = {}, lossDef: any = {}; for (const k in B.lossD) { if (GE.DEF[k]) { const l = B.lossD[k] - (rebuilt[k] || 0); if (l > 0) lossDef[k] = l; } else lossShips[k] = B.lossD[k]; }
-      const battleA = E.packBattle(B, d.from, defName + (row.to_npc ? "" : " 👤"), { loot, rebuilt, coord: to, attackerIsMe: true });
-      const battleD = E.packBattle(B, d.from + " 👤", defName + " (Du)", { loot, rebuilt, coord: to, attackerIsMe: false });
+      const battleA = E.packBattle(B, d.from, defName + (row.to_npc ? "" : " 👤"), { loot, rebuilt, coord: to, attackerIsMe: true, ...gx, gal: galA });
+      const battleD = E.packBattle(B, d.from + " 👤", defName + " (Du)", { loot, rebuilt, coord: to, attackerIsMe: false, ...gx, gal: galD });
       if (defL) { await patchSnap(defL, to, (sn: any) => { for (const k in lossShips) sn.ships[k] = Math.max(0, (sn.ships[k] || 0) - lossShips[k]); for (const k in lossDef) sn.def[k] = Math.max(0, (sn.def[k] || 0) - lossDef[k]); for (const r of ["m", "k", "g"]) sn.r[r] = Math.max(0, (sn.r[r] || 0) - ((loot as any)[r] || 0)); }); }
-      if (defL) await event(defL, { kind: "attacked", from: d.from, to, lossShips, lossDef, loot, debris: B.debris, battle: battleD, winner: B.winner });
+      if (defL) await event(defL, { kind: "attacked", from: d.from, to, lossShips, lossDef, loot, debris: B.debris, battle: battleD, winner: B.winner, moon, gal: galD, galKey: galD ? "d" + row.id : null });
       else { const H = (await meta("npchits")) || {}; const o = H[row.to_npc] || { m: 0, k: 0, g: 0, t: Date.now() }; const f = Math.max(0, 1 - (Date.now() - o.t) / (12 * 3600e3 / CFG.speed));
         H[row.to_npc] = { m: (o.m || 0) * f + loot.m, k: (o.k || 0) * f + loot.k, g: (o.g || 0) * f + loot.g, t: Date.now() }; must(await db.from("ge_meta").upsert({ k: "npchits", v: H })); }
-      result = { kind: "attack", endShips: B.endA, loot, debris: B.debris, battle: battleA, winner: B.winner, defName };
+      result = { kind: "attack", endShips: B.endA, loot, debris: B.debris, battle: battleA, winner: B.winner, defName, moon, gal: galA, galKey: galA ? "a" + row.id : null };
     }
   } catch (e) { result = { kind: "fail", msg: (e as Error).message }; }
   must(await db.from("ge_fleet").update({ status: "done", result }).eq("id", row.id));
@@ -185,19 +202,21 @@ Deno.serve(async (req) => {
       // v41: Server rechnet nach – unmögliche Sprünge (Stufen-Regeln, Bauzeit, DM, Kosten) werden abgelehnt
       let nx: any; try { nx = JSON.parse(await gunzip(b.z)); } catch (_e) { return err("Spielstand unlesbar"); }
       // v42: alte Clients (ohne Stufen-Regeln, z. B. aus dem Cache) dürfen keine Spielstände mehr schreiben
-      if ((+b.cv || 0) < 52) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
+      if ((+b.cv || 0) < 53) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
       // v42: Konto-Reset – nur Spielstände mit der aktuellen Reset-Kennung (rid) werden angenommen; ältere lokale Kopien werden abgewiesen
       { const r = must(await db.from("ge_meta").select("v").eq("k", "rid:" + a.name_l).maybeSingle()) as any;
         if (r && r.v && nx.rid !== r.v.rid) return J({ error: "Dein Konto wurde zurückgesetzt – der neue Spielstand wird geladen", code: "reject", reasons: ["reset"] }, 409); }
       if (+nx.t > Date.now() + 5 * 60e3) return J({ error: "Spielstand aus der Zukunft", code: "reject" }, 409);
       const prev = must(await db.from("ge_save").select("z,t,updated").eq("name_l", a.name_l).maybeSingle()) as any;
+      if (!prev) { try { E.load(nx); if (E.galSum(nx.gal) > 1 || E.cores(nx) > 0 || (nx.gal?.st || 0) > 1) return J({ error: "Spielstand abgelehnt: Galactonit ohne Beleg", code: "reject", reasons: ["gal first save"] }, 409); } catch (_e) { /* ungültig → unten wie bisher */ } }
       if (prev) { try { const pv = JSON.parse(await gunzip(prev.z)); E.load(pv); E.load(nx); const dt = Date.now() - (Date.parse(prev.updated) || 0);
           // Admin-Geschenke: eingelöste Geschenke müssen im Stand bleiben (kein Überschreiben durch alte Kopien); neu enthaltene zählen als verdiente DM
           const gl = must(await db.from("ge_gift").select("id,dm").eq("name_l", a.name_l).not("claimed", "is", null)) as any[];
           const g1 = nx.gifts || {}, g0 = pv.gifts || {}; const miss = gl.filter((g) => !g1[g.id]);
           if (miss.length) return J({ error: "Geschenk fehlt im Spielstand – aktueller Stand wird geladen", code: "reject", reasons: ["gift " + miss.map((g) => g.id).join(",")] }, 409);
           const giftDM = gl.filter((g) => g1[g.id] && !g0[g.id]).reduce((x, g) => x + (+g.dm || 0), 0);
-          const errs: string[] = E.validateSave(pv, nx, dt, giftDM);
+          const galLed = ((await meta("gal:" + a.name_l)) || {}) as any;
+          const errs: string[] = E.validateSave(pv, nx, dt, giftDM, galLed);
           if (errs.length) { console.log("save reject", a.name_l, errs.slice(0, 5)); return J({ error: "Spielstand abgelehnt: " + errs.slice(0, 3).join("; "), code: "reject", reasons: errs.slice(0, 20) }, 409); }
         } catch (e) { console.log("validate fail", (e as Error).message); return J({ error: "Spielstand konnte nicht geprüft werden", code: "reject", reasons: ["validate: " + (e as Error).message] }, 409); } }
       must(await db.from("ge_save").upsert({ name_l: a.name_l, z: b.z, t: +b.t || Date.now(), updated: new Date().toISOString() })); return J({ ok: true });
