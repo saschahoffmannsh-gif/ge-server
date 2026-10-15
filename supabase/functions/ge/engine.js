@@ -624,7 +624,7 @@ E.abandon=function(pid){if(pid===S.home)return 'Der Heimatplanet kann nicht aufg
 //  2) Bauzeit: Summe der Bauzeiten (abzgl. Gratis-Fertigstellung) je Planet ≤ verstrichene Zeit × Bauschleifen + mit DM gekaufte Zeit.
 //  3) Dunkle Materie wächst höchstens um die erreichbaren Belohnungen; Rohstoffe: Kosten ≤ Vorrat + Produktion + Belohnungen (großzügig).
 E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
- try{S=next;const dt=Math.max(0,dtMs);const days=dt/864e5;
+ try{S=next;const dt=Math.max(0,dtMs);const t0=+prev.t||0;const days=dt/864e5;
   const dmGain=(+next.dm||0)-(+prev.dm||0);const dmAllow=80+60*days;if(dmGain>dmAllow)errs.push(`DM +${Math.round(dmGain)} (erlaubt ${Math.round(dmAllow)})`);
   const dmSpent=Math.max(0,(+prev.dm||0)+dmAllow-(+next.dm||0));const dmMs=Math.pow(dmSpent/0.75,1/0.9)*60e3;
   const tech0=prev.tech||{},tech1=next.tech||{};const qMax=2;let costAll=0,resPrev=0,prodH=0,timeT=0;
@@ -632,8 +632,11 @@ E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.pla
    resPrev+=(p0.r.m||0)+(p0.r.k||0)+(p0.r.g||0);try{const pi=E.prodInfo(p1);prodH+=Math.max(0,pi.m)+Math.max(0,pi.k)+Math.max(0,pi.g)}catch(e){prodH+=1e5}
    let tB=0;const sim={...p1,b:{...p0.b},bq:[]};
    for(const b of Object.keys(p1.b||{})){const a=p0.b[b]||0,z=p1.b[b]||0;if(z<=a)continue;
-    for(let L=a+1;L<=z;L++){if(!GE.BUILD[b])continue;const bad=E.bReqs({...sim,b:{...p1.b,[b]:L-1}},b,L,tech1).filter(x=>!x.ok);if(bad.length)errs.push(`${b} ${L}: Benötigt ${bad.map(x=>x.id+' '+x.need).join(', ')}`);
-     const pL={...p1,b:{...p1.b,[b]:L-1}};const c=E.bCost(b,L,pL);costAll+=c[0]+c[1]+c[2];if(!E.storeOk(p1,c))errs.push(`${b} ${L}: Lager zu klein`);
+    for(let L=a+1;L<=z;L++){if(!GE.BUILD[b])continue;const pq=(p0.bq||[]).find(q=>q.id===b&&q.lv===L&&!q.demo);const bad=E.bReqs({...sim,b:{...p1.b,[b]:L-1}},b,L,tech1).filter(x=>!x.ok);if(bad.length)errs.push(`${b} ${L}: Benötigt ${bad.map(x=>x.id+' '+x.need).join(', ')}`);
+     const pL={...p1,b:{...p1.b,[b]:L-1}};
+     // v45: schon im letzten Stand eingereiht → bezahlt; nur die Restzeit nach diesem Stand zählt (Offline-Fortschritt)
+     if(pq){tB+=Math.max(0,Math.min(pq.end-Math.max(pq.start,t0),E.bTime(pL,b,L)*1000)-E.FREE_MS);continue}
+     const c=E.bCost(b,L,pL);costAll+=c[0]+c[1]+c[2];if(!E.storeOk(p1,c))errs.push(`${b} ${L}: Lager zu klein`);
      tB+=Math.max(0,E.bTime(pL,b,L)*1000-E.FREE_MS)}}
    if(tB>dt*qMax+dmMs+120e3)errs.push(`Bauzeit ${Math.round(tB/60e3)} min in ${Math.round(dt/60e3)} min`);
   }
@@ -643,8 +646,10 @@ E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.pla
     if(key==='ships'){for(const f of st.fleets||[])if(!f.npc)for(const k in f.ships||{})o[k]=(o[k]||0)+(f.ships[k]||0);for(const x of st.saves||[])for(const k in x.ships||{})o[k]=(o[k]||0)+(x.ships[k]||0)}return o};
    const yard=Math.max(0,...(next.order||[]).map(i=>((next.planets[i]||{}).b||{}).shipyard||0));const bmax=k=>Math.max(0,...(next.order||[]).map(i=>((next.planets[i]||{}).b||{})[k]||0));
    const yp={...(next.planets[next.home]||{}),b:{...((next.planets[next.home]||{}).b||{}),shipyard:yard}};let tU=0;
+   const qd={};for(const id of prev.order||[]){const p=prev.planets[id];for(const q of (p&&p.sq)||[]){const left=Math.max(0,(q.n||0)-(q.done||0));if(!left)continue;const k=q.kind+':'+q.id;const o=qd[k]||(qd[k]={n:0,t:0});o.n+=left;o.t+=Math.max(0,q.start+q.ut*q.n-Math.max(q.start+q.ut*(q.done||0),t0))}}
    for(const [kind,tab,key] of [['ship',GE.SHIP,'ships'],['def',GE.DEF,'def']]){const h0=tot(prev,key),h1=tot(next,key);
-    for(const u of Object.keys(h1)){const n=(h1[u]||0)-(h0[u]||0);if(n<=0||!tab[u])continue;
+    for(const u of Object.keys(h1)){let n=(h1[u]||0)-(h0[u]||0);if(n<=0||!tab[u])continue;
+     const pq=qd[kind+':'+u];if(pq){const m=Math.min(n,pq.n);tU+=pq.t*(m/pq.n);n-=m;if(n<=0)continue}
      const bad=Object.keys(tab[u].req||{}).filter(k=>(GE.TECH[k]?(tech1[k]||0):bmax(k))<tab[u].req[k]);
      if(bad.length&&n>25)errs.push(`${u} +${n}: Benötigt ${bad.map(k=>k+' '+tab[u].req[k]).join(', ')}`);
      if(!bad.length){costAll+=n*(tab[u].c[0]+tab[u].c[1]+tab[u].c[2]);tU+=n*E.uTime(yp,kind,u)*1000}}}
@@ -652,7 +657,9 @@ E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.pla
   const home=next.planets[next.home]||next.planets[next.order[0]];
   for(const t of Object.keys(tech1)){const a=tech0[t]||0,z=tech1[t]||0;if(z<=a||!GE.TECH[t])continue;const labMax=Math.max(...(next.order||[]).map(i=>(next.planets[i].b||{}).lab||0));
    const lp={...home,b:{...(home.b||{}),lab:labMax}};
-   for(let L=a+1;L<=z;L++){const bad=E.tReqs(lp,t,L,{...tech1,[t]:L-1}).filter(x=>!x.ok);if(bad.length)errs.push(`${t} ${L}: Benötigt ${bad.map(x=>x.id+' '+x.need).join(', ')}`);const c=E.tCost(t,L,home);costAll+=c[0]+c[1]+c[2];timeT+=Math.max(0,E.tTime(t,L,home)*1000-E.FREE_MS)}}
+   for(let L=a+1;L<=z;L++){const bad=E.tReqs(lp,t,L,{...tech1,[t]:L-1}).filter(x=>!x.ok);if(bad.length)errs.push(`${t} ${L}: Benötigt ${bad.map(x=>x.id+' '+x.need).join(', ')}`);
+    const rq=prev.rq;if(rq&&rq.id===t&&rq.lv===L){timeT+=Math.max(0,Math.min(rq.end-Math.max(rq.start,t0),E.tTime(t,L,home)*1000)-E.FREE_MS);continue}
+    const c=E.tCost(t,L,home);costAll+=c[0]+c[1]+c[2];timeT+=Math.max(0,E.tTime(t,L,home)*1000-E.FREE_MS)}}
   if(timeT>dt+dmMs+120e3)errs.push(`Forschungszeit ${Math.round(timeT/60e3)} min in ${Math.round(dt/60e3)} min`);
   const allow=resPrev+prodH*(dt/36e5)*1.5+300000+costAll*0.1;if(costAll>allow)errs.push(`Kosten ${Math.round(costAll)} > möglich ${Math.round(allow)}`);
  }finally{S=keep}return errs};
