@@ -85,12 +85,12 @@ GE.TECH = {
  ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],f:1.85,req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
  hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],f:1.85,req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
  plasma:{n:'Plasmatechnik',cat:'Basis',c:[2000,4000,1000],f:1.85,req:{lab:6,energy:6,laser:8,ion:4},d:'Plasma als Waffe. +1 % Metall-, +0,66 % Kristall-, +0,33 % Gasproduktion je Stufe.'},
- espionage:{n:'Spionagetechnik',cat:'Fortgeschritten',c:[200,1000,200],f:1.65,req:{lab:3},d:'Bessere Spionageberichte. Ab Stufe 6 höhere Rohstoff-Fundchance im Nebel.'},
+ espionage:{n:'Spionagetechnik',cat:'Fortgeschritten',c:[200,1000,200],f:1.65,req:{lab:3},d:'Bessere Spionageberichte. Im Nebel: bis Stufe 10 +0,5 %-Punkte Schiffsfundchance je Stufe, jede Stufe +2 % Schiffsfund-Budget.'},
  computer:{n:'Computertechnik',cat:'Fortgeschritten',c:[0,400,600],f:1.65,req:{lab:1},d:'+1 Flottenslot je 2 Stufen (Nebelflüge zählen nicht).'},
- astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,req:{lab:3,espionage:3,impulse:2},d:'Je 2 Stufen +1 Planet (max. 8 Planeten). Nebelflotten kontoweit: 1 ab St. 1, 2 ab St. 4, 3 ab St. 8.'},
+ astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,req:{lab:3,espionage:3,impulse:2},d:'Je 2 Stufen +1 Planet (max. 8 Planeten). Parallele Nebelplätze kontoweit: 1/2/3/4 ab Stufe 1/4/9/12 (das Tageslimit von 25 Erkundungen bleibt).'},
  ultra:{n:'Ultratemperatur',cat:'Fortgeschritten',c:[5000,10000,5000],f:1.85,req:{lab:6,energy:6},d:'Hitzebeständige Kollektoren: +2 % Energieproduktion je Stufe.'},
  antigrav:{n:'Antigravitation',cat:'Fortgeschritten',c:[10000,20000,10000],f:1.85,req:{lab:8,hyper:5},d:'Hebt die Schwerkraft auf. Voraussetzung für Interceptor, Dreadnought und Iron Behemoth.'},
- alloy:{n:'Legierungsortung',cat:'Fortgeschritten',c:[3000,6000,2000],f:1.85,req:{lab:5,espionage:5},d:'Spürt Erzadern auf: +2 % Rohstoffausbeute im Nebel je Stufe.'},
+ alloy:{n:'Legierungsortung',cat:'Fortgeschritten',c:[3000,6000,2000],f:1.85,req:{lab:5,espionage:5},d:'Spürt Erzadern auf: +2 % Rohstofffundmenge im Nebel je Stufe (bis der Laderaum voll ist).'},
  dynpower:{n:'Dynamische Energie',cat:'Fortgeschritten',c:[4000,4000,4000],f:1.85,req:{lab:5,energy:5},d:'Effizientere Triebwerke: −2 % Treibstoffverbrauch je Stufe (max. −40 %).'},
  combustion:{n:'Verbrennungstriebwerk',cat:'Kampf',c:[400,0,600],f:1.65,req:{lab:1,energy:1},d:'+10 % Geschwindigkeit für Transporter, Jäger, Recycler und Sonden.'},
  impulse:{n:'Impulstriebwerk',cat:'Kampf',c:[2000,4000,600],f:1.65,req:{lab:2,energy:1},d:'+20 % Geschwindigkeit für Schwere Jäger, Kreuzer, Bomber und Kolonieschiffe.'},
@@ -103,7 +103,7 @@ GE.TECH = {
 
 // Schiffe: c, hull(Struktur), sh, at, sp, cargo, fuel, drive
 GE.SHIP = {
- sc:{n:'Kleiner Transporter',c:[2000,2000,0],sh:10,at:5,sp:5000,cargo:5000,fuel:10,drv:'combustion',req:{shipyard:2,combustion:2},d:'Wendiger Frachter für kleine Mengen. Ideal für die ersten Nebelflüge.'},
+ sc:{n:'Kleiner Transporter',c:[2000,2000,0],sh:10,at:5,sp:5000,cargo:5000,fuel:10,drv:'combustion',req:{shipyard:2,combustion:2},d:'Wendiger Frachter für kleine Mengen. Ideal für die ersten Nebelflüge (Ortung 4.000, wenig Gas).'},
  lc:{n:'Großer Transporter',c:[6000,6000,0],sh:25,at:5,sp:7500,cargo:25000,fuel:50,drv:'combustion',req:{shipyard:4,combustion:6},d:'Großer Laderaum für Rohstofftransporte und Plünderungen.'},
  lf:{n:'Leichter Jäger',c:[3000,1000,0],sh:10,at:50,sp:12500,cargo:50,fuel:20,drv:'combustion',req:{shipyard:1,combustion:1},d:'Günstiger, schneller Jäger. Gutes Kanonenfutter.'},
  hf:{n:'Schwerer Jäger',c:[6000,4000,0],sh:25,at:150,sp:10000,cargo:100,fuel:75,drv:'impulse',req:{shipyard:3,armour:2,impulse:2},d:'Besser gepanzerter Jäger mit Schnellfeuer gegen Kleine Transporter.'},
@@ -114,8 +114,8 @@ GE.SHIP = {
  de:{n:'Zerstörer',c:[60000,50000,15000],sh:500,at:2000,sp:5000,cargo:2000,fuel:1000,drv:'hyperdrive',req:{shipyard:9,hyperdrive:6,hyper:5},d:'Schweres Kriegsschiff mit enormer Feuerkraft.'},
  dn:{n:'Dreadnought',c:[5000000,4000000,1000000],sh:50000,at:200000,sp:100,cargo:1000000,fuel:1,drv:'hyperdrive',req:{shipyard:12,hyperdrive:7,hyper:6,antigrav:3},d:'Schwimmende Festung mit Schnellfeuer gegen nahezu alles.'},
  ib:{n:'Iron Behemoth',c:[10000000,8000000,3000000],sh:80000,at:300000,sp:80,cargo:2000000,fuel:1,drv:'hyperdrive',req:{shipyard:15,hyperdrive:9,antigrav:6},d:'Das Endgame-Schiff von Galaxy Empire. Stärker als jedes Dreadnought.'},
- rc:{n:'Recycler',c:[10000,6000,2000],sh:10,at:1,sp:2000,cargo:20000,fuel:300,drv:'combustion',req:{shipyard:4,combustion:6,shielding:2},d:'Sammelt Trümmerfelder ein – und ist das Arbeitspferd für Nebelflüge.'},
- pr:{n:'Spionagesonde',c:[0,1000,0],sh:0,at:0,sp:100000000,cargo:5,fuel:1,drv:'combustion',req:{shipyard:3,combustion:3,espionage:2},d:'Spioniert fremde Planeten aus. Viele Sonden bringen im Nebel mehr Schiffe.'},
+ rc:{n:'Recycler',c:[10000,6000,2000],sh:10,at:1,sp:2000,cargo:20000,fuel:300,drv:'combustion',req:{shipyard:4,combustion:6,shielding:2},d:'Sammelt Trümmerfelder ein – und ortet im Nebel am meisten Rohstoffe je Schiff (Ortung 24.000), braucht aber viel Gas.'},
+ pr:{n:'Spionagesonde',c:[0,1000,0],sh:0,at:0,sp:100000000,cargo:5,fuel:1,drv:'combustion',req:{shipyard:3,combustion:3,espionage:2},d:'Spioniert fremde Planeten aus. Im Nebel erhöhen Sonden Chance und Umfang von Schiffsfunden.'},
  co:{n:'Kolonieschiff',c:[10000,20000,10000],sh:100,at:50,sp:2500,cargo:7500,fuel:1000,drv:'impulse',req:{shipyard:4,impulse:3},d:'Gründet eine neue Kolonie auf einer freien Position.'},
  ss:{n:'Solarsatellit',c:[0,2000,500],sh:1,at:1,sp:0,cargo:0,fuel:0,drv:null,req:{shipyard:1},d:'Liefert Energie abhängig von der Planetentemperatur. Kann nicht fliegen.'}
 };
@@ -144,7 +144,7 @@ GE.COMMANDERS = {
  admiral:{n:'Admiral',d:'+2 Flottenslots, −10 % Bauzeit für Verteidigung',p7:20,p30:80},
  geologist:{n:'Geologe',d:'+10 % Rohstoffproduktion',p7:25,p30:100},
  engineer:{n:'Ingenieur',d:'Verteidigung verliert im Kampf nur 50 %',p7:25,p30:100},
- guider:{n:'Guider',d:'Rettet 35 % einer im Nebel zerstörten Flotte',p7:20,p30:80}
+ guider:{n:'Guider',d:'Senkt Nebelverluste durch Piraten und Navigationsschäden um 35 %',p7:20,p30:80}
 };
 GE.ITEMS = {
  armor1:{n:'Schiffspanzerplatte Lv1',d:'+10 % Hülle aller Schiffe für 24 h',buff:'hull',v:0.10},

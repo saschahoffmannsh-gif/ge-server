@@ -30,26 +30,28 @@ E.typeOf=typeOf;
 E.newGame=function(opts={}){
  const seed=opts.seed||((Math.random()*1e9)|0);
  const r=srng(seed); const s=1+Math.floor(r()*E.SYS), p=4+Math.floor(r()*9);
- S={v:3,rv:2,dmLed:0,voucher:0,seed,speed:opts.speed||10,t:now(),created:now(),cmdName:'Kommandant',ally:null,
+ S={v:3,rv:3,dmLed:0,voucher:0,nebT:[],nebDM:[],nebL:{n:0,r:0,ships:{},res:{m:0,k:0,g:0}},seed,speed:opts.speed||10,t:now(),created:now(),cmdName:'Kommandant',ally:null,
   planets:{},order:[],home:'P1',cur:'P1',nextId:2,
   tech:{},rq:null,dm:0,gal:{shards:{},gems:[],energy:0,nextGem:1},items:{},buffs:[],cmd:{},
   fleets:[],nextFleet:1,reports:[],nextRep:1,debris:{},npc:{},neb:{},
   task:0,flags:{},built:{},pts:{b:0,t:0},log:[],raids:true,nextRaid:0,lastGift:0,settings:{raids:true}};
  const hp=newPlanet('P1','Heimatplanet',1,s,p,178,'heimatwelt'); hp.r={m:500,k:500,g:0};
  S.planets.P1=hp; S.order=['P1'];
- const np=E.npcAt(1,s);while(np.includes(hp.p)){hp.p=hp.p%12+3}hp.temp=40; // Progression v1: neue Heimatwelten 40 °C
+ const np=E.npcAt(1,s);for(let k=0;k<15&&np.includes(hp.p);k++)hp.p=hp.p%15+1; // vorher Endlosschleife möglich (Zyklus 3→6→9→12)hp.temp=40; // Progression v1: neue Heimatwelten 40 °C
  addLog('Willkommen, Kommandant! Aries erwartet dich mit deiner ersten Aufgabe.');
  return S;
 };
 E.load=function(obj){S=obj;migrate();return S};
 E.state=()=>S;
-function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];migrate34();migrateV2();}
+function migrate(){S.settings=S.settings||{raids:true};S.flags=S.flags||{};S.built=S.built||{};S.neb=S.neb||{};S.items=S.items||{};S.buffs=S.buffs||[];migrate34();migrateV2();migrateV3();}
 // Progression v1 (rv 2): idempotent; keine rückwirkenden Gutschriften, bezahlte Aufträge behalten ihren Preis
 function migrateV2(){if(S.rv>=2)return;S.rv=2;if(S.dmLed==null)S.dmLed=0;if(S.voucher==null)S.voucher=0;
  const n=S.order.filter(id=>S.planets[id]&&!S.planets[id].moon).length;if(n>8)S.grandP=n;
  if(S.order.filter(id=>S.planets[id]&&!S.planets[id].moon).length>1)S.flags.firstCol=1;
  if(S.flags.nebula||S.flags.nebN)S.flags.expSafeDone=1;if((S.flags.npcWins||0)>0)S.flags.trainWin=1;
  if(S.created==null)S.created=S.t||now()}
+// Nebel v2 (rv 3): neue Zähler, keine Rückwirkung – laufende Flotten behalten ihre Regelversion
+function migrateV3(){if(S.rv>=3)return;S.rv=3;if(!Array.isArray(S.nebT))S.nebT=[];if(!S.nebL)S.nebL={n:0,r:0,ships:{},res:{m:0,k:0,g:0}};if(!Array.isArray(S.nebDM))S.nebDM=[]}
 // v34: 15 Bauplätze – Solar+Fusion → Kraftwerk, 3 Speicher → Lager
 function migrate34(){for(const id in (S.planets||{})){const p=S.planets[id];if(!p||!p.b)continue;const b=p.b;const mx=(a)=>Math.max(0,...a.map(k=>b[k]||0));
  if(!p.moon&&(b.solar!=null||b.fusion!=null||b.metal_store!=null||b.crystal_store!=null||b.gas_store!=null)){const pw=Math.max(b.power||0,mx(['solar','fusion'])),st=Math.max(b.store||0,mx(['metal_store','crystal_store','gas_store']));['solar','fusion','metal_store','crystal_store','gas_store'].forEach(k=>delete b[k]);if(pw)b.power=pw;if(st)b.store=st;p.pads=null;p.padsV=0}
@@ -306,8 +308,6 @@ E.fuel=function(from,to,ships,pct){const d=E.dist(from,to);let f=0;for(const id 
 E.cargoCap=ships=>{let c=0;for(const id in ships)c+=ships[id]*GE.SHIP[id].cargo;return c};
 E.fleetSlots=()=>1+Math.floor(E.tl('computer')/2)+(cmdActive('admiral')?2:0)+(S.xslot||0);
 E.slotsUsed=()=>S.fleets.filter(f=>f.mission!=='explore'&&!f.npc).length;
-// Progression v1: Nebel-Slots kontoweit (1 / 2 / 3 ab Astrophysik 1 / 4 / 8)
-E.nebulaSlots=()=>{const a=E.tl('astro');return a>=8?3:a>=4?2:a>=1?1:0};
 E.nebulaUsed=()=>S.fleets.filter(f=>f.mission==='explore').length;
 // max. 8 Planeten; Bestandskonten mit 9 Planeten behalten sie (S.grandP)
 E.maxPlanets=()=>Math.max(Math.min(8,1+Math.floor(E.tl('astro')/2)),S.grandP||0);
@@ -345,7 +345,7 @@ E.send=function(pid,ships,to,mission,pct,cargo){
  const allowed=E.missionsFor(to.g,to.s,to.p);if(to.moon){if(!['transport','deploy'].includes(mission))return 'Mission nicht möglich'}
  else if(!allowed.includes(mission))return 'Mission an diesem Ziel nicht möglich';
  if(pl.g===to.g&&pl.s===to.s&&pl.p===to.p&&!!pl.moon===!!to.moon)return 'Start und Ziel sind identisch';
- if(mission==='explore'){if(E.tl('astro')<1)return 'Astrophysik Stufe 1 benötigt';if(E.nebulaUsed()>=E.nebulaSlots())return 'Alle Nebelflotten-Slots belegt (kontoweit)';if(S.flags.expSafeDone&&E.pve().n>=E.NEB_MAX)return 'Maximal 12 Nebel-Starts je 24 h – neue Starts ab '+new Date(E.winEnd()).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});if(pl.s!==to.s||pl.g!==to.g)return 'Nur der Nebel im eigenen System kann erkundet werden'}
+ if(mission==='explore'){if(E.tl('astro')<1)return 'Astrophysik Stufe 1 benötigt';if(E.nebulaUsed()>=E.nebulaSlots())return 'Alle Nebelplätze belegt (kontoweit; Astrophysik 1/4/9/12 → 1/2/3/4 Plätze)';if(E.nebFree()<=0)return 'Höchstens 25 Erkundungen je 24 h – nächste Freigabe '+new Date(E.nebNextFree()).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});if(Object.keys(ships).some(k=>k==='ss'))return 'Satelliten können nicht erkunden';if(pl.s!==to.s||pl.g!==to.g)return 'Nur der Nebel im eigenen System kann erkundet werden'}
  else if(E.slotsUsed()>=E.fleetSlots())return 'Alle Flottenslots belegt (Computertechnik erhöht die Slots)';
  if(mission==='spy'&&Object.keys(ships).some(k=>k!=='pr'))return 'Spionage nur mit Spionagesonden';
  if(mission==='spy'&&ships.pr>20)return 'Maximal 20 Sonden pro Spionage';
@@ -361,7 +361,9 @@ E.send=function(pid,ships,to,mission,pct,cargo){
  if(mission==='deploy'&&dst&&((E.lv(pl,'stargate')&&E.lv(dst,'stargate'))||(pl.moon&&dst.moon&&E.lv(pl,'wormhole')&&E.lv(dst,'wormhole'))))dur=5000;
  pl.r.g-=fuel+cargo.g;pl.r.m-=cargo.m;pl.r.k-=cargo.k;for(const id in ships){pl.ships[id]-=ships[id];if(!pl.ships[id])delete pl.ships[id]}
  const f={id:S.nextFleet++,mission,from:pid,fromC:{g:pl.g,s:pl.s,p:pl.p,moon:!!pl.moon},to:{g:to.g,s:to.s,p:to.p,moon:!!to.moon},ships,cargo,pct,depart:now(),arrive:now()+dur,dur,phase:'out'};
- if(mission==='explore'){f.hold=30*MIN/S.speed;S.flags.nebula=1;if(!S.flags.expSafeDone){S.flags.expSafeDone=1;f.safe=1}else{const pv=E.pve();pv.n++;f.att=pv.n;f.win=pv.w;f.share=E.nebShare(pv.n)}}
+ if(mission==='explore'){const N=E.NEB2;S.flags.nebula=1;f.nv=N.V;f.snap=E.nebSnap();S.nebT=(S.nebT||[]).filter(x=>x>now()-N.WIN);S.nebT.push(now());E.nebL().n++;
+  // Haltezeit 30 echte Minuten; die erste (sichere) Tutorial-Erkundung bleibt kurz (30 Min. Spielzeit), damit das Tutorial nicht hängt
+  if(!S.flags.expSafeDone){S.flags.expSafeDone=1;f.safe=1;f.hold=30*MIN/S.speed}else f.hold=N.HOLD}
  S.fleets.push(f);if(E.onSend)try{E.onSend(f)}catch(e){}emit('change');return null};
 function findOwn(c){for(const id of S.order){const p=S.planets[id];if(!p.moon&&p.g===c.g&&p.s===c.s&&p.p===c.p)return id}return null}
 E.findOwn=findOwn;
@@ -369,14 +371,14 @@ E.recall=function(fid){const f=S.fleets.find(x=>x.id===fid);if(!f||f.phase==='ba
  if(f.phase==='out'){const el=t-f.depart;f.phase='back';f.backAt=t+el;f.arrive=t+el}else if(f.phase==='hold'){f.phase='back';f.arrive=t+f.dur;}emit('change')};
 function fleetEventTime(f){return f.arrive}
 function returnFleet(f){const pl=S.planets[f.from]||S.planets[S.home];if(f.trainW)S.flags.trainWin=1;if(f.mission==='explore')S.flags.expBack=(S.flags.expBack||0)+1;for(const id in f.ships)pl.ships[id]=(pl.ships[id]||0)+f.ships[id];giveRes(pl,f.cargo);
- S.fleets=S.fleets.filter(x=>x!==f);if(f.mission!=='deploy')addLog(`Flotte ${f.id} ist zu ${pl.name} zurückgekehrt`,'fleet');emit('fleetback',f)}
+ S.fleets=S.fleets.filter(x=>x!==f);if(f.mission!=='deploy')addLog(`Flotte ${f.id} ist zu ${pl.name} zurückgekehrt`,'fleet');emit('fleetback',f);if(f.mission==='explore'&&S.nebQ)nebQueueKick()}
 function report(type,title,data){const r={id:S.nextRep++,t:now(),type,title,read:false,...data};S.reports.unshift(r);if(S.reports.length>80)S.reports.length=80;emit('report',r);return r}
 E.report=report;
 function processFleet(f){
  const t=f.arrive;
  if(f.npc){return raidArrive(f)}
  if(f.phase==='back'){returnFleet(f);return}
- if(f.phase==='hold'){nebulaResolve(f);return}
+ if(f.phase==='hold'){if(f.nv>=2)nebulaResolve2(f);else nebulaResolve(f);return}
  if(f.pvp&&E.pvpArrive){f.phase='pvp';f.pvpAt=f.arrive;f.arrive=Infinity;E.pvpArrive(f);return}
  // Ankunft
  const to=f.to,k=ck(to.g,to.s,to.p);
@@ -487,7 +489,98 @@ function attackArrive(f){const to=f.to;const sl=E.slot(to.g,to.s,to.p);const st=
  report('combat',`Kampf bei ${sl.name} [${to.g}:${to.s}:${to.p}]`,{battle:packBattle(B,'Du',sl.kind==='npc'?`${sl.name} (NPC Lv${sl.lv})`:`${sl.player} (inaktiv)`,{loot,shards,rebuilt,coord:to,attackerIsMe:true})});
 }
 function packBattle(B,nameA,nameD,extra){return{nameA,nameD,startA:B.startA,startD:B.startD,endA:B.endA,endD:B.endD,rounds:B.rounds.map(r=>({a:r.a,d:r.d,sa:r.sa,sd:r.sd})),winner:B.winner,lossA:B.lossA,lossD:B.lossD,debris:B.debris,valA:B.valA,valD:B.valD,...extra}}
-// ---------- Nebel ----------
+// ---------- Nebel v2 „Nebelwirtschaft – 25 Erkundungen“ (Regelversion 2, ersetzt Budget/Quoten/Spiegelgefecht) ----------
+// Konstanten zentral; Client und Server nutzen dieselbe engine.js. Laufende Flotten ohne nv bleiben bei Regelversion 1.
+E.NEB2={V:2,MAX:25,WIN:864e5,HOLD:30*MIN,DM_MAX:40,DM:[2,6],
+ W:{sc:4000,lc:12000,rc:24000,pr:100},WCAP:1e6,WEXP:0.65,RES_F:0.03,
+ P:{pr:1,sc:0.25,lc:1,rc:1.5},PB:1e6,PEXP:0.75,
+ POOL:{pr:10,sc:10,lc:15,rc:15,co:2,lf:25,hf:10,cr:7,bs:4,ic:1,de:1},
+ EV:{res:0.5,pir:0.08,nav:0.02,delay:0.03,dm:0.04,item:0.03},
+ SUB:[['planet',0.6,[0.5,0.3,0.2]],['wreck',0.24,[0.6,0.4,0]],['ast',0.16,[0.45,0.35,0.2]]],
+ ITEMS:['armor1','energy1','power1','engine1'],CIVIL:['sc','lc','rc','pr','co'],
+ QMIN:0.9};
+// Astrophysik 1/4/9/12 → 1/2/3/4 parallele Nebelplätze (kontoweit)
+E.nebulaSlots=()=>{const a=E.tl('astro');return a>=12?4:a>=9?3:a>=4?2:a>=1?1:0};
+// rollierendes reales 24-h-Fenster (Tempo beschleunigt es nicht)
+E.nebL=()=>S.nebL||(S.nebL={n:0,r:0,ships:{},res:{m:0,k:0,g:0}});
+E.nebStarts=()=>{const t=now();return (S.nebT||[]).filter(x=>x>t-E.NEB2.WIN&&x<=t)};
+E.nebFree=()=>Math.max(0,E.NEB2.MAX-E.nebStarts().length);
+E.nebNextFree=()=>{const st=E.nebStarts();return st.length>=E.NEB2.MAX?st[st.length-E.NEB2.MAX]+E.NEB2.WIN:now()};
+E.nebDMLeft=()=>{const t=now();const used=(S.nebDM||[]).filter(x=>x[0]>t-E.NEB2.WIN).reduce((a,x)=>a+x[1],0);return Math.max(0,E.NEB2.DM_MAX-used)};
+// Ortung (Rohstoffe) und Sondenleistung (Schiffsfunde)
+E.nebPower=ships=>{const N=E.NEB2;let W=0,P=0;for(const id in ships){W+=(N.W[id]||0)*ships[id];P+=(N.P[id]||0)*ships[id]}
+ const We=W<=N.WCAP?W:N.WCAP*Math.pow(W/N.WCAP,N.WEXP);return{W,We,P}};
+E.nebChance=(P,S_)=>0.10+0.15*P/(P+10000)+0.005*Math.min(S_,10);
+E.nebBudget=(P,S_)=>P>0?E.NEB2.PB*(1+0.02*S_)*Math.pow(P/1e5,E.NEB2.PEXP):0;
+E.nebResMean=(We,L)=>E.NEB2.RES_F*We*(1+0.02*L);
+const shipVal=id=>{const c=GE.SHIP[id].c;return c[0]+c[1]+c[2]};E.shipVal=shipVal;
+// Fundklassen: Voraussetzungen nach den originalen Anforderungen (Forschung kontoweit, Gebäude bestes Gebäude)
+E.nebAllowed=()=>Object.keys(E.NEB2.POOL).filter(id=>{const rq=GE.SHIP[id].req||{};return Object.keys(rq).every(k=>(GE.TECH[k]?E.tl(k):E.maxB(k))>=rq[k])});
+// Eskortenschutz: Kampfschiffe = flugfähig außer SC/LC/RC/PR/CO (Satelliten fliegen nicht); H mit unveränderter Grundhülle
+E.nebEscort=(ships,T)=>{const N=E.NEB2;let H=0,Es=0;for(const id in ships){const d=GE.SHIP[id],n=ships[id];if(id==='ss')continue;
+  if(N.CIVIL.includes(id))H+=n*d.hull*0.1;else Es+=n*(d.at*(1+0.1*(T.weapons||0))+d.sh*(1+0.1*(T.shielding||0)))}
+ return 0.8*Es/(Es+500+0.004*H)};
+E.nebSnap=()=>({esp:E.tl('espionage'),alloy:E.tl('alloy'),weapons:E.tl('weapons'),shielding:E.tl('shielding'),armour:E.tl('armour'),ok:E.nebAllowed()});
+// Vorschau für die UI (keine Autorität für Auszahlungen)
+E.nebPreview=(ships,cargoFree)=>{const T=E.nebSnap();const pw=E.nebPower(ships);const cap=cargoFree!=null?cargoFree:E.cargoCap(ships);
+ const rm=E.nebResMean(pw.We,T.alloy);const b=E.nebBudget(pw.P,T.esp);const ch=E.nebChance(pw.P,T.esp);const esc=E.nebEscort(ships,T);
+ const pir=(1-esc)/(1+0.02*(T.armour+T.shielding));
+ return{free:E.nebFree(),next:E.nebNextFree(),used:E.nebulaUsed(),slots:E.nebulaSlots(),cap,W:pw.W,We:pw.We,P:pw.P,chance:ch,
+  res:[Math.min(cap,Math.floor(rm*0.7)),Math.min(cap,Math.floor(rm*1.3))],budget:[Math.floor(b*0.7),Math.floor(b*1.3)],escort:esc,
+  pirLoss:[0.003*pir*(cmdActive('guider')?0.65:1),0.009*pir*(cmdActive('guider')?0.65:1)],dmLeft:E.nebDMLeft(),ok:T.ok}};
+function nebLose(ships,frac){const lost={};for(const id in ships){const raw=ships[id]*frac;let n=Math.floor(raw)+(Math.random()<raw%1?1:0);n=Math.min(n,ships[id]);if(n>0)lost[id]=n}return lost}
+function nebulaResolve2(f){
+ const N=E.NEB2,t=f.arrive,ships=f.ships,T=f.snap||E.nebSnap();const L=E.nebL();L.r=(L.r||0)+1;
+ const capFree=Math.max(0,E.cargoCap(ships)-(f.cargo.m+f.cargo.k+f.cargo.g));
+ const pw=E.nebPower(ships);const ch=E.nebChance(pw.P,T.esp);const g=cmdActive('guider')?0.65:1;
+ const rec={v:2,sent:{...ships}};let text='',title='Nebelbericht';
+ const u=Math.random();const E1=N.EV.res,E2=E1+ch,E3=E2+N.EV.pir,E4=E3+N.EV.nav,E5=E4+N.EV.delay,E6=E5+N.EV.dm,E7=E6+N.EV.item;
+ let out=f.safe?'safe':u<E1?'res':u<E2?'ships':u<E3?'pirates':u<E4?'nav':u<E5?'delay':u<E6?'dm':u<E7?'item':'none';
+ const giveFind=(why)=>{const z=Math.random();let acc=0,sub=N.SUB[0];for(const s of N.SUB){acc+=s[1];if(z<acc){sub=s;break}}
+  const amt=Math.min(capFree,E.nebResMean(pw.We,T.alloy)*rnd(0.7,1.3));const got={m:Math.floor(amt*sub[2][0]),k:Math.floor(amt*sub[2][1]),g:Math.floor(amt*sub[2][2])};
+  for(const r in got){f.cargo[r]+=got[r];L.res[r]=(L.res[r]||0)+got[r]}rec.res=got;rec.sub=sub[0];
+  const tx={planet:`Deine Flotte entdeckte einen verlassenen Planeten und belud die Frachträume: ${fmtR(got)}.`,wreck:`Ein uraltes Schiffswrack treibt im Nebel. Deine Crew zerlegte es: ${fmtR(got)}.`,ast:`Ein rohstoffreiches Asteroidenfeld! Die Abbautrupps förderten ${fmtR(got)}.`}[sub[0]];
+  return (why?why+' ':'')+tx+(amt>=capFree&&capFree>0?' (Laderaum voll)':capFree<=0?' Kein freier Laderaum – nichts mitgenommen.':'')};
+ const applyLoss=(lost)=>{for(const id in lost){f.ships[id]-=lost[id];if(f.ships[id]<=0)delete f.ships[id]}rec.loss=lost;const n=countShips(lost);
+  if(!countShips(f.ships)){S.fleets=S.fleets.filter(z=>z!==f);rec.lost=true}return n};
+ rec.outcome=out;
+ switch(out){
+  case 'safe':{const hp=S.planets[S.home];let pi={m:0,k:0,g:0};E._nb=1;try{pi=E.prodInfo(hp)}finally{E._nb=0}const got={m:Math.floor(Math.max(0,pi.m)*0.5),k:Math.floor(Math.max(0,pi.k)*0.5),g:Math.floor(Math.max(0,pi.g)*0.5)};const s=got.m+got.k+got.g;if(s>capFree){const q=capFree/Math.max(1,s);for(const r in got)got[r]=Math.floor(got[r]*q)}for(const r in got){f.cargo[r]+=got[r];L.res[r]=(L.res[r]||0)+got[r]}rec.res=got;text=`Deine erste Erkundung verlief sicher: Die Crew sammelte ${fmtR(got)}.`;break}
+  case 'res':text=giveFind();break;
+  case 'ships':{const b=E.nebBudget(pw.P,T.esp)*rnd(0.7,1.3);const cand=(T.ok||[]).filter(id=>N.POOL[id]&&shipVal(id)<=b);
+    if(!cand.length){text=giveFind('Eine verlassene Rebellenstation – ohne brauchbare Schiffe, aber mit Vorräten.');rec.conv='ships';break}
+    let sum=0;for(const id of cand)sum+=N.POOL[id];let x=Math.random()*sum,pick=cand[cand.length-1];for(const id of cand){x-=N.POOL[id];if(x<0){pick=id;break}}
+    const n=Math.floor(b/shipVal(pick));f.ships[pick]=(f.ships[pick]||0)+n;L.ships[pick]=(L.ships[pick]||0)+n;rec.ships={[pick]:n};rec.budget=Math.floor(b);
+    text=`Eine verlassene Rebellenstation! ${fmtN(n)}× ${GE.SHIP[pick].n} schließen sich deiner Flotte an und fliegen mit nach Hause.`;break}
+  case 'pirates':{const esc=E.nebEscort(ships,T);const fr=rnd(0.003,0.009)*(1-esc)/(1+0.02*((T.armour||0)+(T.shielding||0)))*g;rec.frac=fr;rec.escort=esc;
+    const n=applyLoss(nebLose({...ships},fr));text=`Piraten überfielen deine Flotte. Nach einem kurzen Gefecht konnte sie entkommen${n?` – ${fmtN(n)} Schiffe gingen verloren`:' – ohne Verluste'}.`+(esc>0.05?` Deine Eskorte fing ${Math.round(esc*100)} % des Schadens ab.`:'')+(g<1?' Dein Guider verhinderte 35 % der Verluste.':'');if(rec.lost)text+=' Die gesamte Flotte ging verloren.';break}
+  case 'nav':{const major=Math.random()<0.1;const fr=(major?rnd(0.05,0.10):rnd(0.01,0.03))*g;rec.frac=fr;rec.major=major;
+    const n=applyLoss(nebLose({...ships},fr));text=(major?'Ein schwerer Teilchensturm beschädigte die Flotte.':'Navigationsfehler im dichten Nebel.')+(n?` ${fmtN(n)} Schiffe gingen verloren.`:' Alle Schiffe kamen davon.')+(g<1?' Dein Guider verhinderte 35 % der Verluste.':'');if(rec.lost)text+=' Die gesamte Flotte ging verloren.';break}
+  case 'delay':{const why=['Ein Asteroidenfeld versperrte den Rückweg.','Ein Reaktor fiel aus und musste repariert werden.','Ein Teilchensturm legte die Navigation lahm.'][ri(0,2)];const ex=f.dur*rnd(0.5,2);text=why+' Die Flotte kehrt verspätet zurück.';rec.delay=ex;f.phase='back';f.arrive=t+f.dur+ex;report('nebula',title,{text,neb:rec});return}
+  case 'dm':{const left=E.nebDMLeft();if(left<=0){text=giveFind('Spuren Dunkler Materie – das Tageskontingent (40 DM) ist erreicht.');rec.conv='dm';break}
+    const n=Math.min(left,ri(N.DM[0],N.DM[1]));S.nebDM=(S.nebDM||[]).filter(x=>x[0]>now()-N.WIN);S.nebDM.push([now(),n]);E.addDM(n);rec.dm=n;text=Math.random()<0.5?`In einem verlassenen Schiff fand deine Crew ${n} Dunkle Materie.`:`Ein Alienwesen überließ deiner Flotte ${n} Dunkle Materie.`;break}
+  case 'item':{const it=N.ITEMS[ri(0,N.ITEMS.length-1)];S.items[it]=(S.items[it]||0)+1;rec.items={[it]:1};text=`Im Nebel trieb ein Container mit Ausrüstung: 1× ${GE.ITEMS[it].n}.`;break}
+  default:text=['Die Flotte durchkämmte den Nebel, fand aber nichts Verwertbares.','Leere. Nur kosmischer Staub, so weit die Sensoren reichen.','Seltsame Signale – doch ihre Quelle blieb verborgen.'][ri(0,2)];
+ }
+ report('nebula',title,{text,neb:rec});
+ if(S.fleets.includes(f)){f.phase='back';f.arrive=t+f.dur}else nebQueueKick();
+}
+// Wiederholungsauftrag (für alle Spieler): Flottenvorlage, echter Bestand, pausiert mit Grund
+E.nebRepeat=function(pid,ships,pct,count){count=Math.max(1,Math.min(E.NEB2.MAX,Math.floor(count)||1));
+ const pl=S.planets[pid];if(!pl)return 'Planet fehlt';const to={g:pl.g,s:pl.s,p:16,moon:false};
+ const e=E.send(pid,ships,to,'explore',pct);if(e)return e;const f=S.fleets[S.fleets.length-1];
+ S.nebQ={pid,ships:{...f.ships},pct:pct||100,left:count-1,why:null,wait:0};f.q=1;if(!S.nebQ.left)S.nebQ=null;emit('change');return null};
+E.nebStop=()=>{S.nebQ=null;emit('change')};
+function nebQueueKick(){const q=S.nebQ;if(!q||q.left<=0){if(q&&q.left<=0)S.nebQ=null;return}
+ if(S.fleets.some(f=>f.q))return; // die Auftragsflotte ist noch unterwegs
+ const pl=S.planets[q.pid];if(!pl){q.why='Startplanet existiert nicht mehr';return}
+ if(E.nebFree()<=0){q.wait=E.nebNextFree();q.why='Tageskontingent (25) erreicht – weiter ab '+new Date(q.wait).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});return}
+ const ships={};for(const id in q.ships){const have=pl.ships[id]||0;if(have<Math.ceil(q.ships[id]*E.NEB2.QMIN)){q.why=`Zu wenige ${GE.SHIP[id].n} (${fmtN(have)}/${fmtN(q.ships[id])})`;q.wait=0;return}ships[id]=Math.min(have,q.ships[id])}
+ const e=E.send(q.pid,ships,{g:pl.g,s:pl.s,p:16,moon:false},'explore',q.pct);
+ if(e){q.why=e;q.wait=/Slots belegt/.test(e)?0:0;return}
+ const f=S.fleets[S.fleets.length-1];f.q=1;q.left--;q.why=null;q.wait=0;if(q.left<=0)S.nebQ=null}
+E.nebQueueKick=()=>{if(S.nebQ){S.nebQ.why=null;nebQueueKick();emit('change')}};
+// ---------- Nebel Regelversion 1 (nur noch für Flotten, die vor der Umstellung gestartet sind) ----------
 E.NEB={resCap:667,wreckCap:1334,astCap:4002,resMax:{m:10e6,k:6e6,g:8e6}};
 function nebulaKey(f){return f.to.g+':'+f.to.s}
 function nebulaResolve(f){
@@ -642,6 +735,7 @@ E.tick=function(to){to=to||now();let guard=0;const t0=S.t;
   for(const f of S.fleets)if(f.arrive<next){next=f.arrive;kind='f';ref=f}
   if(S.settings.raids&&S.nextRaid&&S.nextRaid<next){next=S.nextRaid;kind='raid'}
   for(const s of S.saves||[])if(s.ret<next){next=s.ret;kind='save';ref=s}
+  if(S.nebQ&&S.nebQ.wait&&S.nebQ.wait<next){next=S.nebQ.wait;kind='nq'}
   next=Math.max(next,S.t);
   const dtH=(next-S.t)/HOUR;for(const id of S.order)produce(S.planets[id],dtH);
   for(const id of S.order)progressYard(S.planets[id],next);
@@ -649,7 +743,7 @@ E.tick=function(to){to=to||now();let guard=0;const t0=S.t;
   const prev=E.clock;E.clock=()=>next; // Ereigniszeit als „jetzt“
   try{
   if(kind==='b')finishBuild(ref);else if(kind==='r')finishResearch();else if(kind==='f')processFleet(ref);
-  else if(kind==='raid'){launchRaid(next);scheduleRaid(next)}else if(kind==='save')saveReturn(ref);
+  else if(kind==='raid'){launchRaid(next);scheduleRaid(next)}else if(kind==='save')saveReturn(ref);else if(kind==='nq'){S.nebQ.wait=0;nebQueueKick()}
   }finally{E.clock=prev}
   if(!kind)break;}
  if(S.settings.raids&&!S.nextRaid&&E.totalPoints()>=3000)scheduleRaid(S.t);
@@ -675,6 +769,27 @@ E.validateSave=function(prev,next,dtMs,extraDM){extraDM=Math.max(0,+extraDM||0);
   const dmGain=(+next.dm||0)-(+prev.dm||0);if(dmGain>earned+5)errs.push(`DM +${Math.round(dmGain)} (verdient ${Math.round(earned)})`);
   const dmSpent=Math.max(0,(+prev.dm||0)+earned-(+next.dm||0));const dmMs=Math.pow(dmSpent/0.75,1/0.9)*60e3+(Math.max(0,(+((next.flags||{}).vUsed)||0)-(+((prev.flags||{}).vUsed)||0))>0?E.VOUCHER_MS:0);
   const tech0=prev.tech||{},tech1=next.tech||{};const qMax=2;let costAll=0,resPrev=0,prodH=0,timeT=0;
+  // Nebel v2: Startfenster (≤25 je rollierenden realen 24 h, keine gelöschten Starts) und Fund-Ledger (Schiffe/Rohstoffe je Auflösung begrenzt)
+  const nebShip={},nebRes={m:0,k:0,g:0};let nebResAllow=0;
+  {const N=E.NEB2,L0=prev.nebL||{n:0,r:0,ships:{},res:{}},L1=next.nebL||{n:0,r:0,ships:{},res:{}};const T0=(prev.nebT||[]).slice().sort((a,b)=>a-b),T1=(next.nebT||[]).slice().sort((a,b)=>a-b);
+   const dn=(+L1.n||0)-(+L0.n||0),dr=(+L1.r||0)-(+L0.r||0);
+   if(dn<0||dr<0)errs.push('Nebel-Zähler zurückgesetzt');
+   const tMax=Math.max(+next.t||0,t0);const keep=T0.filter(x=>x>tMax-N.WIN);const set=new Set(T1);if(keep.some(x=>!set.has(x)))errs.push('Nebel-Starts gelöscht');
+   const newT=T1.filter(x=>!T0.includes(x));if(newT.length>Math.max(0,dn))errs.push(`Nebel-Starts ${newT.length} ohne Zähler`);
+   if(newT.some(x=>x>tMax+5*60e3||x<t0-N.WIN))errs.push('Nebel-Startzeit unplausibel');
+   for(let i=0;i<T1.length;i++){let c=0;for(let j=i;j>=0&&T1[j]>T1[i]-N.WIN;j--)c++;if(c>N.MAX){errs.push(`Mehr als ${N.MAX} Nebel-Starts in 24 h`);break}}
+   const newF=(next.fleets||[]).filter(f=>f.mission==='explore'&&!f.npc&&f.id>=(+prev.nextFleet||0));if(newF.length>Math.max(0,dn))errs.push('Nebelflotte ohne gezählten Start');
+   if(newF.some(f=>!(f.nv>=2)))errs.push('Nebelflotte mit alter Regelversion');
+   const openPrev=(prev.fleets||[]).filter(f=>f.mission==='explore'&&!f.npc&&f.nv>=2).length;if(dr>Math.max(0,dn)+openPrev)errs.push('Mehr Nebel-Auflösungen als Starts');
+   // Obergrenze je Auflösung aus dem größeren Bestand (vorher/nachher) – eine Flotte kann höchstens den gesamten Bestand enthalten
+   const tot=st=>{const o={};for(const id of st.order||[]){const p=st.planets[id];if(p)for(const k in p.ships||{})o[k]=(o[k]||0)+(p.ships[k]||0)}for(const f of st.fleets||[])if(!f.npc)for(const k in f.ships||{})o[k]=(o[k]||0)+(f.ships[k]||0);return o};
+   const a0=tot(prev),a1=tot(next),mx={};for(const k of new Set([...Object.keys(a0),...Object.keys(a1)]))mx[k]=Math.max(a0[k]||0,a1[k]||0);
+   const pw=E.nebPower(mx),cap=E.cargoCap(mx),esp=Math.max(tech0.espionage||0,tech1.espionage||0),alloy=Math.max(tech0.alloy||0,tech1.alloy||0);
+   const k=Math.max(0,dr);const shipMax=k*E.nebBudget(pw.P,esp)*1.3+1;const resMax=k*Math.min(cap,E.nebResMean(pw.We,alloy)*1.3)+(k?2e5:0); // + sichere Tutorial-Erkundung (0,5 h Hauptweltproduktion)
+   let sv=0;for(const u in L1.ships||{}){const d=(+L1.ships[u]||0)-(+(L0.ships||{})[u]||0);if(d<0){errs.push('Nebel-Ledger '+u+' gesunken');continue}if(d>0){if(!GE.SHIP[u]||!N.POOL[u]){errs.push('Nebelfund '+u+' nicht im Fundpool');continue}nebShip[u]=d;sv+=d*E.shipVal(u)}}
+   if(sv>shipMax)errs.push(`Nebel-Schiffsfunde ${Math.round(sv)} > möglich ${Math.round(shipMax)}`);
+   let rv=0;for(const r of['m','k','g']){const d=(+(L1.res||{})[r]||0)-(+(L0.res||{})[r]||0);if(d<0)errs.push('Nebel-Ledger Rohstoffe gesunken');nebRes[r]=Math.max(0,d);rv+=Math.max(0,d)}
+   if(rv>resMax)errs.push(`Nebel-Rohstofffunde ${Math.round(rv)} > möglich ${Math.round(resMax)}`);nebResAllow=Math.min(rv,resMax)}
   for(const id of next.order||[]){const p1=next.planets[id],p0=prev.planets&&prev.planets[id];if(!p1||!p0||p1.moon)continue;
    resPrev+=(p0.r.m||0)+(p0.r.k||0)+(p0.r.g||0);try{const pi=E.prodInfo(p1);prodH+=Math.max(0,pi.m)+Math.max(0,pi.k)+Math.max(0,pi.g)}catch(e){prodH+=1e5}
    let tB=0;const sim={...p1,b:{...p0.b},bq:[]};
@@ -696,6 +811,7 @@ E.validateSave=function(prev,next,dtMs,extraDM){extraDM=Math.max(0,+extraDM||0);
    const qd={};for(const id of prev.order||[]){const p=prev.planets[id];for(const q of (p&&p.sq)||[]){const left=Math.max(0,(q.n||0)-(q.done||0));if(!left)continue;const k=q.kind+':'+q.id;const o=qd[k]||(qd[k]={n:0,t:0});o.n+=left;o.t+=Math.max(0,q.start+q.ut*q.n-Math.max(q.start+q.ut*(q.done||0),t0))}}
    for(const [kind,tab,key] of [['ship',GE.SHIP,'ships'],['def',GE.DEF,'def']]){const h0=tot(prev,key),h1=tot(next,key);
     for(const u of Object.keys(h1)){let n=(h1[u]||0)-(h0[u]||0);if(n<=0||!tab[u])continue;
+     if(kind==='ship'&&nebShip[u]){n-=Math.min(n,nebShip[u]);if(n<=0)continue}
      const pq=qd[kind+':'+u];if(pq){const m=Math.min(n,pq.n);tU+=pq.t*(m/pq.n);n-=m;if(n<=0)continue}
      const bad=Object.keys(tab[u].req||{}).filter(k=>(GE.TECH[k]?(tech1[k]||0):bmax(k))<tab[u].req[k]);
      if(bad.length&&n>25)errs.push(`${u} +${n}: Benötigt ${bad.map(k=>k+' '+tab[u].req[k]).join(', ')}`);
@@ -708,7 +824,7 @@ E.validateSave=function(prev,next,dtMs,extraDM){extraDM=Math.max(0,+extraDM||0);
     const rq=prev.rq;if(rq&&rq.id===t&&rq.lv===L){timeT+=Math.max(0,Math.min(rq.end-Math.max(rq.start,t0),E.tTime(t,L,home)*1000)-E.FREE_MS);continue}
     const c=E.tCost(t,L,home);costAll+=c[0]+c[1]+c[2];timeT+=Math.max(0,E.tTime(t,L,home)*1000-E.FREE_MS)}}
   if(timeT>dt+dmMs+120e3)errs.push(`Forschungszeit ${Math.round(timeT/60e3)} min in ${Math.round(dt/60e3)} min`);
-  const allow=resPrev+prodH*(dt/36e5)*1.5+300000+costAll*0.1;if(costAll>allow)errs.push(`Kosten ${Math.round(costAll)} > möglich ${Math.round(allow)}`);
+  const allow=resPrev+prodH*(dt/36e5)*1.5+300000+costAll*0.1+nebResAllow;if(costAll>allow)errs.push(`Kosten ${Math.round(costAll)} > möglich ${Math.round(allow)}`);
  }finally{S=keep}return errs};
 root.ENGINE=E; if(typeof module!=='undefined')module.exports=E;
 })(typeof window!=='undefined'?window:globalThis);
