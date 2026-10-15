@@ -208,7 +208,9 @@ Deno.serve(async (req) => {
         if (r && r.v && nx.rid !== r.v.rid) return J({ error: "Dein Konto wurde zurückgesetzt – der neue Spielstand wird geladen", code: "reject", reasons: ["reset"] }, 409); }
       if (+nx.t > Date.now() + 5 * 60e3) return J({ error: "Spielstand aus der Zukunft", code: "reject" }, 409);
       const prev = must(await db.from("ge_save").select("z,t,updated").eq("name_l", a.name_l).maybeSingle()) as any;
-      if (!prev) { try { E.load(nx); if (E.galSum(nx.gal) > 1 || E.cores(nx) > 0 || (nx.gal?.st || 0) > 1) return J({ error: "Spielstand abgelehnt: Galactonit ohne Beleg", code: "reject", reasons: ["gal first save"] }, 409); } catch (_e) { /* ungültig → unten wie bisher */ } }
+      if (!prev) { try { E.load(nx); const led = ((await meta("gal:" + a.name_l)) || {}) as any; const g = nx.gal || {}; const src = g.src || {};
+          const badKey = Object.keys(src).some((k) => k === "tut" ? +src[k] > 1 : !(led[k] != null && +led[k] === +src[k]));
+          if (badKey || (+g.base || 0) > 0 || (+g.st || 0) + 5 * (E.cores(nx) + (+g.lost || 0)) > E.galSum(g)) return J({ error: "Spielstand abgelehnt: Galactonit ohne Beleg", code: "reject", reasons: ["gal first save"] }, 409); } catch (_e) { /* ungültig → unten wie bisher */ } }
       if (prev) { try { const pv = JSON.parse(await gunzip(prev.z)); E.load(pv); E.load(nx); const dt = Date.now() - (Date.parse(prev.updated) || 0);
           // Admin-Geschenke: eingelöste Geschenke müssen im Stand bleiben (kein Überschreiben durch alte Kopien); neu enthaltene zählen als verdiente DM
           const gl = must(await db.from("ge_gift").select("id,dm").eq("name_l", a.name_l).not("claimed", "is", null)) as any[];
