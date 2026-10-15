@@ -383,8 +383,8 @@ E.send=function(pid,ships,to,mission,pct,cargo){
  let dur=E.flightTime(pl,to,ships,pct)*1000;
  const dst=to.moon?S.planets[S.planets[findOwn(to)]?.moonId]:S.planets[findOwn(to)];
  // Review V2 (F15): Sternentor/Wurmloch nur Schiffe ohne Fracht, 5 s, Abklingzeit 60/45/30/20/10 Min. an beiden Endpunkten (niedrigere Stufe zählt)
- let gate=null;if(mission==='deploy'&&dst&&!(cargo.m+cargo.k+cargo.g)){const gs=E.lv(pl,'stargate')&&E.lv(dst,'stargate')?'stargate':(pl.moon&&dst.moon&&E.lv(pl,'wormhole')&&E.lv(dst,'wormhole'))?'wormhole':null;
-  if(gs&&E.gateReady(pl)&&E.gateReady(dst)){gate={gs,lv:Math.min(E.bEff(pl,gs),E.bEff(dst,gs)),dst};dur=5000}}
+ let gate=null;if(mission==='deploy'&&dst){const gs=E.lv(pl,'stargate')&&E.lv(dst,'stargate')?'stargate':(pl.moon&&dst.moon&&E.lv(pl,'wormhole')&&E.lv(dst,'wormhole'))?'wormhole':null;
+  if(gs&&E.gateReady(pl)&&E.gateReady(dst)){gate={gs,lv:Math.min(E.bEff(pl,gs),E.bEff(dst,gs)),dst};dur=5000;cargo={m:0,k:0,g:0}}} // Ladung bleibt am Start
  pl.r.g-=fuel+cargo.g;pl.r.m-=cargo.m;pl.r.k-=cargo.k;for(const id in ships){pl.ships[id]-=ships[id];if(!pl.ships[id])delete pl.ships[id]}
  if(gate){const cd=E.gateCd(gate.lv);pl.gcd=now()+cd;gate.dst.gcd=now()+cd}
  const f={id:S.nextFleet++,mission,from:pid,fromC:{g:pl.g,s:pl.s,p:pl.p,moon:!!pl.moon},to:{g:to.g,s:to.s,p:to.p,moon:!!to.moon},ships,cargo,pct,depart:now(),arrive:now()+dur,dur,phase:'out'};

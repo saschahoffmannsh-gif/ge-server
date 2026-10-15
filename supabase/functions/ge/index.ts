@@ -91,14 +91,15 @@ async function myAlly(name: string) { const rows = must(await db.from("ge_ally")
 async function personal(a: any) {
   const inc = must(await db.from("ge_fleet").select("id,mission,data,arrive,from_l").eq("to_l", a.name_l).eq("status", "out")) as any[];
   const myPub = (must(await db.from("ge_pub").select("data").eq("name_l", a.name_l).maybeSingle()) as any)?.data || {};
-  // Review V2 Radar: L1 Ankunft, L2 Mission, L3 grobe Anzahl, L4 Klassen, L5 Anzahl soweit der Spionagevergleich es erlaubt
+  // Review V2 Radar: Warnung immer (ohne Radar nur grobe Zeit), L1 präzise Ankunft, L2 Mission, L3 grobe Anzahl, L4 Klassen, L5 Anzahl soweit der Spionagevergleich es erlaubt
   const radarAt = (to: any) => { const sn = (myPub.snap || []).find((q: any) => q.g === to?.g && q.s === to?.s && q.p === to?.p); return Math.min(5, +(sn?.radar) || 0); };
   const myEsp = +(myPub.tech?.espionage) || 0;
   const ev = must(await db.from("ge_event").select("id,data,created").eq("name_l", a.name_l).eq("acked", false).order("id").limit(50)) as any[];
   const al = await myAlly(a.name);
   return { incoming: inc.map((f) => { const lv = radarAt(f.data.to); const n = Object.values(f.data.ships || {}).reduce((x: number, y: any) => x + (+y || 0), 0) as number; const o: any = { id: f.id, to: f.data.to, radar: lv };
-      if (lv >= 1) o.arrive = f.arrive; if (lv >= 2) { o.mission = f.mission; o.from = f.data.from; } if (lv >= 3) o.nRough = n < 10 ? "<10" : n < 100 ? "10–99" : n < 1000 ? "100–999" : "≥1000";
-      if (lv >= 4) o.classes = Object.keys(f.data.ships || {}); if (lv >= 5 && myEsp >= (+(f.data.esp) || 0)) { o.n = n; o.ships = f.data.ships; } return o; }).filter((o: any) => o.radar >= 1),
+      o.arrive = lv >= 1 ? f.arrive : Math.ceil(f.arrive / 900e3) * 900e3; if (lv < 1) o.approx = 1; // Warnung immer; präzise Ankunft erst ab Radar 1
+      if (lv >= 2) { o.mission = f.mission; o.from = f.data.from; } if (lv >= 3) o.nRough = n < 10 ? "<10" : n < 100 ? "10–99" : n < 1000 ? "100–999" : "≥1000";
+      if (lv >= 4) o.classes = Object.keys(f.data.ships || {}); if (lv >= 5 && myEsp >= (+(f.data.esp) || 0)) { o.n = n; o.ships = f.data.ships; } return o; }),
     events: ev.map((e) => ({ id: e.id, ...e.data })), ally: al ? { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members, apps: al.apps } : null };
 }
 async function resolveDue(f: { to_l: string }) { const rows = must(await db.from("ge_fleet").select("*").eq("to_l", f.to_l).eq("status", "out").lte("arrive", Date.now())) as any[]; for (const r of rows) await resolve(r); }
