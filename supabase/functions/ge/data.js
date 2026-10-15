@@ -6,24 +6,24 @@ GE.RES = {m:'Metall',k:'Kristall',g:'Gas',e:'Energie',dm:'Dunkle Materie'};
 // Gebäude: c=[M,K,G], f=Faktor, req, img = Panoramabild, pano = Hotspot
 GE.BUILD = {
  metal_mine:{n:'Metallmine',c:[60,15,0],f:1.5,img:'Bergbau',d:'Fördert Metall aus der Planetenkruste. Grundlage jeder Wirtschaft.',prod:'m'},
- crystal_mine:{n:'Kristallmine',c:[48,24,0],f:1.6,img:'Schmiede',d:'Baut Kristall ab – in Galaxy Empire der Engpass-Rohstoff.',prod:'k'},
- gas_mine:{n:'Gasförderung',c:[225,75,0],f:1.5,img:'Raffinerie',d:'Gewinnt Gas aus der Atmosphäre. Kalte Planeten fördern mehr.',prod:'g'},
+ crystal_mine:{n:'Kristallmine',c:[48,24,0],f:1.6,fs:[[16,30,3,2],[31,40,27,20]],img:'Schmiede',d:'Baut Kristall ab – in Galaxy Empire der Engpass-Rohstoff.',prod:'k'},
+ gas_mine:{n:'Gasförderung',c:[225,75,0],f:1.5,fs:[[16,30,7,5],[31,40,13,10]],img:'Raffinerie',d:'Gewinnt Gas aus der Atmosphäre. Kalte Planeten fördern mehr.',prod:'g'},
  power:{n:'Kraftwerk',c:[75,30,0],f:1.5,img:'Kraftwerk',d:'Erzeugt Energie für Minen und Anlagen. Energietechnik steigert die Leistung.',prod:'e'},
  robotics:{n:'Roboterfabrik',c:[400,120,200],f:2,img:'Roboter_Labor',d:'Roboter beschleunigen den Bau aller Gebäude.'},
  nanite:{n:'Nanitenfabrik',c:[400000,200000,60000],f:2,img:'KI_Center',req:{robotics:8,computer:8},d:'Halbiert pro Stufe die Bauzeit von Gebäuden, Schiffen und Verteidigung.'},
  shipyard:{n:'Raumschiffwerft',c:[400,200,100],f:2,img:'Werft',req:{robotics:2},d:'Baut Schiffe und Verteidigungsanlagen. Jede Stufe verkürzt die Bauzeit.'},
  lab:{n:'Forschungslabor',c:[200,400,200],f:2,img:'Forschung',req:{robotics:1},d:'Ermöglicht Forschung. Höhere Stufen erforschen schneller und schalten Technologien frei.'},
- store:{n:'Lager',c:[1000,500,250],f:2,img:'Lager',grp:'store',d:'Ein Lager für alle Rohstoffe: erhöht die Kapazität für Metall, Kristall und Gas.'},
- radar:{n:'Radaranlage',c:[20000,20000,1000],f:2,req:{shipyard:1},d:'Erkennt anrückende feindliche Flotten. Höhere Stufen zeigen Ankunft und Schiffstypen.'},
- alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,img:'Allianzzentrum',req:{robotics:1},d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz.'},
- galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit: ab Stufe 1 kann auf diesem Planeten ein Galactonit-Kern (5 Steine) eingesetzt werden.'},
+ store:{n:'Lager',c:[1000,500,250],f:2,fs:[[21,40,9,5]],img:'Lager',grp:'store',d:'Ein Lager für alle Rohstoffe: erhöht die Kapazität für Metall, Kristall und Gas.'},
+ radar:{n:'Radaranlage',c:[20000,20000,1000],f:2,cap:5,req:{shipyard:1},d:'Angriffe werden immer gemeldet. Radar-Leiter: L1 genaue Ankunft, L2 Mission, L3 grobe Anzahl, L4 Schiffsklassen, L5 genauerer Bestand (soweit dein Spionagevergleich es erlaubt). Keine gegnerische Technik oder Ladung.'},
+ alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,cap:1,img:'Allianzzentrum',req:{robotics:1},d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz. Stufe 1 ist der Abschluss, bis das gemeinsame Depot umgesetzt ist.'},
+ galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,cap:5,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit: ab Stufe 1 kann auf diesem Planeten ein Galactonit-Kern (5 Steine) eingesetzt werden. Höhere Stufen senken das Bruchrisiko beim Kernwechsel: 50/40/30/20/10 % (Stufe 1–5).'},
  terraformer:{n:'Terraformer',c:[0,50000,100000],f:2,req:{robotics:8,energy:8},d:'Formt die Planetenkruste um: +5 Bauplätze (Felder) je Stufe. Belegt selbst kein Feld – auch auf vollen Planeten baubar.'},
- stargate:{n:'Sternentor',c:[2000000,4000000,2000000],f:2,req:{hyper:7,shipyard:10},d:'Verlegt Flotten ohne Flugzeit zwischen eigenen Planeten mit Sternentor.'},
+ stargate:{n:'Sternentor',c:[2000000,4000000,2000000],f:2,cap:5,req:{hyper:7,shipyard:10},d:'Verlegt Schiffe (ohne Ladung) in 5 Sekunden zwischen eigenen Planeten mit Sternentor. Danach Abklingzeit an Start und Ziel: 60/45/30/20/10 Min. (Stufe 1–5, die niedrigere Endpunktstufe zählt).'},
  // Mond
- moon_base:{n:'Mondbasis',c:[20000,40000,20000],f:2,moon:1,d:'Jede Stufe schafft 3 zusätzliche Felder auf dem Mond.'},
- pioneer:{n:'Pionierlabor',c:[50000,100000,50000],f:2,moon:1,req:{moon_base:1},d:'Pionierforschung auf dem Mond: +2 % Kampfstärke aller Schiffe je Stufe.'},
- eux:{n:'EU-X Radarphalanx',c:[20000,40000,20000],f:2,moon:1,req:{moon_base:1},d:'Scannt Flottenbewegungen im Umkreis von (Stufe² − 1) Systemen.'},
- wormhole:{n:'Wurmlochgenerator',c:[2000000,4000000,2000000],f:2,moon:1,req:{moon_base:1,hyper:7},d:'Sprungtor: verlegt Schiffe sofort zwischen Monden.'}
+ moon_base:{n:'Mondbasis',c:[20000,40000,20000],f:2,moon:1,d:'Jede Stufe schafft 3 zusätzliche Felder auf dem Mond; die Basis belegt selbst 1 Feld je Stufe – netto +2 freie Felder je Stufe.'},
+ pioneer:{n:'Pionierlabor',c:[50000,100000,50000],f:2,moon:1,req:{moon_base:1},d:'Pionierforschung auf dem Mond: +2 % Grundangriff aller Einheiten je Stufe des höchsten Pionierlabors (Monde werden nicht addiert) – in allen Kämpfen.'},
+ eux:{n:'EU-X Radarphalanx',c:[20000,40000,20000],f:2,cap:0,moon:1,req:{moon_base:1},d:'Noch nicht verfügbar: wird erst mit einem echten serverseitigen Flottenscan freigegeben.'},
+ wormhole:{n:'Wurmlochgenerator',c:[2000000,4000000,2000000],f:2,cap:5,moon:1,req:{moon_base:1,hyper:7},d:'Verlegt Schiffe (ohne Ladung) in 5 Sekunden zwischen Monden mit Wurmloch. Abklingzeit an Start und Ziel 60/45/30/20/10 Min. (niedrigere Endpunktstufe).'}
 };
 // ===== v42 Stufen-Tabelle (Fortschrittsbremse) =====
 // Gilt für JEDEN Ausbauschritt auf Stufe L (nicht nur fürs Freischalten). Client (Bau-/Forschungsknöpfe) UND Server
@@ -81,24 +81,24 @@ GE.PANO={Bergbau:'metal_mine',Schmiede:'crystal_mine',Raffinerie:'gas_mine',Kraf
 // Forschung: cat basic/adv/combat
 GE.TECH = {
  energy:{n:'Energietechnik',cat:'Basis',c:[0,800,400],f:1.65,req:{lab:1},d:'Steigert die Leistung des Kraftwerks. Voraussetzung vieler Technologien.'},
- laser:{n:'Lasertechnik',cat:'Basis',c:[200,100,0],f:1.65,req:{lab:1,energy:2},d:'Gebündeltes Licht – Grundlage der Laserwaffen.'},
- ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],f:1.85,req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
- hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],f:1.85,req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
+ laser:{n:'Lasertechnik',cat:'Basis',c:[200,100,0],f:1.65,cap:12,req:{lab:1,energy:2},d:'Gebündeltes Licht – Grundlage der Laserwaffen.'},
+ ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],f:1.85,cap:4,req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
+ hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],f:1.85,cap:7,req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
  plasma:{n:'Plasmatechnik',cat:'Basis',c:[2000,4000,1000],f:1.85,req:{lab:6,energy:6,laser:8,ion:4},d:'Plasma als Waffe. +1 % Metall-, +0,66 % Kristall-, +0,33 % Gasproduktion je Stufe.'},
  espionage:{n:'Spionagetechnik',cat:'Fortgeschritten',c:[200,1000,200],f:1.65,req:{lab:3},d:'Bessere Spionageberichte. Im Nebel: bis Stufe 10 +0,5 %-Punkte Schiffsfundchance je Stufe, jede Stufe +2 % Schiffsfund-Budget.'},
  computer:{n:'Computertechnik',cat:'Fortgeschritten',c:[0,400,600],f:1.65,req:{lab:1},d:'+1 Flottenslot je 2 Stufen (Nebelflüge zählen nicht).'},
- astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,req:{lab:3,espionage:3,impulse:2},d:'Je 2 Stufen +1 Planet (max. 8 Planeten). Parallele Nebelplätze kontoweit: 1/2/3/4 ab Stufe 1/4/9/12 (das Tageslimit von 25 Erkundungen bleibt).'},
+ astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,cap:14,req:{lab:3,espionage:3,impulse:2},d:'Je 2 Stufen +1 Planet (max. 8 Planeten). Parallele Nebelplätze kontoweit: 1/2/3/4 ab Stufe 1/4/9/12 (das Tageslimit von 25 Erkundungen bleibt).'},
  ultra:{n:'Ultratemperatur',cat:'Fortgeschritten',c:[5000,10000,5000],f:1.85,req:{lab:6,energy:6},d:'Hitzebeständige Kollektoren: +2 % Energieproduktion je Stufe.'},
- antigrav:{n:'Antigravitation',cat:'Fortgeschritten',c:[10000,20000,10000],f:1.85,req:{lab:8,hyper:5},d:'Hebt die Schwerkraft auf. Voraussetzung für Interceptor, Dreadnought und Iron Behemoth.'},
+ antigrav:{n:'Antigravitation',cat:'Fortgeschritten',c:[10000,20000,10000],f:1.85,cap:6,req:{lab:8,hyper:5},d:'Hebt die Schwerkraft auf. Voraussetzung für Interceptor, Dreadnought und Iron Behemoth.'},
  alloy:{n:'Legierungsortung',cat:'Fortgeschritten',c:[3000,6000,2000],f:1.85,req:{lab:5,espionage:5},d:'Spürt Erzadern auf: +2 % Rohstofffundmenge im Nebel je Stufe (bis der Laderaum voll ist).'},
- dynpower:{n:'Dynamische Energie',cat:'Fortgeschritten',c:[4000,4000,4000],f:1.85,req:{lab:5,energy:5},d:'Effizientere Triebwerke: −2 % Treibstoffverbrauch je Stufe (max. −40 %).'},
+ dynpower:{n:'Dynamische Energie',cat:'Fortgeschritten',c:[4000,4000,4000],f:1.85,cap:20,req:{lab:5,energy:5},d:'Effizientere Triebwerke: −2 % Treibstoffverbrauch je Stufe (max. −40 %).'},
  combustion:{n:'Verbrennungstriebwerk',cat:'Kampf',c:[400,0,600],f:1.65,req:{lab:1,energy:1},d:'+10 % Geschwindigkeit für Transporter, Jäger, Recycler und Sonden.'},
  impulse:{n:'Impulstriebwerk',cat:'Kampf',c:[2000,4000,600],f:1.65,req:{lab:2,energy:1},d:'+20 % Geschwindigkeit für Schwere Jäger, Kreuzer, Bomber und Kolonieschiffe.'},
  hyperdrive:{n:'Hyperraumantrieb',cat:'Kampf',c:[10000,20000,6000],f:1.85,req:{lab:7,hyper:3,impulse:4},d:'+30 % Geschwindigkeit für Schlachtschiffe und Großkampfschiffe.'},
  weapons:{n:'Waffentechnik',cat:'Kampf',c:[800,200,0],f:1.75,req:{lab:4},d:'+10 % Angriffskraft aller Einheiten je Stufe.'},
  shielding:{n:'Schildtechnik',cat:'Kampf',c:[200,600,0],f:1.75,req:{lab:6,energy:3},d:'+10 % Schildstärke aller Einheiten je Stufe.'},
  armour:{n:'Strength (Panzerung)',cat:'Kampf',c:[1000,0,0],f:1.75,req:{lab:2},d:'+10 % Hüllenstruktur aller Einheiten je Stufe.'},
- discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],f:1.85,req:{galacto:1},d:'Galactonit-Forschung (Voraussetzung im Missionslog). Galactonit selbst entsteht nur in PvP-Trümmerfeldern.'}
+ discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],f:1.85,cap:0,req:{galacto:1},d:'Vorerst nicht erforschbar – derzeit ohne Funktion. Bereits erforschte Stufen bleiben als Altstand erhalten.'}
 };
 
 // Schiffe: c, hull(Struktur), sh, at, sp, cargo, fuel, drive
@@ -112,8 +112,8 @@ GE.SHIP = {
  ic:{n:'Interceptor',c:[30000,40000,15000],sh:400,at:700,sp:10000,cargo:750,fuel:250,drv:'hyperdrive',req:{shipyard:8,hyper:5,hyperdrive:5,laser:12,antigrav:1},d:'Seit 2013 berüchtigt: Schnellfeuer gegen fast alle mittleren Schiffe.'},
  bo:{n:'Bomber',c:[50000,25000,15000],sh:500,at:1000,sp:4000,cargo:500,fuel:1000,drv:'impulse',req:{shipyard:8,impulse:6,plasma:5},d:'Spezialist gegen Verteidigungsanlagen.'},
  de:{n:'Zerstörer',c:[60000,50000,15000],sh:500,at:2000,sp:5000,cargo:2000,fuel:1000,drv:'hyperdrive',req:{shipyard:9,hyperdrive:6,hyper:5},d:'Schweres Kriegsschiff mit enormer Feuerkraft.'},
- dn:{n:'Dreadnought',c:[5000000,4000000,1000000],sh:50000,at:200000,sp:100,cargo:1000000,fuel:1,drv:'hyperdrive',req:{shipyard:12,hyperdrive:7,hyper:6,antigrav:3},d:'Schwimmende Festung mit Schnellfeuer gegen nahezu alles.'},
- ib:{n:'Iron Behemoth',c:[10000000,8000000,3000000],sh:80000,at:300000,sp:80,cargo:2000000,fuel:1,drv:'hyperdrive',req:{shipyard:15,hyperdrive:9,antigrav:6},d:'Das Endgame-Schiff von Galaxy Empire. Stärker als jedes Dreadnought.'},
+ dn:{n:'Dreadnought',c:[5000000,4000000,1000000],sh:50000,at:200000,sp:100,cargo:1000000,fuel:5000,drv:'hyperdrive',req:{shipyard:12,hyperdrive:7,hyper:6,antigrav:3},d:'Schwimmende Festung mit Schnellfeuer gegen nahezu alles.'},
+ ib:{n:'Iron Behemoth',c:[10000000,8000000,3000000],sh:80000,at:300000,sp:80,cargo:2000000,fuel:10000,drv:'hyperdrive',req:{shipyard:15,hyperdrive:9,antigrav:6},d:'Das Endgame-Schiff von Galaxy Empire. Stärker als jedes Dreadnought.'},
  rc:{n:'Recycler',c:[10000,6000,2000],sh:10,at:1,sp:2000,cargo:20000,fuel:300,drv:'combustion',req:{shipyard:4,combustion:6,shielding:2},d:'Sammelt Trümmerfelder ein – und ortet im Nebel am meisten Rohstoffe je Schiff (Ortung 24.000), braucht aber viel Gas.'},
  pr:{n:'Spionagesonde',c:[0,1000,0],sh:0,at:0,sp:100000000,cargo:5,fuel:1,drv:'combustion',req:{shipyard:3,combustion:3,espionage:2},d:'Spioniert fremde Planeten aus. Im Nebel erhöhen Sonden Chance und Umfang von Schiffsfunden.'},
  co:{n:'Kolonieschiff',c:[10000,20000,10000],sh:100,at:50,sp:2500,cargo:7500,fuel:1000,drv:'impulse',req:{shipyard:4,impulse:3},d:'Gründet eine neue Kolonie auf einer freien Position.'},
@@ -124,10 +124,10 @@ GE.DEF = {
  ll:{n:'Leichtes Lasergeschütz',c:[1500,500,0],sh:25,at:100,req:{shipyard:2,energy:1,laser:3},d:'Solide Grundverteidigung.'},
  hl:{n:'Schweres Lasergeschütz',c:[6000,2000,0],sh:100,at:250,req:{shipyard:4,energy:3,laser:6},d:'Starker Laser gegen Jäger.'},
  gauss:{n:'MK2-Kanone',c:[20000,15000,2000],sh:200,at:1100,req:{shipyard:6,energy:6,weapons:3,shielding:1},d:'Schwere Projektilkanone.'},
- ionc:{n:'Ionengeschütz',c:[2000,6000,0],sh:500,at:150,req:{shipyard:4,ion:4},d:'Hoher Schild, schützt andere Anlagen.'},
+ ionc:{n:'Ionengeschütz',c:[2000,6000,0],sh:500,at:150,req:{shipyard:4,ion:4},d:'Sehr hoher eigener Schild (schützt nur sich selbst, keine anderen Anlagen).'},
  plasmat:{n:'Plasmawerfer',c:[50000,50000,30000],sh:300,at:3000,req:{shipyard:8,plasma:7},d:'Die stärkste Verteidigungsanlage.'},
- sdome:{n:'Kleine Schildkuppel',c:[10000,10000,0],sh:2000,at:1,max:1,req:{shipyard:1,shielding:2},d:'Schützt den ganzen Planeten. Nur einmal baubar.'},
- ldome:{n:'Große Schildkuppel',c:[50000,50000,0],sh:10000,at:1,max:1,req:{shipyard:6,shielding:6},d:'Massiver Planetenschild. Nur einmal baubar.'}
+ sdome:{n:'Kleine Schildkuppel',c:[10000,10000,0],sh:2000,at:1,max:1,req:{shipyard:1,shielding:2},d:'Große Einzelanlage mit starkem eigenem Schild (kein planetenweiter Schutz anderer Ziele). Nur einmal baubar.'},
+ ldome:{n:'Große Schildkuppel',c:[50000,50000,0],sh:10000,at:1,max:1,req:{shipyard:6,shielding:6},d:'Sehr starke Einzelanlage mit massivem eigenem Schild (kein planetenweiter Schutz anderer Ziele). Nur einmal baubar.'}
 };
 (function(){for(const t of [GE.SHIP,GE.DEF])for(const k in t)t[k].hull=t[k].c[0]+t[k].c[1];})();
 // Schnellfeuer [OG]
@@ -143,18 +143,18 @@ GE.COMMANDERS = {
  technocrat:{n:'Technokrat',d:'−25 % Forschungszeit, +2 Spionagestufen',p7:20,p30:80},
  admiral:{n:'Admiral',d:'+2 Flottenslots, −10 % Bauzeit für Verteidigung',p7:20,p30:80},
  geologist:{n:'Geologe',d:'+10 % Rohstoffproduktion',p7:25,p30:100},
- engineer:{n:'Ingenieur',d:'Verteidigung verliert im Kampf nur 50 %',p7:25,p30:100},
+ engineer:{n:'Ingenieur',d:'Halbiert die dauerhaften Verteidigungsverluste: jede zerstörte Anlage wird mit 85 % statt 70 % Chance wiederaufgebaut',p7:25,p30:100},
  guider:{n:'Guider',d:'Senkt Nebelverluste durch Piraten und Navigationsschäden um 35 %',p7:20,p30:80}
 };
 GE.ITEMS = {
- armor1:{n:'Schiffspanzerplatte Lv1',d:'+10 % Hülle aller Schiffe für 24 h',buff:'hull',v:0.10},
- armor2:{n:'Schiffspanzerplatte Lv2',d:'+20 % Hülle aller Schiffe für 24 h',buff:'hull',v:0.20},
- energy1:{n:'Energiegerät Lv1',d:'+10 % Energieproduktion für 24 h',buff:'energy',v:0.10},
- energy2:{n:'Energiegerät Lv2',d:'+20 % Energieproduktion für 24 h',buff:'energy',v:0.20},
- power1:{n:'Leistungsadapter Lv1',d:'+10 % Rohstoffproduktion für 24 h',buff:'prod',v:0.10},
- power2:{n:'Leistungsadapter Lv2',d:'+20 % Rohstoffproduktion für 24 h',buff:'prod',v:0.20},
- engine1:{n:'Triebwerkssystem Lv1',d:'+10 % Flottengeschwindigkeit für 24 h',buff:'speed',v:0.10},
- engine2:{n:'Triebwerkssystem Lv2',d:'+20 % Flottengeschwindigkeit für 24 h',buff:'speed',v:0.20}
+ armor1:{n:'Schiffspanzerplatte Lv1',d:'+10 % Hülle aller Schiffe für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'hull',v:0.10},
+ armor2:{n:'Schiffspanzerplatte Lv2',d:'+20 % Hülle aller Schiffe für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'hull',v:0.20},
+ energy1:{n:'Energiegerät Lv1',d:'+10 % Energieproduktion für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'energy',v:0.10},
+ energy2:{n:'Energiegerät Lv2',d:'+20 % Energieproduktion für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'energy',v:0.20},
+ power1:{n:'Leistungsadapter Lv1',d:'+10 % Rohstoffproduktion für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'prod',v:0.10},
+ power2:{n:'Leistungsadapter Lv2',d:'+20 % Rohstoffproduktion für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'prod',v:0.20},
+ engine1:{n:'Triebwerkssystem Lv1',d:'+10 % Flottengeschwindigkeit für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'speed',v:0.10},
+ engine2:{n:'Triebwerkssystem Lv2',d:'+20 % Flottengeschwindigkeit für 24 Echtzeit-Stunden (gleiche Wirkung: höchstens die stärkste zählt; gleiche Stärke verlängert um 24 h, max. 72 h im Voraus)',buff:'speed',v:0.20}
 };
 GE.CORES = {
  at:{n:'Angriffskern',d:'+20 % Angriff (Flotten von diesem Planeten und seine Verteidigung)',stats:['at'],v:0.20},
@@ -213,3 +213,7 @@ GE.FAKE_NAMES=['Nyx','Vortex','Kraken','Orion77','StarLord','Helix','Nova','Zeph
 GE.ALLY_TAGS=['DARK','GEF','NOVA','ORB','PAX','RED','SOL','VOID','WOLF','XEN'];
 
 GE.PLANET_POOL=['heisser_planet','kristallplanet','bewohnbarer_planet','heimatwelt','gasriese','eisplanet','p2_wueste','p2_toxisch','p2_ozean','p2_lava','p2_ringgas','p2_mondgrau','p2_tuerkis','p2_eisenrot'];
+// Review V2 (F05): bestätigte DM-Quellen der Kampagnenstränge (Validator) und einmalige Schiffsgeschenke
+GE.CAMP_DM={k1:5,k2:8,k3:10,a1:5,a2:5,i1:8,i2:15,f1:5,f2:8,f3:8,f4:10,g1:5,g2:3,g3:10,s1:5,s2:15,r1:10,c1:5,c2:2};
+GE.CAMP_SHIPS={T24:{sc:1}};
+GE.CAMP_RES_MAX=5e6; // Obergrenze je Kampagnen-Zuschuss (Zuschüsse sind beim Freischalten festgeschrieben)

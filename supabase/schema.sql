@@ -12,3 +12,15 @@ create table if not exists ge_ally(tag text primary key, name text not null, fou
 create table if not exists ge_chat(id bigserial primary key, ch text not null, name text not null, txt text not null, t bigint not null);
 create index if not exists ge_chat_ch on ge_chat(ch,id);
 alter table ge_fleet enable row level security; alter table ge_event enable row level security; alter table ge_ally enable row level security; alter table ge_chat enable row level security;
+-- Review A4/F10: vollständiges Schema (ge_gift mit tatsächlich abgefragten Spalten), Indizes, Revisions-/Lease-Spalten, Cron
+create table if not exists ge_gift(id bigserial primary key, name_l text not null references ge_acct(name_l) on delete cascade, dm integer not null default 0, msg text default '', sender text default 'Admin', created bigint not null, claimed bigint);
+create index if not exists ge_gift_name on ge_gift(name_l);
+alter table ge_gift enable row level security;
+alter table ge_acct add column if not exists token_t bigint;
+create unique index if not exists ge_acct_home_u on ge_acct(home);
+alter table ge_fleet add column if not exists busy_at bigint;
+alter table ge_fleet add column if not exists cid text;
+create unique index if not exists ge_fleet_cid_u on ge_fleet(from_l, cid) where cid is not null;
+create index if not exists ge_event_created on ge_event(name_l, id);
+-- Stündlicher Rang-Schnappschuss (URL an das eigene Projekt anpassen):
+-- select cron.schedule('ge-tick','5 * * * *',$$select net.http_post(url:='https://<ref>.supabase.co/functions/v1/ge/api/tick', headers:='{"content-type":"application/json"}'::jsonb, body:='{}'::jsonb)$$);

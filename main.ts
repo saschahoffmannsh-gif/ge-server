@@ -1,3 +1,5 @@
+// HINWEIS (Review A4): main.ts ist ein veralteter Deno-KV-Prototyp OHNE die Prüfungen der Supabase-Function (Validator, Galactonit, Nebel, PvP).
+// Er ist NICHT Teil des unterstützten Produktionsumfangs und darf nicht als Server betrieben werden. Produktion: supabase/functions/ge/index.ts.
 // Galaxy Empire – Multiplayer-Server, Stufe 1: Login (Name+PIN+Einladung), Spielstand-Sync, gemeinsame Karte, Rangliste, NPC-Spieler.
 // Deno Deploy (console.deno.com) + Deno KV. Lokal: deno task dev
 import { makeNPCs, stateAt, summary, allyNames } from "./lib/npc.js";

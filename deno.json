@@ -1,1 +1,1 @@
-{ "tasks": { "dev": "deno run -A --unstable-kv --unstable-cron main.ts", "test": "deno run -A --unstable-kv --unstable-cron test.ts" }, "unstable": ["kv", "cron"] }
+{ "tasks": { "dev": "deno run -A --unstable-kv --unstable-cron main.ts", "check": "deno check supabase/functions/ge/index.ts", "test": "deno check supabase/functions/ge/index.ts" }, "unstable": ["kv", "cron"] }
