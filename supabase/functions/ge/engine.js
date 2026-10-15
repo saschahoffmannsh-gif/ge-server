@@ -322,6 +322,8 @@ E.budget=kind=>{const p=E.pve(),h=E.BUDGET_H[kind];return{m:Math.floor(h*p.P.m),
 E.npcLeft=()=>{const b=E.budget('npc'),u=E.pve().npc;return{m:Math.max(0,b.m-u.m),k:Math.max(0,b.k-u.k),g:Math.max(0,b.g-u.g)}};
 // Anteil eines Nebel-Starts: Versuch 1–3 je 25 %, Versuch 4–12 je 1/36 des Fensterbudgets
 E.nebShare=n=>{const b=E.budget('neb');const f=n<=3?0.25:n<=E.NEB_MAX?1/36:0;return{m:Math.floor(b.m*f),k:Math.floor(b.k*f),g:Math.floor(b.g*f)}};
+// Admin-Geschenk anwenden (idempotent über S.gifts)
+E.applyGift=(id,dm)=>{S.gifts=S.gifts||{};if(S.gifts[id])return false;S.gifts[id]=1;E.addDM(dm);emit('change');return true};
 E.addDM=n=>{n=Math.floor(n)||0;if(n<=0)return;S.dm+=n;S.dmLed=(S.dmLed||0)+n};
 E.protectedUntil=()=>(S.created||0)+7*24*HOUR;
 E.colonies=()=>S.order.filter(id=>!S.planets[id].moon).length-1;
@@ -666,10 +668,10 @@ E.abandon=function(pid){if(pid===S.home)return 'Der Heimatplanet kann nicht aufg
 //  1) Jede neue Gebäude-/Forschungsstufe erfüllt die Stufen-Regeln (GE.LVRULE, Labor-Stufe, Basis-req) und passt ins Lager.
 //  2) Bauzeit: Summe der Bauzeiten (abzgl. Gratis-Fertigstellung) je Planet ≤ verstrichene Zeit × Bauschleifen + mit DM gekaufte Zeit.
 //  3) Dunkle Materie wächst höchstens um die erreichbaren Belohnungen; Rohstoffe: Kosten ≤ Vorrat + Produktion + Belohnungen (großzügig).
-E.validateSave=function(prev,next,dtMs){const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
+E.validateSave=function(prev,next,dtMs,extraDM){extraDM=Math.max(0,+extraDM||0);const errs=[];if(!prev||!next||!next.planets)return errs;const keep=S;
  try{S=next;const dt=Math.max(0,dtMs);const t0=+prev.t||0;const days=dt/864e5;
   // Progression v1: DM-Ledger statt Zeitgutschrift – nur verdiente DM (dmLed) dürfen den Bestand erhöhen bzw. Beschleunigung bezahlen
-  const earnRaw=Math.max(0,(+next.dmLed||0)-(+prev.dmLed||0)),earnCap=60+50*Math.ceil(days+1e-9);if(earnRaw>earnCap)errs.push(`DM-Ledger +${Math.round(earnRaw)} (erlaubt ${Math.round(earnCap)})`);let earned=Math.min(earnRaw,earnCap);if(!(+prev.rv>=2))earned=Math.max(earned,Math.min(Math.max(0,(+next.dm||0)-(+prev.dm||0)),80+60*days)); // Übergang: Stand vor der Migration
+  const earnRaw=Math.max(0,(+next.dmLed||0)-(+prev.dmLed||0)-extraDM),earnCap=60+50*Math.ceil(days+1e-9);if(earnRaw>earnCap)errs.push(`DM-Ledger +${Math.round(earnRaw)} (erlaubt ${Math.round(earnCap)})`);let earned=Math.min(earnRaw,earnCap)+extraDM; // Admin-Geschenke (serverseitig belegt) zählen vollif(!(+prev.rv>=2))earned=Math.max(earned,Math.min(Math.max(0,(+next.dm||0)-(+prev.dm||0)),80+60*days)); // Übergang: Stand vor der Migration
   const dmGain=(+next.dm||0)-(+prev.dm||0);if(dmGain>earned+5)errs.push(`DM +${Math.round(dmGain)} (verdient ${Math.round(earned)})`);
   const dmSpent=Math.max(0,(+prev.dm||0)+earned-(+next.dm||0));const dmMs=Math.pow(dmSpent/0.75,1/0.9)*60e3+(Math.max(0,(+((next.flags||{}).vUsed)||0)-(+((prev.flags||{}).vUsed)||0))>0?E.VOUCHER_MS:0);
   const tech0=prev.tech||{},tech1=next.tech||{};const qMax=2;let costAll=0,resPrev=0,prodH=0,timeT=0;

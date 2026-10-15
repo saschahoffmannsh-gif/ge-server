@@ -165,22 +165,39 @@ Deno.serve(async (req) => {
       return J({ token: a.token, ...pubAcct(a), hasSave: !!s, saveT: s?.t ?? null });
     }
     if (P === "/api/universe") return J(await universe());
+    // Admin: Geschenk anlegen (nur mit GE_ADMIN_KEY)
+    if (P === "/api/admin/gift" && req.method === "POST") {
+      const key = Deno.env.get("GE_ADMIN_KEY") || ""; if (!key || req.headers.get("x-ge-admin") !== key) return err("Kein Zugriff", 403);
+      const b = await req.json(); const n = norm(b.name); const acct = must(await db.from("ge_acct").select("name_l").eq("name_l", n).maybeSingle()); if (!acct) return err("Konto unbekannt", 404);
+      const dm = Math.max(0, Math.min(100000, Math.floor(+b.dm || 0))); const r = must(await db.from("ge_gift").insert({ name_l: n, dm, msg: String(b.msg || "").slice(0, 300), sender: String(b.sender || "Admin").slice(0, 40), created: Date.now() }).select("id").single()) as any;
+      return J({ ok: true, id: r.id });
+    }
     const a = await auth(req); if (!a) return err("Nicht angemeldet", 401);
     if (P === "/api/me") { const s = must(await db.from("ge_save").select("t").eq("name_l", a.name_l).maybeSingle()) as any; return J({ ...pubAcct(a), hasSave: !!s, saveT: s?.t ?? null }); }
+    if (P === "/api/gifts") { const rows = must(await db.from("ge_gift").select("id,dm,msg,sender,created,claimed").eq("name_l", a.name_l).order("id")) as any[]; return J({ gifts: rows }); }
+    if (P === "/api/gift/claim" && req.method === "POST") { const b = await req.json(); const id = +b.id;
+      const g = must(await db.from("ge_gift").select("id,dm,claimed").eq("id", id).eq("name_l", a.name_l).maybeSingle()) as any; if (!g) return err("Geschenk unbekannt", 404);
+      const up = must(await db.from("ge_gift").update({ claimed: Date.now() }).eq("id", id).eq("name_l", a.name_l).is("claimed", null).select("id")) as any[];
+      return J({ ok: true, id, dm: g.dm, first: up.length > 0 }); }
     if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
     if (P === "/api/save" && req.method === "POST") {
       const b = await req.json(); if (typeof b.z !== "string" || b.z.length > 5_000_000) return err("Ungültiger Spielstand");
       // v41: Server rechnet nach – unmögliche Sprünge (Stufen-Regeln, Bauzeit, DM, Kosten) werden abgelehnt
       let nx: any; try { nx = JSON.parse(await gunzip(b.z)); } catch (_e) { return err("Spielstand unlesbar"); }
       // v42: alte Clients (ohne Stufen-Regeln, z. B. aus dem Cache) dürfen keine Spielstände mehr schreiben
-      if ((+b.cv || 0) < 49) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
+      if ((+b.cv || 0) < 50) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
       // v42: Konto-Reset – nur Spielstände mit der aktuellen Reset-Kennung (rid) werden angenommen; ältere lokale Kopien werden abgewiesen
       { const r = must(await db.from("ge_meta").select("v").eq("k", "rid:" + a.name_l).maybeSingle()) as any;
         if (r && r.v && nx.rid !== r.v.rid) return J({ error: "Dein Konto wurde zurückgesetzt – der neue Spielstand wird geladen", code: "reject", reasons: ["reset"] }, 409); }
       if (+nx.t > Date.now() + 5 * 60e3) return J({ error: "Spielstand aus der Zukunft", code: "reject" }, 409);
       const prev = must(await db.from("ge_save").select("z,t,updated").eq("name_l", a.name_l).maybeSingle()) as any;
       if (prev) { try { const pv = JSON.parse(await gunzip(prev.z)); E.load(pv); E.load(nx); const dt = Date.now() - (Date.parse(prev.updated) || 0);
-          const errs: string[] = E.validateSave(pv, nx, dt);
+          // Admin-Geschenke: eingelöste Geschenke müssen im Stand bleiben (kein Überschreiben durch alte Kopien); neu enthaltene zählen als verdiente DM
+          const gl = must(await db.from("ge_gift").select("id,dm").eq("name_l", a.name_l).not("claimed", "is", null)) as any[];
+          const g1 = nx.gifts || {}, g0 = pv.gifts || {}; const miss = gl.filter((g) => !g1[g.id]);
+          if (miss.length) return J({ error: "Geschenk fehlt im Spielstand – aktueller Stand wird geladen", code: "reject", reasons: ["gift " + miss.map((g) => g.id).join(",")] }, 409);
+          const giftDM = gl.filter((g) => g1[g.id] && !g0[g.id]).reduce((x, g) => x + (+g.dm || 0), 0);
+          const errs: string[] = E.validateSave(pv, nx, dt, giftDM);
           if (errs.length) { console.log("save reject", a.name_l, errs.slice(0, 5)); return J({ error: "Spielstand abgelehnt: " + errs.slice(0, 3).join("; "), code: "reject", reasons: errs.slice(0, 20) }, 409); }
         } catch (e) { console.log("validate fail", (e as Error).message); return J({ error: "Spielstand konnte nicht geprüft werden", code: "reject", reasons: ["validate: " + (e as Error).message] }, 409); } }
       must(await db.from("ge_save").upsert({ name_l: a.name_l, z: b.z, t: +b.t || Date.now(), updated: new Date().toISOString() })); return J({ ok: true });
