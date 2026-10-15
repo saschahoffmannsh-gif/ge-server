@@ -12,10 +12,10 @@ GE.BUILD = {
  robotics:{n:'Roboterfabrik',c:[400,120,200],f:2,img:'Roboter_Labor',d:'Roboter beschleunigen den Bau aller Gebäude.'},
  nanite:{n:'Nanitenfabrik',c:[400000,200000,60000],f:2,img:'KI_Center',req:{robotics:8,computer:8},d:'Halbiert pro Stufe die Bauzeit von Gebäuden, Schiffen und Verteidigung.'},
  shipyard:{n:'Raumschiffwerft',c:[400,200,100],f:2,img:'Werft',req:{robotics:2},d:'Baut Schiffe und Verteidigungsanlagen. Jede Stufe verkürzt die Bauzeit.'},
- lab:{n:'Forschungslabor',c:[200,400,200],f:2,img:'Forschung',d:'Ermöglicht Forschung. Höhere Stufen erforschen schneller und schalten Technologien frei.'},
+ lab:{n:'Forschungslabor',c:[200,400,200],f:2,img:'Forschung',req:{robotics:1},d:'Ermöglicht Forschung. Höhere Stufen erforschen schneller und schalten Technologien frei.'},
  store:{n:'Lager',c:[1000,500,250],f:2,img:'Lager',grp:'store',d:'Ein Lager für alle Rohstoffe: erhöht die Kapazität für Metall, Kristall und Gas.'},
  radar:{n:'Radaranlage',c:[20000,20000,1000],f:2,req:{shipyard:1},d:'Erkennt anrückende feindliche Flotten. Höhere Stufen zeigen Ankunft und Schiffstypen.'},
- alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,img:'Allianzzentrum',d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz.'},
+ alliance:{n:'Allianzdepot',c:[2000,4000,0],f:2,img:'Allianzzentrum',req:{robotics:1},d:'Zentrale für Allianzen. Ermöglicht Beitritt und Gründung einer Allianz.'},
  galacto:{n:'Galactonit-Forschungszentrum',c:[10000,20000,5000],f:2,img:'Waffen',req:{lab:3},d:'Verarbeitet Galactonit. Jede Stufe schaltet einen Sockel für Edelsteine frei.'},
  terraformer:{n:'Terraformer',c:[0,50000,100000],f:2,req:{robotics:8,energy:8},d:'Formt die Planetenkruste um: +5 Bauplätze (Felder) je Stufe. Belegt selbst kein Feld – auch auf vollen Planeten baubar.'},
  stargate:{n:'Sternentor',c:[2000000,4000000,2000000],f:2,req:{hyper:7,shipyard:10},d:'Verlegt Flotten ohne Flugzeit zwischen eigenen Planeten mit Sternentor.'},
@@ -47,23 +47,8 @@ GE.BUILD = {
 //  Terraformer        | Robo 8 + Energie 8 (Basis); Robo ≥ L+7, Energietechnik ≥ L+7
 //  Sternentor         | Hyperraum 7 + Werft 10 (Basis); Hyperraumtechnik ≥ L+6
 // Kapitel-Freischaltungen (Bauen/Forschen-Tabs etc.) kommen zusätzlich aus campaign.js.
-GE.LVRULE={
- _all:(L)=>[['robotics',Math.ceil((L-3)/2)]],
- robotics:(L)=>[['power',L],['metal_mine',L]].concat(L>=4?[['computer',L-3]]:[]),
- metal_mine:(L)=>[['power',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
- crystal_mine:(L)=>[['power',L-1],['metal_mine',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
- gas_mine:(L)=>[['power',L],['crystal_mine',L-2],['robotics',Math.ceil(L/2)-1]].concat(L>=6?[['store',Math.floor(L/3)]]:[],L>=8?[['energy',Math.floor(L/3)]]:[]),
- power:(L)=>[['@mine2',L-3]].concat(L>=6?[['energy',Math.floor((L-4)/2)]]:[]),
- store:(L)=>[['@mine',2*L-1]],
- lab:(L)=>[['robotics',L-2]].concat(L>=4?[['energy',L-2]]:[]),
- shipyard:(L)=>[['robotics',L-2]].concat(L>=3?[['combustion',L-2]]:[]),
- nanite:(L)=>[['robotics',L+7],['computer',L+7]],
- radar:(L)=>[['shipyard',L],['espionage',Math.ceil(L/2)]],
- alliance:(L)=>[['robotics',L]],
- galacto:(L)=>[['lab',L+2]],
- terraformer:(L)=>[['robotics',L+7],['energy',L+7]],
- stargate:(L)=>[['hyper',L+6]]
-};
+// Progression v1 (2026-10): alle alten Stufen-Regeln entfernt – nur noch feste Basis-req.
+GE.LVRULE={};
 // Forschung: Stufe L verlangt IMMER Forschungslabor ≥ max(Basis-Labor, ⌈L/2⌉) plus die Basis-req aus GE.TECH und diese
 // mit der Stufe wachsenden Abhängigkeiten (GE-ähnlicher Technologiebaum):
 //  Energietechnik     | ab L4 Computertechnik ≥ L−3
@@ -85,27 +70,8 @@ GE.LVRULE={
 //  Legierungsortung   | Spionage ≥ L+4
 //  Dynamische Energie | Energie ≥ L+4, Verbrennung ≥ L
 //  Discoverer         | Galactonit-Zentrum ≥ L
-GE.TRULE={
- energy:(L)=>L>=4?[['computer',L-3]]:[],
- laser:(L)=>[['energy',Math.max(2,Math.ceil(L/2))]],
- ion:(L)=>[['laser',L+4],['energy',L+3]],
- plasma:(L)=>[['energy',L+7],['laser',L+9],['ion',L+4]],
- hyper:(L)=>[['energy',L+4],['shielding',L+4]],
- combustion:(L)=>[['energy',Math.ceil((L-1)/2)]],
- impulse:(L)=>[['energy',Math.ceil(L/2)],['combustion',L+1]],
- hyperdrive:(L)=>[['hyper',L+2],['impulse',L+3]],
- computer:(L)=>[['energy',Math.ceil(L/2)]],
- espionage:(L)=>[['computer',Math.ceil(L/2)],['energy',Math.ceil(L/3)]],
- astro:(L)=>[['espionage',L+3],['impulse',L+2],['computer',Math.ceil(L/2)+1]],
- weapons:(L)=>[['energy',Math.ceil(L/2)],['laser',Math.ceil(L/2)]],
- shielding:(L)=>[['energy',L+2],['weapons',L-1]],
- armour:(L)=>[['weapons',L-1],['energy',Math.ceil(L/3)]],
- ultra:(L)=>[['energy',L+5]],
- antigrav:(L)=>[['hyper',L+4],['shielding',L+5]],
- alloy:(L)=>[['espionage',L+4]],
- dynpower:(L)=>[['energy',L+4],['combustion',L]],
- discoverer:(L)=>[['galacto',L]]
-};
+// Progression v1: keine stufenabhängigen Forschungsregeln mehr; Labor = max(Basis, ⌈L/2⌉).
+GE.TRULE={};
 // Schiffe & Verteidigung: Basis-req in GE.SHIP/GE.DEF (Werft-Stufe + Forschung wie in GE), werden bei jedem Bauauftrag geprüft.
 GE.PLANET_B=['metal_mine','crystal_mine','gas_mine','power','store','robotics','nanite','shipyard','lab','radar','alliance','galacto','terraformer','stargate'];
 GE.MOON_B=['moon_base','robotics','shipyard','pioneer','eux','wormhole'];
@@ -114,25 +80,25 @@ GE.PANO={Bergbau:'metal_mine',Schmiede:'crystal_mine',Raffinerie:'gas_mine',Kraf
 
 // Forschung: cat basic/adv/combat
 GE.TECH = {
- energy:{n:'Energietechnik',cat:'Basis',c:[0,800,400],req:{lab:1},d:'Steigert die Leistung des Kraftwerks. Voraussetzung vieler Technologien.'},
- laser:{n:'Lasertechnik',cat:'Basis',c:[200,100,0],req:{lab:1,energy:2},d:'Gebündeltes Licht – Grundlage der Laserwaffen.'},
- ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
- hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
- plasma:{n:'Plasmatechnik',cat:'Basis',c:[2000,4000,1000],req:{lab:4,energy:8,laser:10,ion:5},d:'Plasma als Waffe. +1 % Metall-, +0,66 % Kristall-, +0,33 % Gasproduktion je Stufe.'},
- espionage:{n:'Spionagetechnik',cat:'Fortgeschritten',c:[200,1000,200],req:{lab:3},d:'Bessere Spionageberichte. Ab Stufe 6 höhere Rohstoff-Fundchance im Nebel.'},
- computer:{n:'Computertechnik',cat:'Fortgeschritten',c:[0,400,600],req:{lab:1},d:'+1 Flottenslot je 2 Stufen (Nebelflüge zählen nicht).'},
- astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,req:{lab:3,espionage:4,impulse:3},d:'Je 2 Stufen +1 Kolonie (max. 8). Nebelflotten pro Planet: 2 ab St. 4, 3 ab St. 9, 4 ab St. 12.'},
- ultra:{n:'Ultratemperatur',cat:'Fortgeschritten',c:[5000,10000,5000],req:{lab:6,energy:6},d:'Hitzebeständige Kollektoren: +2 % Energieproduktion je Stufe.'},
- antigrav:{n:'Antigravitation',cat:'Fortgeschritten',c:[10000,20000,10000],req:{lab:8,hyper:5},d:'Hebt die Schwerkraft auf. Voraussetzung für Interceptor, Dreadnought und Iron Behemoth.'},
- alloy:{n:'Legierungsortung',cat:'Fortgeschritten',c:[3000,6000,2000],req:{lab:5,espionage:5},d:'Spürt Erzadern auf: +2 % Rohstoffausbeute im Nebel je Stufe.'},
- dynpower:{n:'Dynamische Energie',cat:'Fortgeschritten',c:[4000,4000,4000],req:{lab:5,energy:5},d:'Effizientere Triebwerke: −2 % Treibstoffverbrauch je Stufe (max. −40 %).'},
- combustion:{n:'Verbrennungstriebwerk',cat:'Kampf',c:[400,0,600],req:{lab:1,energy:1},d:'+10 % Geschwindigkeit für Transporter, Jäger, Recycler und Sonden.'},
- impulse:{n:'Impulstriebwerk',cat:'Kampf',c:[2000,4000,600],req:{lab:2,energy:1},d:'+20 % Geschwindigkeit für Schwere Jäger, Kreuzer, Bomber und Kolonieschiffe.'},
- hyperdrive:{n:'Hyperraumantrieb',cat:'Kampf',c:[10000,20000,6000],req:{lab:7,hyper:3},d:'+30 % Geschwindigkeit für Schlachtschiffe und Großkampfschiffe.'},
- weapons:{n:'Waffentechnik',cat:'Kampf',c:[800,200,0],req:{lab:4},d:'+10 % Angriffskraft aller Einheiten je Stufe.'},
- shielding:{n:'Schildtechnik',cat:'Kampf',c:[200,600,0],req:{lab:6,energy:3},d:'+10 % Schildstärke aller Einheiten je Stufe.'},
- armour:{n:'Strength (Panzerung)',cat:'Kampf',c:[1000,0,0],req:{lab:2},d:'+10 % Hüllenstruktur aller Einheiten je Stufe.'},
- discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],req:{galacto:1},d:'Erhöht die Chance, bei NPC-Angriffen Galactonit-Splitter zu finden (+5 % je Stufe).'}
+ energy:{n:'Energietechnik',cat:'Basis',c:[0,800,400],f:1.65,req:{lab:1},d:'Steigert die Leistung des Kraftwerks. Voraussetzung vieler Technologien.'},
+ laser:{n:'Lasertechnik',cat:'Basis',c:[200,100,0],f:1.65,req:{lab:1,energy:2},d:'Gebündeltes Licht – Grundlage der Laserwaffen.'},
+ ion:{n:'Ionentechnik',cat:'Basis',c:[1000,300,100],f:1.85,req:{lab:4,laser:5,energy:4},d:'Beschleunigte Ionen für Waffen und Kreuzer.'},
+ hyper:{n:'Hyperraumtechnik',cat:'Basis',c:[0,4000,2000],f:1.85,req:{lab:7,energy:5,shielding:5},d:'Erschließt die vierte und fünfte Dimension.'},
+ plasma:{n:'Plasmatechnik',cat:'Basis',c:[2000,4000,1000],f:1.85,req:{lab:6,energy:6,laser:8,ion:4},d:'Plasma als Waffe. +1 % Metall-, +0,66 % Kristall-, +0,33 % Gasproduktion je Stufe.'},
+ espionage:{n:'Spionagetechnik',cat:'Fortgeschritten',c:[200,1000,200],f:1.65,req:{lab:3},d:'Bessere Spionageberichte. Ab Stufe 6 höhere Rohstoff-Fundchance im Nebel.'},
+ computer:{n:'Computertechnik',cat:'Fortgeschritten',c:[0,400,600],f:1.65,req:{lab:1},d:'+1 Flottenslot je 2 Stufen (Nebelflüge zählen nicht).'},
+ astro:{n:'Astrophysik',cat:'Fortgeschritten',c:[4000,8000,4000],f:1.75,req:{lab:3,espionage:3,impulse:2},d:'Je 2 Stufen +1 Planet (max. 8 Planeten). Nebelflotten kontoweit: 1 ab St. 1, 2 ab St. 4, 3 ab St. 8.'},
+ ultra:{n:'Ultratemperatur',cat:'Fortgeschritten',c:[5000,10000,5000],f:1.85,req:{lab:6,energy:6},d:'Hitzebeständige Kollektoren: +2 % Energieproduktion je Stufe.'},
+ antigrav:{n:'Antigravitation',cat:'Fortgeschritten',c:[10000,20000,10000],f:1.85,req:{lab:8,hyper:5},d:'Hebt die Schwerkraft auf. Voraussetzung für Interceptor, Dreadnought und Iron Behemoth.'},
+ alloy:{n:'Legierungsortung',cat:'Fortgeschritten',c:[3000,6000,2000],f:1.85,req:{lab:5,espionage:5},d:'Spürt Erzadern auf: +2 % Rohstoffausbeute im Nebel je Stufe.'},
+ dynpower:{n:'Dynamische Energie',cat:'Fortgeschritten',c:[4000,4000,4000],f:1.85,req:{lab:5,energy:5},d:'Effizientere Triebwerke: −2 % Treibstoffverbrauch je Stufe (max. −40 %).'},
+ combustion:{n:'Verbrennungstriebwerk',cat:'Kampf',c:[400,0,600],f:1.65,req:{lab:1,energy:1},d:'+10 % Geschwindigkeit für Transporter, Jäger, Recycler und Sonden.'},
+ impulse:{n:'Impulstriebwerk',cat:'Kampf',c:[2000,4000,600],f:1.65,req:{lab:2,energy:1},d:'+20 % Geschwindigkeit für Schwere Jäger, Kreuzer, Bomber und Kolonieschiffe.'},
+ hyperdrive:{n:'Hyperraumantrieb',cat:'Kampf',c:[10000,20000,6000],f:1.85,req:{lab:7,hyper:3,impulse:4},d:'+30 % Geschwindigkeit für Schlachtschiffe und Großkampfschiffe.'},
+ weapons:{n:'Waffentechnik',cat:'Kampf',c:[800,200,0],f:1.75,req:{lab:4},d:'+10 % Angriffskraft aller Einheiten je Stufe.'},
+ shielding:{n:'Schildtechnik',cat:'Kampf',c:[200,600,0],f:1.75,req:{lab:6,energy:3},d:'+10 % Schildstärke aller Einheiten je Stufe.'},
+ armour:{n:'Strength (Panzerung)',cat:'Kampf',c:[1000,0,0],f:1.75,req:{lab:2},d:'+10 % Hüllenstruktur aller Einheiten je Stufe.'},
+ discoverer:{n:'Discoverer',cat:'Galactonit',c:[0,15000,15000],f:1.85,req:{galacto:1},d:'Erhöht die Chance, bei NPC-Angriffen Galactonit-Splitter zu finden (+5 % je Stufe).'}
 };
 
 // Schiffe: c, hull(Struktur), sh, at, sp, cargo, fuel, drive

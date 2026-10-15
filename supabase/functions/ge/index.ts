@@ -35,7 +35,7 @@ async function freeHome(): Promise<number[]> {
   for (let i = 0; i < 500; i++) { const s = 1 + Math.floor(Math.random() * 30), p = 4 + Math.floor(Math.random() * 9); if (!taken.has(`1:${s}:${p}`)) return [1, s, p]; }
   return [1, 31 + Math.floor(Math.random() * 400), 7];
 }
-const pubAcct = (a: any) => ({ name: a.name, home: a.home, speed: CFG.speed, epoch: CFG.epoch, seed: CFG.seed });
+const pubAcct = (a: any) => ({ name: a.name, home: a.home, speed: CFG.speed, epoch: CFG.epoch, seed: CFG.seed, created: a.created });
 async function meta(k: string) { const r = must(await db.from("ge_meta").select("v").eq("k", k).maybeSingle()) as any; return r ? r.v : null; }
 
 async function universe(t = Date.now()) {
@@ -83,6 +83,21 @@ function npcTarget(id: string) { // NPC-Spieler: Rohstoffe aus dem Wirtschaftsmo
   const tl = Math.floor(st.L.l * 0.8); return { x, st, r: { m: st.m, k: st.k, g: st.g }, ships, def, tech: { weapons: tl, shielding: tl, armour: tl, espionage: Math.floor(st.L.l / 2) } };
 }
 async function patchSnap(l: string, to: any, fn: (sn: any) => void) { const p = must(await db.from("ge_pub").select("data").eq("name_l", l).single()) as any; const sn = (p.data.snap || []).find((q: any) => q.g === to.g && q.s === to.s && q.p === to.p && !q.moon); if (!sn) return; sn.r = sn.r || {}; sn.ships = sn.ships || {}; sn.def = sn.def || {}; fn(sn); must(await db.from("ge_pub").update({ data: p.data }).eq("name_l", l)); }
+// Progression v1: Punkte serverseitig aus dem zuletzt akzeptierten Spielstand; Anfängerschutz 7 Tage + max. 5× Entwicklungsabstand
+const PROT_MS = 7 * 24 * 3600e3, DEV_RATIO = 5;
+async function savePoints(l: string) { const s = must(await db.from("ge_save").select("z").eq("name_l", l).maybeSingle()) as any; if (!s) return null;
+  try { const st = JSON.parse(await gunzip(s.z)); const d = E.devPoints(st); let f = 0, df = 0; const add = (o: any, T: any) => { let v = 0; for (const k in o || {}) { const u = T[k]; if (u) v += (+o[k] || 0) * (u.c[0] + u.c[1] + u.c[2]) / 1000; } return v; };
+    for (const id of st.order || []) { const p = st.planets[id]; if (!p) continue; f += add(p.ships, GE.SHIP); df += add(p.def, GE.DEF); } for (const fl of st.fleets || []) if (!fl.npc) f += add(fl.ships, GE.SHIP);
+    return { b: Math.floor(d.b), t: Math.floor(d.t), f: Math.floor(f), d: Math.floor(df) }; } catch (_e) { return null; } }
+async function pvpBlock(fromL: string, toL: string): Promise<string | null> {
+  const acc = must(await db.from("ge_acct").select("name_l,created").in("name_l", [fromL, toL])) as any[]; const now = Date.now();
+  const A = acc.find((x) => x.name_l === fromL), B = acc.find((x) => x.name_l === toL); if (!A || !B) return "Ziel unbekannt";
+  if (now - (+A.created || 0) < PROT_MS) return "Du stehst noch unter Anfängerschutz (7 Tage) – keine Angriffe/Spionage auf Spieler";
+  if (now - (+B.created || 0) < PROT_MS) return "Ziel steht unter Anfängerschutz (7 Tage)";
+  const pubs = must(await db.from("ge_pub").select("name_l,data").in("name_l", [fromL, toL])) as any[];
+  const dv = (l: string) => { const p = pubs.find((x) => x.name_l === l); return Math.max(1, +(p?.data?.devMax) || 0); };
+  const a = dv(fromL), b = dv(toL); if (Math.max(a, b) / Math.min(a, b) > DEV_RATIO) return "Entwicklungsabstand zu groß (max. 5×)";
+  return null; }
 async function resolve(row: any): Promise<any> {
   const claim = must(await db.from("ge_fleet").update({ status: "busy" }).eq("id", row.id).eq("status", "out").select("id")) as any[];
   if (!claim.length) { const r = must(await db.from("ge_fleet").select("result,status").eq("id", row.id).single()) as any; return r.result; }
@@ -92,6 +107,7 @@ async function resolve(row: any): Promise<any> {
     if (row.to_npc) { const T = npcTarget(row.to_npc); const hits = ((await meta("npchits")) || {})[row.to_npc]; if (hits) { const f = Math.max(0, 1 - (Date.now() - hits.t) / (12 * 3600e3 / CFG.speed)); for (const r of ["m", "k", "g"]) T.r[r as "m"] = Math.max(0, T.r[r as "m"] - (hits[r] || 0) * f); } def = T; defName = T.x.n; }
     else { defL = row.to_l; const p = must(await db.from("ge_pub").select("data").eq("name_l", row.to_l).single()) as any; const sn = (p.data.snap || []).find((q: any) => q.g === to.g && q.s === to.s && q.p === to.p && !q.moon);
       if (!sn) throw new Error("Planet nicht mehr vorhanden"); def = { r: { ...sn.r }, ships: { ...sn.ships }, def: { ...sn.def }, tech: p.data.tech || {} }; defName = p.data.name; }
+    if (defL && row.mission !== "transport") { const blk = await pvpBlock(row.from_l, defL); if (blk) throw new Error(blk); }
     if (row.mission === "transport") {
       await patchSnap(defL!, to, (sn: any) => { for (const r of ["m", "k", "g"]) sn.r[r] = (sn.r[r] || 0) + (+d.cargo[r] || 0); });
       await event(defL!, { kind: "transport", from: d.from, to, res: d.cargo });
@@ -157,7 +173,7 @@ Deno.serve(async (req) => {
       // v41: Server rechnet nach – unmögliche Sprünge (Stufen-Regeln, Bauzeit, DM, Kosten) werden abgelehnt
       let nx: any; try { nx = JSON.parse(await gunzip(b.z)); } catch (_e) { return err("Spielstand unlesbar"); }
       // v42: alte Clients (ohne Stufen-Regeln, z. B. aus dem Cache) dürfen keine Spielstände mehr schreiben
-      if ((+b.cv || 0) < 42) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
+      if ((+b.cv || 0) < 49) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
       // v42: Konto-Reset – nur Spielstände mit der aktuellen Reset-Kennung (rid) werden angenommen; ältere lokale Kopien werden abgewiesen
       { const r = must(await db.from("ge_meta").select("v").eq("k", "rid:" + a.name_l).maybeSingle()) as any;
         if (r && r.v && nx.rid !== r.v.rid) return J({ error: "Dein Konto wurde zurückgesetzt – der neue Spielstand wird geladen", code: "reject", reasons: ["reset"] }, 409); }
@@ -173,19 +189,22 @@ Deno.serve(async (req) => {
       const b = await req.json(); const num = (x: unknown) => Math.max(0, Math.floor(+(x as number) || 0));
       const planets = (Array.isArray(b.planets) ? b.planets : []).slice(0, 20).map((p: any) => ({ g: num(p.g), s: num(p.s), p: num(p.p), name: String(p.name || "").slice(0, 20), type: String(p.type || "").slice(0, 20), moon: !!p.moon }));
       const pub = { name: a.name, tag: b.tag ? String(b.tag).slice(0, 5) : null, ally: b.ally ? String(b.ally).slice(0, 30) : null, home: planets[0] ? [planets[0].g, planets[0].s, planets[0].p] : a.home,
-        pts: { b: num(b.pts?.b), t: num(b.pts?.t), f: num(b.pts?.f), d: num(b.pts?.d) }, planets, t: Date.now() };
+        pts: { b: num(b.pts?.b), t: num(b.pts?.t), f: num(b.pts?.f), d: num(b.pts?.d) }, planets, t: Date.now(), devMax: 0, prot: Date.now() - (+a.created || 0) < PROT_MS };
+      { const sp = await savePoints(a.name_l); if (sp) pub.pts = sp; // Progression v1: Punkte vom Server berechnet (Client-Angaben nur, solange kein Spielstand existiert)
+        const old = must(await db.from("ge_pub").select("data").eq("name_l", a.name_l).maybeSingle()) as any; pub.devMax = Math.max(+(old?.data?.devMax) || 0, pub.pts.b + pub.pts.t); }
       const snap = Array.isArray(b.snap) ? b.snap.slice(0, 20) : [];
       must(await db.from("ge_pub").upsert({ name_l: a.name_l, data: { ...pub, snap, tech: b.tech || {} }, t: pub.t }));
       await resolveDue({ to_l: a.name_l });
       const u: any = await universe(); u.players = u.players.map((p: any) => { const { snap: _s, tech: _t, ...rest } = p; return rest; });
-      return J({ ...u, ...(await personal(a)) });
+      return J({ ...u, ...(await personal(a)), created: a.created });
     }
     // ---------- Stufe 2: Flotten zwischen Spielern / NPC-Spielern ----------
     if (P === "/api/fleet" && req.method === "POST") {
       const b = await req.json(); if (!["attack", "spy", "transport"].includes(b.mission)) return err("Mission nicht möglich");
       let to_l = null, to_npc = null;
       if (b.target?.npc) { if (!NPCS.some((x) => x.id === b.target.npc)) return err("Ziel unbekannt"); to_npc = b.target.npc; if (b.mission === "transport") return err("Transport nur zu echten Spielern"); }
-      else { to_l = norm(b.target?.name); if (to_l === a.name_l) return err("Eigenes Ziel"); const t = must(await db.from("ge_acct").select("name_l").eq("name_l", to_l).maybeSingle()); if (!t) return err("Ziel unbekannt"); }
+      else { to_l = norm(b.target?.name); if (to_l === a.name_l) return err("Eigenes Ziel"); const t = must(await db.from("ge_acct").select("name_l").eq("name_l", to_l).maybeSingle()); if (!t) return err("Ziel unbekannt");
+        if (b.mission !== "transport") { const blk = await pvpBlock(a.name_l, to_l); if (blk) return err(blk, 403); } }
       const data = { from: a.name, fromC: b.fromC, to: b.to, ships: b.ships || {}, cargo: b.cargo || { m: 0, k: 0, g: 0 }, tech: b.tech || {}, esp: +b.esp || 0, depart: +b.depart, cid: b.cid };
       const r = must(await db.from("ge_fleet").insert({ from_l: a.name_l, to_l, to_npc, mission: b.mission, data, arrive: Math.floor(+b.arrive) }).select("id").single()) as any;
       return J({ id: r.id });
