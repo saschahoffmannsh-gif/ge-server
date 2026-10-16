@@ -214,6 +214,6 @@ GE.ALLY_TAGS=['DARK','GEF','NOVA','ORB','PAX','RED','SOL','VOID','WOLF','XEN'];
 
 GE.PLANET_POOL=['heisser_planet','kristallplanet','bewohnbarer_planet','heimatwelt','gasriese','eisplanet','p2_wueste','p2_toxisch','p2_ozean','p2_lava','p2_ringgas','p2_mondgrau','p2_tuerkis','p2_eisenrot'];
 // Review V2 (F05): bestätigte DM-Quellen der Kampagnenstränge (Validator) und einmalige Schiffsgeschenke
-GE.CAMP_DM={k1:5,k2:8,k3:10,a1:5,a2:5,i1:8,i2:15,f1:5,f2:8,f3:8,f4:10,g1:5,g2:3,g3:10,s1:5,s2:15,r1:10,c1:5,c2:2};
-GE.CAMP_SHIPS={T24:{sc:1}};
+GE.CAMP_DM={a0:4,a3:4,a4:4,k1:5,k2:8,k3:10,a1:5,a2:5,i1:8,i2:15,f1:5,f2:8,f3:8,f4:10,g1:5,g2:3,g3:10,s1:5,s2:15,r1:10,c1:5,c2:2};
+GE.CAMP_SHIPS={T15:{sc:1}};
 GE.CAMP_RES_MAX=5e6; // Obergrenze je Kampagnen-Zuschuss (Zuschüsse sind beim Freischalten festgeschrieben)

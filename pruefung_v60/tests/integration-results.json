@@ -1,0 +1,87 @@
+{
+  "passed": 18,
+  "results": [
+    {
+      "name": "SQL schema and repeat application",
+      "ok": true
+    },
+    {
+      "name": "Deno + Supabase SDK: atomic registration and initial save",
+      "ok": true
+    },
+    {
+      "name": "SQL login reservations: 20 parallel attempts, five hashes",
+      "ok": true
+    },
+    {
+      "name": "Real SQL revisions: 20 simultaneous saves, one debit",
+      "ok": true
+    },
+    {
+      "name": "Real SQL rollback, state and world ledgers remain unchanged",
+      "ok": true
+    },
+    {
+      "name": "Database RPC is inaccessible to anon",
+      "ok": true
+    },
+    {
+      "name": "Chromium: actual login form, reboot, campaign and graphics fallback",
+      "ok": true
+    },
+    {
+      "name": "Chromium: command created during compression survives canonical merge",
+      "ok": true
+    },
+    {
+      "name": "Chromium: reload and persisted authoritative state",
+      "ok": true
+    },
+    {
+      "name": "Real SQL: 20 fleet confirmations create one paid transport",
+      "ok": true
+    },
+    {
+      "name": "Real SQL: expired lease and 20 resolves deliver cargo/report once",
+      "ok": true
+    },
+    {
+      "name": "Real SQL: both combat states, losses, debris and reports commit once",
+      "ok": true
+    },
+    {
+      "name": "Returned or recalled mission cannot be registered afterwards",
+      "ok": true
+    },
+    {
+      "name": "Schema migration backfills existing home/colony positions",
+      "ok": true
+    },
+    {
+      "name": "Chromium: lost fleet-confirmation response recovers without a second launch/debit",
+      "ok": true
+    },
+    {
+      "name": "Real SQL: 20 gift claims, trusted amount and exactly one DM credit",
+      "ok": true
+    },
+    {
+      "name": "Real SQL: peaceful stone receipt survives retries and enforces seven-day cooldown",
+      "ok": true
+    },
+    {
+      "name": "Malformed command list is rejected without a server exception",
+      "ok": true
+    }
+  ],
+  "postgres": "PostgreSQL 18.6 (PGlite 0.5.10) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.5 (1db513782be24469589d7cb8a1f1834e9a33f271), 32-bit",
+  "browser": "153.0.8010.0",
+  "deno": [
+    "Listening on http://0.0.0.0:8000/ (http://localhost:8000/)"
+  ],
+  "limits": [
+    "PGlite PostgreSQL, not a managed Supabase deployment; REST adapter is test infrastructure.",
+    "pg_cron and pg_net extensions are omitted in this isolated SQL run.",
+    "Input package deliberately excludes image/audio and animation assets; no asset completeness or target-device visual performance proof."
+  ]
+}

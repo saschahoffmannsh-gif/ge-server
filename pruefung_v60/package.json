@@ -1,0 +1,17 @@
+{
+  "name": "galaxy-empire-code",
+  "version": "0.60.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/regression.cjs && node tests/server.cjs",
+    "test:integration": "node tests/integration.cjs",
+    "check:server": "deno check --node-modules-dir=manual server/supabase/functions/ge/index.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@supabase/supabase-js": "2.118.0",
+    "deno": "2.9.6",
+    "playwright": "1.62.1"
+  },
+  "type": "module"
+}

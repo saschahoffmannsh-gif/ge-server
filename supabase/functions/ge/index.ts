@@ -1,8 +1,8 @@
 // Galaxy Empire – Mehrspieler Stufe 1 als Supabase Edge Function (Postgres-Tabellen ge_*).
 // Routen: /api/health, /api/register, /api/login, /api/universe, /api/me, /api/save (GET/POST), /api/pub, /api/tick
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { makeNPCs, stateAt, summary, allyNames } from "./npc.js";
-(globalThis as any).window = globalThis; await import("./data.js"); await import("./engine.js");
+(globalThis as any).window = globalThis; await import("./data.js"); await import("./engine.js");(globalThis as any).headless=true;await import("./campaign.js");await import("./planning.js");await import("./actions.js");await import("./protocol.js");
 const E: any = (globalThis as any).ENGINE; const GE: any = (globalThis as any).GE;
 
 const CFG = {
@@ -41,7 +41,7 @@ async function auth(req: Request) {
   if (!r.token_t || Date.now() - +r.token_t > 864e5) { r.token_t = Date.now(); await db.from("ge_acct").update({ token_t: r.token_t }).eq("name_l", r.name_l); }
   return r as any;
 }
-async function freeHome(): Promise<number[]> {
+async function freeHome(): Promise<number[]> {const E=(globalThis as any).ENGINE.fork();
   const taken = new Set(NPCS.map((x) => x.home.join(":")));
   for (const a of must(await db.from("ge_acct").select("home")) as any[]) taken.add(a.home.join(":"));
   for (const p of must(await db.from("ge_pub").select("data")) as any[]) for (const q of p.data.planets || []) taken.add(`${q.g}:${q.s}:${q.p}`);
@@ -64,7 +64,7 @@ async function universe(t = Date.now()) {
     .map((x: any) => ({ ...x, tot: (x.pts.b || 0) + (x.pts.t || 0) + (x.pts.f || 0) + (x.pts.d || 0) }))
     .sort((a, b) => b.tot - a.tot);
   ranking.forEach((x: any, i) => { x.rank = i + 1; x.prev = snap.get(x.id) ?? null; });
-  return { t, speed: CFG.speed, epoch: CFG.epoch, version: VERSION, players, npcs, ranking, allyNames };
+  return { t, speed: CFG.speed, epoch: CFG.epoch, version: VERSION, players, npcs, ranking, allyNames, reserved:NPCS.filter(x=>t<x.join).map(x=>x.home) };
 }
 
 // ---------- Hilfen Stufe 2/3 ----------
@@ -73,12 +73,28 @@ async function chatSys(ch: string, txt: string) { must(await db.from("ge_chat").
 async function gzip(txt: string) { const buf = new Uint8Array(await new Response(new Blob([new TextEncoder().encode(txt)]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
   let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000)); return btoa(bin); }
 // Review F23: Eingabegrenzen – JSON-Aktion max. 64 KiB (Spielstand eigene Grenze), dekomprimierter Snapshot max. 2 MiB
-async function jbody(req: Request, max = ACTION_MAX) { const t = await req.text(); if (t.length > max) throw new Error("Anfrage zu groß"); return t ? JSON.parse(t) : {}; }
+async function jbody(req:Request,max=ACTION_MAX){if(!req.body)return{};const reader=req.body.getReader(),decoder=new TextDecoder();let size=0,text='';try{for(;;){const{value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>max)throw new Error('Anfrage zu groß');text+=decoder.decode(value,{stream:true});}text+=decoder.decode();}finally{await reader.cancel();}return text?JSON.parse(text):{};}
+
 async function loadSave(l: string): Promise<any | null> { const s = must(await db.from("ge_save").select("z,t").eq("name_l", l).maybeSingle()) as any; if (!s) return null; try { return JSON.parse(await gunzip(s.z)); } catch (_e) { return null; } }
 const capLv = (id: string, lv: number) => Math.min(+lv || 0, E.bCapLv(id));
 async function gunzip(b64: string) { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-  const out = await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); if (out.length > SNAP_MAX) throw new Error("Spielstand zu groß (max. 2 MiB)"); return out; }
+  const reader=new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip")).getReader();const chunks:Uint8Array[]=[];let size=0;try{for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>SNAP_MAX)throw new Error("Spielstand zu groß (max. 2 MiB)");chunks.push(value);}}finally{await reader.cancel();}const out=new Uint8Array(size);let at=0;for(const c of chunks){out.set(c,at);at+=c.length;}return new TextDecoder().decode(out); }
 // v41 Chat: Säubern, Längen-Limit, Rate-Limit (DB-basiert, gilt über alle Instanzen)
+async function record(l:string){return must(await db.from("ge_save").select("z,t,rev").eq("name_l",l).single()) as any;}
+async function contextFor(l:string){const events:any={},results:any={},gifts:any={},fleet:any={};
+ for(const e of must(await db.from("ge_event").select("id,data").eq("name_l",l)) as any[])events[e.data.key||e.id]=e.data;
+ for(const f of must(await db.from("ge_fleet").select("id,cid,data,status,result,arrive").eq("from_l",l)) as any[]){fleet[f.cid]=f;if(f.status==='done')results[f.id]=f.result;}
+ for(const g of must(await db.from("ge_gift").select("id,dm").eq("name_l",l).not("claimed","is",null)) as any[])gifts[g.id]=g.dm;
+ const acctRows=must(await db.from('ge_acct').select('name_l,name,home,created')) as any[];const slots:any={};for(const a of acctRows)if(a.name_l!==l)slots[a.home.join(':')]={kind:'player',real:1,player:a.name,prot:Date.now()<protEnd(a.created,null)};for(const p of must(await db.from("ge_pub").select("name_l,data")) as any[])if(p.name_l!==l)for(const q of p.data.planets||[])if(!q.moon)slots[`${q.g}:${q.s}:${q.p}`]={kind:'player',real:1,player:p.data.name,prot:Date.now()<protEnd(acctRows.find(a=>a.name_l===p.name_l)?.created||0,p.data.tutEnd)};
+ for(const n of NPCS)slots[n.home.join(':')]=Date.now()>=n.join?{kind:'player',npcid:n.id,npcp:n.type,player:n.n}:{kind:'reserved',npcid:'reserved'};
+ const incoming=must(await db.from('ge_fleet').select('*').eq('to_l',l).eq('status','out')) as any[];const debris:any={};for(const d of must(await db.from('ge_debris').select('*')) as any[])debris[d.coord]=d.data;
+ const npcBefore=await meta('npcworld');return{events,results,gifts,fleet,slots,debris,incoming,gal:(await meta('gal:'+l))||{},npc:npcBefore||{},npcBefore};
+}
+function hydrate(st:any,ctx:any){st.debris=JSON.parse(JSON.stringify(ctx.debris));st.npc=JSON.parse(JSON.stringify(ctx.npc));for(const f of st.fleets||[]){const r=ctx.fleet[f.id];if(r){f.pvp=f.pvp||{};f.pvp.sid=r.id;}}return st;}
+function publication(st:any,a:any,old:any){const E=(globalThis as any).ENGINE.fork();E.load(st);const pts=E.calcPoints(st);let df=0;for(const id of st.order)for(const [k,n]of Object.entries(st.planets[id].def||{})){const c=GE.DEF[k].c;df+=(n as number)*(c[0]+c[1]+c[2])/1000;}const ps=st.order.map((i:string)=>st.planets[i]);
+ return{name:a.name,home:a.home,tag:old?.tag||null,ally:old?.ally||null,pts:{b:pts.b,t:pts.t,f:Math.max(0,pts.f-Math.floor(df)),d:Math.floor(df)},planets:ps.map((p:any)=>({g:p.g,s:p.s,p:p.p,name:p.name,type:p.type,moon:!!p.moon})),snap:ps.filter((p:any)=>!p.moon).map((p:any)=>({g:p.g,s:p.s,p:p.p,r:p.r,ships:p.ships,def:p.def,core:p.core,radar:E.bEff(p,'radar')})),tech:{...st.tech},t:st.t,tutEnd:st.flags.tutEnd||null,prot:Date.now()<protEnd(a.created,st.flags.tutEnd),devMax:Math.max(old?.devMax||0,pts.dev),pve:!!st.flags.pveMode};}
+async function stateWrite(a:any,prev:any,st:any){for(const id of st.order)for(const r of ['m','k','g'])if(!Number.isFinite(st.planets[id].r[r])||st.planets[id].r[r]<0||st.planets[id].r[r]>Number.MAX_SAFE_INTEGER)throw new Error('Unsicherer Rohstoffbestand');const old=(must(await db.from('ge_pub').select('data').eq('name_l',a.name_l).maybeSingle()) as any)?.data;return{name_l:a.name_l,base:prev.rev,z:await gzip(JSON.stringify(st)),t:st.t,positions:st.order.map((i:string)=>st.planets[i]).filter((p:any)=>!p.moon).map((p:any)=>`${p.g}:${p.s}:${p.p}`),pub:publication(st,a,old)};}
+function debrisWrites(before:any,after:any){const out:any[]=[];for(const coord of new Set([...Object.keys(before),...Object.keys(after)])){if(JSON.stringify(before[coord]||null)!==JSON.stringify(after[coord]||null))out.push({coord,before:before[coord]||null,value:after[coord]||null});}return out;}
 function clean(t: string) { return String(t || "").replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().slice(0, 200); }
 async function rateOk(name: string) { const since = Date.now() - 60e3; const rows = must(await db.from("ge_chat").select("t").eq("name", name).gt("t", since).order("t", { ascending: false }).limit(8)) as any[];
   if (rows.length && Date.now() - rows[0].t < 2500) return "Zu schnell – kurz warten"; if (rows.length >= 8) return "Zu viele Nachrichten – bitte 1 Minute warten"; return null; }
@@ -102,7 +118,7 @@ async function personal(a: any) {
       if (lv >= 4) o.classes = Object.keys(f.data.ships || {}); if (lv >= 5 && myEsp >= (+(f.data.esp) || 0)) { o.n = n; o.ships = f.data.ships; } return o; }),
     events: ev.map((e) => ({ id: e.id, ...e.data })), ally: al ? { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members, apps: al.apps } : null };
 }
-async function resolveDue(f: { to_l: string }) { const rows = must(await db.from("ge_fleet").select("*").eq("to_l", f.to_l).eq("status", "out").lte("arrive", Date.now())) as any[]; for (const r of rows) await resolve(r); }
+async function resolveDue(f: { to_l: string }) { const rows = must(await db.from("ge_fleet").select("*").eq("to_l", f.to_l).or(`status.eq.out,and(status.eq.busy,busy_at.lt.${Date.now()-120000})`).lte("arrive", Date.now())) as any[]; for (const r of rows) await resolve(r); }
 const val = (o: any, T: any) => { let v = 0; for (const k in o) { const d = T[k]; if (d) v += o[k] * (d.c[0] + d.c[1] + d.c[2]); } return v; };
 function npcTarget(id: string) { // NPC-Spieler: Rohstoffe aus dem Wirtschaftsmodell, Flotte/Verteidigung aus ihren Punkten
   const x = NPCS.find((n) => n.id === id)!; const st = stateAt(x, Date.now(), CFG.speed, npcCache);
@@ -119,7 +135,7 @@ async function patchSnap(l: string, to: any, fn: (sn: any) => void) { const p = 
 const PROT_MS = 7 * 24 * 3600e3, DEV_RATIO = 5;
 // Review V2: Schutzende = max(Erstellung + 7 Tage, min(Erstellung + 14 Tage, Grundtutorialende + 24 h)); kontobasiert
 const protEnd = (created: number, tutEnd: number | null) => Math.max(created + PROT_MS, Math.min(created + 2 * PROT_MS, tutEnd ? tutEnd + 864e5 : Infinity));
-async function savePoints(l: string) { const s = must(await db.from("ge_save").select("z").eq("name_l", l).maybeSingle()) as any; if (!s) return null;
+async function savePoints(l: string) {const E=(globalThis as any).ENGINE.fork(); const s = must(await db.from("ge_save").select("z").eq("name_l", l).maybeSingle()) as any; if (!s) return null;
   try { const st = JSON.parse(await gunzip(s.z)); const d = E.devPoints(st); let f = 0, df = 0; const add = (o: any, T: any) => { let v = 0; for (const k in o || {}) { const u = T[k]; if (u) v += (+o[k] || 0) * (u.c[0] + u.c[1] + u.c[2]) / 1000; } return v; };
     for (const id of st.order || []) { const p = st.planets[id]; if (!p) continue; f += add(p.ships, GE.SHIP); df += add(p.def, GE.DEF); } for (const fl of st.fleets || []) if (!fl.npc) f += add(fl.ships, GE.SHIP);
     return { b: Math.floor(d.b), t: Math.floor(d.t), f: Math.floor(f), d: Math.floor(df) }; } catch (_e) { return null; } }
@@ -133,74 +149,56 @@ async function pvpBlock(fromL: string, toL: string): Promise<string | null> {
   const dv = (l: string) => { const p = pubs.find((x) => x.name_l === l); return Math.max(1, +(p?.data?.devMax) || 0); };
   const a = dv(fromL), b = dv(toL); if (Math.max(a, b) / Math.min(a, b) > DEV_RATIO) return "Entwicklungsabstand zu groß (max. 5×)";
   return null; }
-async function resolve(row: any): Promise<any> {
-  // Review A3: Lease statt endgültigem "busy" – ein abgebrochener Abschluss wird nach 2 Minuten erneut versucht
-  const nowL = Date.now(); const claim = must(await db.from("ge_fleet").update({ status: "busy", busy_at: nowL }).eq("id", row.id).or(`status.eq.out,and(status.eq.busy,busy_at.lt.${nowL - 120000})`).select("id")) as any[];
-  if (!claim.length) { const r = must(await db.from("ge_fleet").select("result,status").eq("id", row.id).single()) as any; return r.result; }
-  const d = row.data; const to = d.to; let result: any;
-  try {
-    let def: any, defName = "", defL: string | null = null, defCore: string | null = null, defHasMoon = false;
-    if (row.to_npc) { const T: any = npcTarget(row.to_npc);
-      // Review V2: Serverbots erhalten persistente Verluste
-      { const NL = ((await meta("npcloss")) || {})[row.to_npc] || {}; for (const k in NL.ships || {}) T.ships[k] = Math.max(0, (T.ships[k] || 0) - NL.ships[k]); for (const k in NL.def || {}) T.def[k] = Math.max(0, (T.def[k] || 0) - NL.def[k]); } const hits = ((await meta("npchits")) || {})[row.to_npc]; if (hits) { const f = Math.max(0, 1 - (Date.now() - hits.t) / (12 * 3600e3 / CFG.speed)); for (const r of ["m", "k", "g"]) T.r[r as "m"] = Math.max(0, T.r[r as "m"] - (hits[r] || 0) * f); } def = T; defName = T.x.n; }
-    else { defL = row.to_l; const p = must(await db.from("ge_pub").select("data").eq("name_l", row.to_l).single()) as any; const sn = (p.data.snap || []).find((q: any) => q.g === to.g && q.s === to.s && q.p === to.p && !q.moon);
-      if (!sn) throw new Error("Planet nicht mehr vorhanden"); def = { r: { ...sn.r }, ships: { ...sn.ships }, def: { ...sn.def }, tech: p.data.tech || {} }; defName = p.data.name; defCore = sn.core || null;
-      // Review F18/F20: Verteidiger-Bonus aus dem akzeptierten Spielstand (Kern, Pionier, Items), Ingenieur für den Wiederaufbau
-      try { const dst = await loadSave(row.to_l); if (dst) { E.load(dst); const dp = dst.order.map((i: string) => dst.planets[i]).find((q: any) => q && !q.moon && q.g === to.g && q.s === to.s && q.p === to.p); if (dp) def.bonus = E.combatBonus(dp); def.eng = +((dst.cmd || {}).engineer || 0) > Date.now(); } } catch (_e) { /* Bonus fällt auf Kern zurück */ }
-      defHasMoon = (p.data.planets || []).some((q: any) => q.moon && q.g === to.g && q.s === to.s && q.p === to.p); }
-    if (defL && row.mission !== "transport") { const blk = await pvpBlock(row.from_l, defL); if (blk) throw new Error(blk); }
-    if (row.mission === "transport") {
-      await patchSnap(defL!, to, (sn: any) => { for (const r of ["m", "k", "g"]) sn.r[r] = (sn.r[r] || 0) + (+d.cargo[r] || 0); });
-      await event(defL!, { kind: "transport", from: d.from, to, res: d.cargo });
-      result = { kind: "transport", to, defName, delivered: d.cargo };
-    } else if (row.mission === "spy") {
-      const n = d.ships.pr || 0; const score = n + 2 * ((d.esp || 0) - (def.tech.espionage || 0));
-      const data: any = { target: { ...to, name: defName, kind: "player", player: defName }, score, r: Object.fromEntries(Object.entries(def.r).map(([k, v]) => [k, Math.floor(v as number)])) };
-      if (score >= 2) data.ships = def.ships; if (score >= 3) data.def = def.def; if (score >= 5) data.tech = def.tech;
-      const enemy = Object.values(def.ships).reduce((x: number, y: any) => x + y, 0) as number; const ch = Math.min(0.8, enemy * 0.02 / Math.max(1, n));
-      data.counter = Math.round(ch * 100); data.lost = Math.random() < ch;
-      if (defL) await event(defL, { kind: "spied", from: d.from, to, lost: data.lost });
-      result = { kind: "spy", spy: data, lostProbes: data.lost };
-    } else {
-      // Galactonit v2: Kern-Boni aus den veröffentlichten Planetendaten (Angreifer: Startplanet, Verteidiger: Zielplanet)
-      const cb = (c: string | null, _dfd: boolean) => { const C = c && (GE as any).CORES[c]; const o: any = {}; if (!C) return o; for (const st of C.stats) if (st === "at" || st === "sh" || st === "hull") o[st] = C.v; return o; };
-      let atkCore: string | null = null; if (defL && d.fromC) { const ap = must(await db.from("ge_pub").select("data").eq("name_l", row.from_l).maybeSingle()) as any; const asn = (ap?.data?.snap || []).find((q: any) => q.g === d.fromC.g && q.s === d.fromC.s && q.p === d.fromC.p); atkCore = asn?.core || null; }
-      const B = E.simulate({ units: d.ships, tech: d.tech, bonus: d.bonus || cb(atkCore, false) }, { units: { ...def.ships, ...def.def }, tech: def.tech, bonus: def.bonus || cb(defCore, true) });
-      // Mond + Galactonit-Wurf (nur echte Spieler, einmal je Kampf)
-      let moon = false, galA = 0, galD = 0, galWhy = "";
-      if (defL) { moon = !defHasMoon && Math.random() * 100 < B.moonChance;
-        const pk = "galpair:" + [row.from_l, defL].sort().join("|"); const pr = (await meta(pk)) as any;
-        if (E.galDebris(B) < E.GAL.MIN_LOSS) galWhy = "zu wenig Trümmer für Galactonit (< 100.000 Metall+Kristall)";
-        else if (pr && Date.now() - (+pr.t || 0) < E.GAL.PAIR) galWhy = "Galactonit für dieses Spielerpaar erst wieder ab " + new Date((+pr.t) + E.GAL.PAIR).toISOString().slice(0, 16).replace("T", " ") + " UTC";
-        else { const g = E.galRoll(B, moon); galA = g.a; galD = g.d; if (!galA) galWhy = "kein Galactonit gefunden";
-          if (galA) { must(await db.from("ge_meta").upsert({ k: pk, v: { t: Date.now(), f: row.id } }));
-            for (const [l, key, n] of [[row.from_l, "a" + row.id, galA], [defL, "d" + row.id, galD]] as [string, string, number][]) { const k = "gal:" + l; const v = ((await meta(k)) || {}) as any; v[key] = n; must(await db.from("ge_meta").upsert({ k, v })); } } }
-        if (moon) await patchPlanets(defL, to); }
-      const gx = { pvp: !!defL, moon, galWhy };
-      const sp = E.splitUnits(B.endD); const rebuilt: any = E.rebuildDef(B.lossD, !!def.eng); // Review F18: stochastisch 70 % / Ingenieur 85 %
-      let loot = { m: 0, k: 0, g: 0 };
-      if (B.winner === "a") { const used = (d.cargo.m || 0) + (d.cargo.k || 0) + (d.cargo.g || 0); loot = E.lootCalc(def.r, Math.max(0, E.cargoCap(B.endA) - used)); }
-      const lossShips: any = {}, lossDef: any = {}; for (const k in B.lossD) { if (GE.DEF[k]) { const l = B.lossD[k] - (rebuilt[k] || 0); if (l > 0) lossDef[k] = l; } else lossShips[k] = B.lossD[k]; }
-      const battleA = E.packBattle(B, d.from, defName + (row.to_npc ? "" : " 👤"), { loot, rebuilt, coord: to, attackerIsMe: true, ...gx, gal: galA });
-      const battleD = E.packBattle(B, d.from + " 👤", defName + " (Du)", { loot, rebuilt, coord: to, attackerIsMe: false, ...gx, gal: galD });
-      if (defL) { await patchSnap(defL, to, (sn: any) => { for (const k in lossShips) sn.ships[k] = Math.max(0, (sn.ships[k] || 0) - lossShips[k]); for (const k in lossDef) sn.def[k] = Math.max(0, (sn.def[k] || 0) - lossDef[k]); for (const r of ["m", "k", "g"]) sn.r[r] = Math.max(0, (sn.r[r] || 0) - ((loot as any)[r] || 0)); }); }
-      if (defL) await event(defL, { kind: "attacked", from: d.from, to, lossShips, lossDef, loot, debris: B.debris, battle: battleD, winner: B.winner, moon, gal: galD, galKey: galD ? "d" + row.id : null });
-      else { { const NLall = ((await meta("npcloss")) || {}) as any; const NL = NLall[row.to_npc] || { ships: {}, def: {} }; for (const k in lossShips) NL.ships[k] = (NL.ships[k] || 0) + lossShips[k]; for (const k in lossDef) NL.def[k] = (NL.def[k] || 0) + lossDef[k]; NLall[row.to_npc] = NL; must(await db.from("ge_meta").upsert({ k: "npcloss", v: NLall })); }
-        const H = (await meta("npchits")) || {}; const o = H[row.to_npc] || { m: 0, k: 0, g: 0, t: Date.now() }; const f = Math.max(0, 1 - (Date.now() - o.t) / (12 * 3600e3 / CFG.speed));
-        H[row.to_npc] = { m: (o.m || 0) * f + loot.m, k: (o.k || 0) * f + loot.k, g: (o.g || 0) * f + loot.g, t: Date.now() }; must(await db.from("ge_meta").upsert({ k: "npchits", v: H })); }
-      result = { kind: "attack", endShips: B.endA, loot, debris: B.debris, battle: battleA, winner: B.winner, defName, moon, gal: galA, galKey: galA ? "a" + row.id : null };
-    }
-  } catch (e) { result = { kind: "fail", msg: (e as Error).message }; }
-  must(await db.from("ge_fleet").update({ status: "done", result }).eq("id", row.id));
-  return result;
+function stableRandom(seed:number){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+async function resolve(row:any):Promise<any>{
+ const lease=Date.now();const claimed=must(await db.from('ge_fleet').update({status:'busy',busy_at:lease}).eq('id',row.id).or(`status.eq.out,and(status.eq.busy,busy_at.lt.${lease-120000})`).select('*')) as any[];
+ if(!claimed.length){const r=must(await db.from('ge_fleet').select('result,status').eq('id',row.id).single()) as any;return r.result;}row=claimed[0];
+ for(let attempt=0;attempt<4;attempt++){
+  const ar=await record(row.from_l),ac=await contextFor(row.from_l);let as=JSON.parse(await gunzip(ar.z));hydrate(as,ac);
+  const A=(globalThis as any).makeRuntime(as,ac);as=A.state();const resolveAt=Date.now();A.clock=()=>resolveAt;const attacker=must(await db.from('ge_acct').select('*').eq('name_l',row.from_l).single()) as any;
+  const af=as.fleets.find((f:any)=>String(f.id)===String(row.cid));if(!af)throw new Error('Bestätigte Flotte fehlt');af.pvp=af.pvp||{};af.pvp.sid=row.id;
+  let D:any=null,ds:any=null,dr:any=null,dc:any=null,defender:any=null,dp:any=null,def:any=null,defName='',botBefore:any=null,botKey='';const metaWrites:any[]=[],events:any[]=[];let result:any;
+  if(row.to_l){dr=await record(row.to_l);ds=JSON.parse(await gunzip(dr.z));dc=await contextFor(row.to_l);hydrate(ds,dc);D=(globalThis as any).makeRuntime(ds,dc);ds=D.state();D.clock=()=>A.now();(globalThis as any).advanceRuntimes([A,D],A.now());defender=must(await db.from('ge_acct').select('*').eq('name_l',row.to_l).single()) as any;dp=ds.order.map((i:string)=>ds.planets[i]).find((p:any)=>p.g===row.data.to.g&&p.s===row.data.to.s&&p.p===row.data.to.p&&!p.moon);if(!dp)throw new Error('Ziel fehlt');def={r:dp.r,ships:dp.ships,def:dp.def,tech:ds.tech,bonus:D.combatBonus(dp),eng:D.cmdActive('engineer')};defName=defender.name;}
+  else{A.tick();const T:any=npcTarget(row.to_npc);botKey='bot:'+row.to_npc;botBefore=await meta(botKey);const bot=JSON.parse(JSON.stringify(botBefore||{r:T.r,ships:T.ships,def:T.def,full:{r:T.r,ships:T.ships,def:T.def},t:A.now()}));
+   // Persistent, prepaid one-unit rebuilding with real elapsed yard time.
+   const grow=(t:number)=>{const dt=Math.max(0,t-bot.t)/(12*3600e3/CFG.speed);for(const r of ['m','k','g'])bot.r[r]=Math.min(T.r[r],bot.r[r]+T.r[r]*dt);bot.t=t;};
+   const queue=(t:number)=>{for(const kind of ['ships','def'])for(const [id,n]of Object.entries(T[kind]))if((bot[kind][id]||0)<(n as number)){const c=(GE.SHIP[id]||GE.DEF[id]).c;if(!['m','k','g'].every((r,i)=>bot.r[r]>=c[i]))continue;['m','k','g'].forEach((r,i)=>bot.r[r]-=c[i]);bot.q={kind,id,end:t+A.uTime({b:{shipyard:Math.max(2,T.st.L.l)}},kind==='def'?'def':'ship',id)*1000};return;}};
+   let guard=0;while(bot.q&&bot.q.end<=A.now()&&guard++<100000){const q=bot.q;grow(q.end);bot[q.kind][q.id]=(bot[q.kind][q.id]||0)+1;delete bot.q;queue(q.end);}grow(A.now());if(!bot.q)queue(A.now());def={...bot,tech:T.tech};defName=T.x.n;
+  }
+  let blocked:string|null=null;if(row.to_l&&row.mission!=='transport')blocked=await pvpBlock(row.from_l,row.to_l);
+  const key='fleet:'+row.id+':'+(row.to_l||row.to_npc),d=row.data;
+  // Stable per-mission randomness survives lease expiry and transaction retries.
+  const seed=parseInt((await sha('battle:'+row.id+':'+JSON.stringify(d))).slice(0,8),16),rng=stableRandom(seed);A.rng=rng;if(D)D.rng=rng;
+  if(blocked)result={kind:'fail',msg:blocked};
+  else if(row.mission==='transport'){const ev={key,kind:'transport',from:d.from,to:d.to,res:d.cargo};D.externalEvents[key]=ev;D.receiveEvent(key);events.push({name_l:row.to_l,key,data:ev});result={kind:'transport',defName,to:d.to,delivered:d.cargo};}
+  else if(row.mission==='spy'){const n=d.ships.pr||0,esp=(def.tech.espionage||0)+(D&&D.cmdActive('technocrat')?2:0),score=n+2*((d.esp||0)-esp),spy:any={target:{...d.to,name:defName,kind:'player',player:defName},score,r:{...def.r}};
+   if(score>=2)spy.ships={...def.ships};if(score>=3)spy.def={...def.def};if(score>=5)spy.tech={...def.tech};const enemy=Object.values(def.ships).reduce((a:number,n:any)=>a+n,0) as number,ch=Math.min(.8,enemy*.02/Math.max(1,n)*Math.max(.3,1-.1*((d.esp||0)-esp)));spy.counter=Math.round(ch*100);spy.lost=rng()<ch;result={kind:'spy',spy,lostProbes:spy.lost};}
+  else{const B=A.simulate({units:d.ships,tech:d.tech,bonus:d.bonus},{units:{...def.ships,...def.def},tech:def.tech,bonus:def.bonus},{raw:true});
+   const rebuilt=A.rebuildDef(B.lossD,def.eng),sp=A.splitUnits(B.endD),loot=B.winner==='a'?A.lootCalc(def.r,Math.max(0,A.cargoCap(B.endA)-(d.cargo.m+d.cargo.k+d.cargo.g))):{m:0,k:0,g:0};
+   if(row.to_npc){const left=A.npcLeft(),pv=A.pve();for(const r of ['m','k','g']){loot[r]=Math.min(loot[r],left[r]);pv.npc[r]+=loot[r];}}
+   const lossShips:any={},lossDef:any={};for(const k in B.lossD){if(GE.DEF[k])lossDef[k]=B.lossD[k]-(rebuilt[k]||0);else lossShips[k]=B.lossD[k];}
+   let moon=false,galA=0,galD=0;let galWhy='';if(D){moon=!dp.moonId&&rng()*100<B.moonChance;const pk='galpair:'+ [row.from_l,row.to_l].sort().join('|'),pair=await meta(pk);
+    if(!pair||A.now()-pair.t>=A.GAL.PAIR){const g=A.galRoll(B,moon,rng);galA=g.a;galD=g.d;if(galA){metaWrites.push({k:pk,before:pair,value:{t:A.now(),f:row.id}});for(const [l,k,n]of [[row.from_l,'a'+row.id,galA],[row.to_l,'d'+row.id,galD]]as any[]){const mk='gal:'+l,old=await meta(mk);metaWrites.push({k:mk,before:old,value:{...(old||{}),[k]:n}});}}}else galWhy='Paar-Sperre aktiv';}
+   const extra={loot,rebuilt,coord:d.to,pvp:!!D,moon,galWhy},ba=A.packBattle(B,d.from,defName,{...extra,attackerIsMe:true,gal:galA}),bd=A.packBattle(B,d.from,defName,{...extra,attackerIsMe:false,gal:galD});
+   if(D){const ev={key,kind:'attacked',from:d.from,to:d.to,lossShips,lossDef,loot,battle:bd,winner:B.winner,moon,gal:galD,galKey:'d'+row.id};D.externalEvents[key]=ev;D.receiveEvent(key);events.push({name_l:row.to_l,key,data:ev});}
+   else{def.ships=sp.ships;def.def={...sp.def};for(const k in rebuilt)def.def[k]=(def.def[k]||0)+rebuilt[k];for(const r of ['m','k','g'])def.r[r]-=loot[r];delete def.tech;metaWrites.push({k:botKey,before:botBefore,value:def});}
+   const coord=`${d.to.g}:${d.to.s}:${d.to.p}`;const deb=as.debris[coord]||(as.debris[coord]={m:0,k:0,nm:0,nk:0});deb.m+=B.debris.m;deb.k+=B.debris.k;if(row.to_npc)for(const [r,i]of [['m',0],['k',1]]as any[])for(const k in B.lossD)if(GE.SHIP[k])deb['n'+r]=(deb['n'+r]||0)+Math.round(B.lossD[k]*GE.SHIP[k].c[i]*.3);
+   result={kind:'attack',endShips:B.endA,loot,battle:ba,debris:B.debris,winner:B.winner,defName,moon,gal:galA,galKey:'a'+row.id};
+  }
+  A.externalResults[row.id]=result;A.receiveFleet(af.id,row.id);if(D){ds.debris=JSON.parse(JSON.stringify(as.debris));ds.npc=JSON.parse(JSON.stringify(as.npc));}if(JSON.stringify(ac.npc)!==JSON.stringify(as.npc))metaWrites.push({k:'npcworld',before:ac.npcBefore,value:as.npc});const states=[await stateWrite(attacker,ar,as)];if(D)states.push(await stateWrite(defender,dr,ds));
+  const tx=await db.rpc('ge_commit_game',{p_states:states,p_fleet:{id:row.id,status:'busy',lease,result},p_events:events,p_meta:metaWrites,p_debris:debrisWrites(ac.debris,as.debris)});
+  if(!tx.error)return result;if(tx.error.code!=='40001')throw new Error(tx.error.message);
+ }
+ throw new Error('Gleichzeitiger Kampf – später erneut versuchen');
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const P = new URL(req.url).pathname.replace(/^.*?\/api\//, "/api/");
   try {
     if (P === "/api/health") return J({ ok: true, service: "ge-supabase", version: VERSION, speed: CFG.speed, lastTick: await meta("snapT") });
     if (P === "/api/tick") { // stündlich per pg_cron: Rang-Schnappschuss
+      const due=must(await db.from('ge_fleet').select('*').or(`status.eq.out,and(status.eq.busy,busy_at.lt.${Date.now()-120000})`).lte('arrive',Date.now()).limit(50)) as any[];for(const f of due)await resolve(f);
       const u = await universe(); must(await db.from("ge_meta").upsert([{ k: "snap", v: u.ranking.map((x: any) => [x.id, x.tot]) }, { k: "snapT", v: u.t }]));
       return J({ ok: true, n: u.ranking.length });
     }
@@ -211,19 +209,18 @@ Deno.serve(async (req) => {
       if (String(b.invite || "").trim().toUpperCase() !== CFG.invite.toUpperCase()) return err("Einladungscode ungültig", 403);
       if (NPCS.some((x) => norm(x.n) === n)) return err("Name bereits vergeben", 409);
       const salt = tokenNew(); const a = { name_l: n, name: String(b.name).trim(), salt, hash: await pbkdf2(salt, String(b.pin)), token: tokenNew(), token_t: Date.now(), home: await freeHome(), created: Date.now() };
-      const r = await db.from("ge_acct").insert(a); if (r.error) return err(r.error.code === "23505" ? "Name oder Heimatposition bereits vergeben" : r.error.message, 409);
-      // Review F02: der Server erstellt den Startzustand; ein erster Client-Upload wird dagegen geprüft
-      { const st = E.newGame({ speed: CFG.speed, seed: CFG.seed }); const hp = st.planets[st.home]; hp.g = a.home[0]; hp.s = a.home[1]; hp.p = a.home[2]; hp.temp = 40; st.seed = CFG.seed; st.created = a.created; st.t = a.created; st.srv = 1;
-        must(await db.from("ge_save").insert({ name_l: n, z: await gzip(JSON.stringify(st)), t: st.t })); }
-      return J({ token: a.token, ...pubAcct(a), hasSave: false });
+      const st=E.newGame({speed:CFG.speed,seed:CFG.seed}),hp=st.planets[st.home];hp.g=a.home[0];hp.s=a.home[1];hp.p=a.home[2];hp.temp=40;st.created=a.created;st.t=a.created;st.cmdName=a.name;st.mp=1;st.srv=1;st.rand=crypto.getRandomValues(new Uint32Array(1))[0];
+      const r=await db.rpc('ge_register_game',{p_account:a,p_z:await gzip(JSON.stringify(st)),p_t:st.t});if(r.error)return err(r.error.code==='23505'?'Name oder Heimatposition bereits vergeben':r.error.message,409);
+      return J({ token: a.token, ...pubAcct(a), hasSave: true });
     }
     if (P === "/api/login" && req.method === "POST") {
       const b = await jbody(req); const nl = norm(b.name); const fs = await failState(nl); const lk = lockedFor(fs);
       if (lk > 0) return err(`Zu viele Fehlversuche – bitte ${Math.ceil(lk / 60e3)} Minuten warten`, 429);
+      if(!must(await db.rpc('ge_login_attempt',{p_name:nl,p_t:Date.now()})))return err('Zu viele Anmeldeversuche – bitte später erneut versuchen',429);
       const a = must(await db.from("ge_acct").select("*").eq("name_l", nl).maybeSingle()) as any;
-      if (!a || !(await pinOk(a, String(b.pin || "")))) { fs.f.push(Date.now()); must(await db.from("ge_meta").upsert({ k: "lf:" + nl, v: fs })); return err("Name oder PIN falsch", 401); }
+      if (!a || !(await pinOk(a, String(b.pin || "")))) { return err("Name oder PIN falsch", 401); }
       { const up: any = { token_t: Date.now() }; if (!String(a.hash).startsWith("pbkdf2$")) up.hash = await pbkdf2(a.salt, String(b.pin)); if (a.token_t && Date.now() - +a.token_t > TOKEN_MS) { up.token = tokenNew(); a.token = up.token; }
-        must(await db.from("ge_acct").update(up).eq("name_l", a.name_l)); if (fs.f.length) must(await db.from("ge_meta").delete().eq("k", "lf:" + nl)); }
+        must(await db.from("ge_acct").update(up).eq("name_l", a.name_l)); must(await db.from("ge_meta").delete().eq("k", "lf:" + nl)); }
       const s = must(await db.from("ge_save").select("t").eq("name_l", a.name_l).maybeSingle()) as any;
       return J({ token: a.token, ...pubAcct(a), hasSave: !!s, saveT: s?.t ?? null });
     }
@@ -242,106 +239,55 @@ Deno.serve(async (req) => {
       const g = must(await db.from("ge_gift").select("id,dm,claimed").eq("id", id).eq("name_l", a.name_l).maybeSingle()) as any; if (!g) return err("Geschenk unbekannt", 404);
       const up = must(await db.from("ge_gift").update({ claimed: Date.now() }).eq("id", id).eq("name_l", a.name_l).is("claimed", null).select("id")) as any[];
       return J({ ok: true, id, dm: g.dm, first: up.length > 0 }); }
-    if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
-    if (P === "/api/save" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); if (typeof b.z !== "string" || b.z.length > 5_000_000) return err("Ungültiger Spielstand");
-      // v41: Server rechnet nach – unmögliche Sprünge (Stufen-Regeln, Bauzeit, DM, Kosten) werden abgelehnt
-      let nx: any; try { nx = JSON.parse(await gunzip(b.z)); } catch (_e) { return err("Spielstand unlesbar"); }
-      // v42: alte Clients (ohne Stufen-Regeln, z. B. aus dem Cache) dürfen keine Spielstände mehr schreiben
-      if ((+b.cv || 0) < 54) return J({ error: "Veraltete App-Version – bitte neu laden (die neue Version wird geladen)", code: "reject", reasons: ["client " + (b.cv || "alt")] }, 409);
-      // v42: Konto-Reset – nur Spielstände mit der aktuellen Reset-Kennung (rid) werden angenommen; ältere lokale Kopien werden abgewiesen
-      { const r = must(await db.from("ge_meta").select("v").eq("k", "rid:" + a.name_l).maybeSingle()) as any;
-        if (r && r.v && nx.rid !== r.v.rid) return J({ error: "Dein Konto wurde zurückgesetzt – der neue Spielstand wird geladen", code: "reject", reasons: ["reset"] }, 409); }
-      if (+nx.t > Date.now() + 5 * 60e3) return J({ error: "Spielstand aus der Zukunft", code: "reject" }, 409);
-      const prev = must(await db.from("ge_save").select("z,t,updated").eq("name_l", a.name_l).maybeSingle()) as any;
-      // Review F12: Revisionsprüfung – ein Stand, der nicht auf dem letzten akzeptierten aufbaut, wird abgewiesen
-      if (prev && b.base != null && +b.base > 0 && +b.base !== +prev.t) return J({ error: "Spielstand veraltet (anderes Gerät/Tab) – aktueller Stand wird geladen", code: "reject", reasons: ["base " + b.base + " != " + prev.t] }, 409);
-      if (!prev) { try { E.load(nx); const led = ((await meta("gal:" + a.name_l)) || {}) as any; const g = nx.gal || {}; const src = g.src || {};
-          const badKey = Object.keys(src).some((k) => k === "tut" ? +src[k] > 1 : !(led[k] != null && +led[k] === +src[k]));
-          if (badKey || (+g.base || 0) > 0 || (+g.st || 0) + 5 * (E.cores(nx) + (+g.lost || 0)) > E.galSum(g)) return J({ error: "Spielstand abgelehnt: Galactonit ohne Beleg", code: "reject", reasons: ["gal first save"] }, 409); } catch (_e) { /* ungültig → unten wie bisher */ } }
-      if (prev) { try { const pv = JSON.parse(await gunzip(prev.z)); E.load(pv); E.load(nx); const dt = Date.now() - (Date.parse(prev.updated) || 0);
-          // Admin-Geschenke: eingelöste Geschenke müssen im Stand bleiben (kein Überschreiben durch alte Kopien); neu enthaltene zählen als verdiente DM
-          const gl = must(await db.from("ge_gift").select("id,dm").eq("name_l", a.name_l).not("claimed", "is", null)) as any[];
-          const g1 = nx.gifts || {}, g0 = pv.gifts || {}; const miss = gl.filter((g) => !g1[g.id]);
-          if (miss.length) return J({ error: "Geschenk fehlt im Spielstand – aktueller Stand wird geladen", code: "reject", reasons: ["gift " + miss.map((g) => g.id).join(",")] }, 409);
-          const giftDM = gl.filter((g) => g1[g.id] && !g0[g.id]).reduce((x, g) => x + (+g.dm || 0), 0);
-          const galLed = ((await meta("gal:" + a.name_l)) || {}) as any;
-          // Review F01: belegte Zuflüsse aus Server-Ereignissen (Lieferungen) und Flottenergebnissen (Beute)
-          const evRes: Record<string, number> = {}; const sum = (o: any) => (+(o?.m) || 0) + (+(o?.k) || 0) + (+(o?.g) || 0);
-          for (const e of must(await db.from("ge_event").select("id,data").eq("name_l", a.name_l)) as any[]) if (e.data?.kind === "transport") evRes[String(e.id)] = sum(e.data.res);
-          for (const f of must(await db.from("ge_fleet").select("id,result").eq("from_l", a.name_l).eq("status", "done")) as any[]) if (f.result?.loot) evRes["f" + f.id] = sum(f.result.loot);
-          const errs: string[] = E.validateSave(pv, nx, dt, giftDM, galLed, evRes);
-          if (errs.length) { console.log("save reject", a.name_l, errs.slice(0, 5)); return J({ error: "Spielstand abgelehnt: " + errs.slice(0, 3).join("; "), code: "reject", reasons: errs.slice(0, 20) }, 409); }
-        } catch (e) { console.log("validate fail", (e as Error).message); return J({ error: "Spielstand konnte nicht geprüft werden", code: "reject", reasons: ["validate: " + (e as Error).message] }, 409); } }
-      if (prev) { const up = must(await db.from("ge_save").update({ z: b.z, t: +b.t || Date.now(), updated: new Date().toISOString() }).eq("name_l", a.name_l).eq("t", prev.t).select("name_l")) as any[];
-        if (!up.length) return J({ error: "Gleichzeitige Speicherung – aktueller Stand wird geladen", code: "reject", reasons: ["race"] }, 409); }
-      else must(await db.from("ge_save").insert({ name_l: a.name_l, z: b.z, t: +b.t || Date.now(), updated: new Date().toISOString() }));
-      return J({ ok: true });
+    if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t,rev").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
+    if(P==='/api/save'&&req.method==='POST'){
+      await resolveDue({to_l:a.name_l});
+      const b=await jbody(req,6_000_000);if((+b.cv||0)<60)return J({error:'Neue App-Version erforderlich',code:'reject'},409);
+      if(typeof b.z!=='string'||b.z.length>5_000_000)return err('Ungültiger Spielstand');
+      let nx:any;try{nx=JSON.parse(await gunzip(b.z));}catch(_){return err('Spielstand unlesbar');}
+      const prev=await record(a.name_l);if(!Number.isSafeInteger(b.base)||b.base!==prev.rev)return J({error:'Spielstand veraltet',code:'reject'},409);
+      const st=JSON.parse(await gunzip(prev.z)),ctx=await contextFor(a.name_l);const membership=await myAlly(a.name);st.ally=membership?{name:membership.name,tag:membership.tag,mp:1}:null;if((nx.rid||null)!==(st.rid||null))return J({error:'Andere Konto-Version',code:'reject'},409);
+      const actions=b.actions||[];if(!Array.isArray(actions)||actions.length>1000||actions.some((x:any)=>!x||!Number.isSafeInteger(x.seq)||!Number.isFinite(x.t)))return J({error:'Ungültige Aktionsliste',code:'reject'},409);const maxT=Math.max(st.t,+nx.t||0,...actions.map((x:any)=>+x.t||0));if(maxT>Date.now()+5000)return J({error:'Spielstand aus der Zukunft',code:'reject'},409);
+      const originalNpc=ctx.npc;hydrate(st,ctx);st.speed=CFG.speed;st.created=a.created;st.cmdName=a.name;st.mp=1;
+      // These flags are UI acknowledgements, never acquisition assertions.
+      for(const k of ['rankSeen','galinfo','named','exported'])if(nx.flags?.[k])st.flags[k]=1;if(st.camp&&nx.camp)st.camp.skip=nx.camp.skip?1:0;
+      let next:any;try{next=(globalThis as any).commandState(st,actions,maxT,ctx);}catch(e){return J({error:'Aktion abgelehnt: '+(e as Error).message,code:'reject'},409);}
+      const write=await stateWrite(a,prev,next),metaWrites:any[]=[];if(JSON.stringify(originalNpc)!==JSON.stringify(next.npc))metaWrites.push({k:'npcworld',before:ctx.npcBefore,value:next.npc});
+      const r=await db.rpc('ge_commit_game',{p_states:[write],p_fleet:actions.filter((x:any)=>x.type==='recall').map((x:any)=>ctx.fleet[x.args[0]]).filter((x:any)=>x&&x.status==='out').map((x:any)=>({id:x.id,status:'out',lease:null,nextStatus:'recalled'})),p_meta:metaWrites,p_debris:debrisWrites(ctx.debris,next.debris)});if(r.error)return J({error:'Gleichzeitige Aktion – aktueller Stand wird geladen',code:'reject'},409);
+      return J({ok:true,z:write.z,t:next.t,rev:r.data[a.name_l],serverNow:Date.now()});
     }
-    if (P === "/api/pub" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const num = (x: unknown) => Math.max(0, Math.floor(+(x as number) || 0));
-      const planets = (Array.isArray(b.planets) ? b.planets : []).slice(0, 20).map((p: any) => ({ g: num(p.g), s: num(p.s), p: num(p.p), name: String(p.name || "").slice(0, 20), type: String(p.type || "").slice(0, 20), moon: !!p.moon }));
-      // Review F07: /pub ist eine abgeleitete Ansicht des zuletzt akzeptierten Spielstands – keine Client-Angaben zu Technik, Koordinaten, Flotte oder Kern
-      const st = await loadSave(a.name_l); const al = await myAlly(a.name); let snap: any[] = []; let tech: any = {}; let tutEnd: number | null = null; let pve = false;
-      if (st) { const ps = (st.order || []).map((i: string) => st.planets[i]).filter((q: any) => q);
-        planets.length = 0; for (const q of ps.slice(0, 20)) planets.push({ g: num(q.g), s: num(q.s), p: num(q.p), name: String(q.name || "").slice(0, 20), type: String(q.type || "").slice(0, 20), moon: !!q.moon });
-        snap = ps.filter((q: any) => !q.moon).slice(0, 20).map((q: any) => ({ g: q.g, s: q.s, p: q.p, r: { m: Math.floor(+q.r?.m || 0), k: Math.floor(+q.r?.k || 0), g: Math.floor(+q.r?.g || 0) }, ships: { ...(q.ships || {}) }, def: { ...(q.def || {}) }, core: q.core || null, radar: capLv("radar", (q.b || {}).radar || 0) }));
-        const T = st.tech || {}; tech = { weapons: Math.min(40, +T.weapons || 0), shielding: Math.min(40, +T.shielding || 0), armour: Math.min(40, +T.armour || 0), espionage: Math.min(40, +T.espionage || 0) };
-        tutEnd = st.flags?.tutEnd ? +st.flags.tutEnd : null; pve = !!st.flags?.pveMode; }
-      else { planets.length = 0; planets.push({ g: a.home[0], s: a.home[1], p: a.home[2], name: "Heimatplanet", type: "heimatwelt", moon: false }); }
-      const pub: any = { name: a.name, tag: al ? al.tag : null, ally: al ? al.name : null, home: planets[0] ? [planets[0].g, planets[0].s, planets[0].p] : a.home,
-        pts: { b: 0, t: 0, f: 0, d: 0 }, planets, t: Date.now(), devMax: 0, tutEnd, pve, prot: Date.now() < protEnd(+a.created || 0, tutEnd) };
-      { const sp = await savePoints(a.name_l); if (sp) pub.pts = sp; // Progression v1: Punkte vom Server berechnet (Client-Angaben nur, solange kein Spielstand existiert)
-        const old = must(await db.from("ge_pub").select("data").eq("name_l", a.name_l).maybeSingle()) as any; pub.devMax = Math.max(+(old?.data?.devMax) || 0, pub.pts.b + pub.pts.t); }
-      must(await db.from("ge_pub").upsert({ name_l: a.name_l, data: { ...pub, snap, tech }, t: pub.t }));
-      await resolveDue({ to_l: a.name_l });
-      const u: any = await universe(); u.players = u.players.map((p: any) => { const { snap: _s, tech: _t, ...rest } = p; return rest; });
-      return J({ ...u, ...(await personal(a)), created: a.created });
+    if(P==='/api/pub'&&req.method==='POST'){
+      await resolveDue({to_l:a.name_l});const r=await record(a.name_l),st=JSON.parse(await gunzip(r.z));const old=(must(await db.from('ge_pub').select('data').eq('name_l',a.name_l).maybeSingle())as any)?.data;const pub=publication(st,a,old);const al=await myAlly(a.name);pub.tag=al?.tag||null;pub.ally=al?.name||null;
+      must(await db.rpc('ge_publish',{p_name:a.name_l,p_base:r.rev,p_data:pub}));return J({...await universe(),...await personal(a),created:a.created});
     }
     // ---------- Stufe 2: Flotten zwischen Spielern / NPC-Spielern ----------
-    if (P === "/api/fleet" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); if (!["attack", "spy", "transport"].includes(b.mission)) return err("Mission nicht möglich");
-      let to_l = null, to_npc = null;
-      if (b.target?.npc) { if (!NPCS.some((x) => x.id === b.target.npc)) return err("Ziel unbekannt"); to_npc = b.target.npc; if (b.mission === "transport") return err("Transport nur zu echten Spielern"); }
-      else { to_l = norm(b.target?.name); if (to_l === a.name_l) return err("Eigenes Ziel"); const t = must(await db.from("ge_acct").select("name_l").eq("name_l", to_l).maybeSingle()); if (!t) return err("Ziel unbekannt");
-        if (b.mission !== "transport") { const blk = await pvpBlock(a.name_l, to_l); if (blk) return err(blk, 403); } }
-      // Review F06: Besitz, Fracht und Flugzeit gegen den akzeptierten Spielstand prüfen; cid eindeutig je Konto (Wiederholung → gleiche Flotte)
-      const cid = b.cid != null ? String(b.cid).slice(0, 64) : null;
-      if (cid) { const ex = must(await db.from("ge_fleet").select("id").eq("from_l", a.name_l).eq("cid", cid).maybeSingle()) as any; if (ex) return J({ id: ex.id, dup: true }); }
-      const st = await loadSave(a.name_l); if (!st) return err("Kein Spielstand – bitte zuerst speichern");
-      const fc = b.fromC || {}; const pl = (st.order || []).map((i: string) => st.planets[i]).find((q: any) => q && q.g === +fc.g && q.s === +fc.s && q.p === +fc.p && !!q.moon === !!fc.moon);
-      if (!pl) return err("Startplanet gehört nicht zu deinem Konto", 403);
-      const ships: any = {}; for (const k in b.ships || {}) { const n = Math.floor(+b.ships[k] || 0); if (n > 0) { if (!GE.SHIP[k]) return err("Unbekannte Einheit"); ships[k] = n; } }
-      if (!Object.keys(ships).length) return err("Keine Schiffe");
-      const avail: any = { ...(pl.ships || {}) }; for (const f of st.fleets || []) if (!f.npc && f.from === pl.id) for (const k in f.ships || {}) avail[k] = (avail[k] || 0) + (+f.ships[k] || 0);
-      for (const k in ships) if (ships[k] > (avail[k] || 0)) return err("Mehr Schiffe als im Spielstand vorhanden", 403);
-      const cargo = { m: Math.max(0, Math.floor(+b.cargo?.m || 0)), k: Math.max(0, Math.floor(+b.cargo?.k || 0)), g: Math.max(0, Math.floor(+b.cargo?.g || 0)) };
-      if (cargo.m + cargo.k + cargo.g > E.cargoCap(ships)) return err("Ladung übersteigt Laderaum", 403);
-      E.load(st); const dur = E.flightTime(pl, b.to, ships, 100) * 1000; const arrive = Math.floor(+b.arrive);
-      if (!(arrive >= Date.now() + dur * 0.95 - 15000) || arrive > Date.now() + 30 * 864e5) return err("Flugzeit unplausibel", 403);
-      const T = st.tech || {}; const tech = { weapons: Math.min(40, +T.weapons || 0), shielding: Math.min(40, +T.shielding || 0), armour: Math.min(40, +T.armour || 0) };
-      const data = { from: a.name, fromC: { g: pl.g, s: pl.s, p: pl.p, moon: !!pl.moon }, to: b.to, ships, cargo, tech, esp: Math.min(40, +T.espionage || 0), depart: +b.depart, cid, bonus: E.combatBonus(pl) };
-      const r = await db.from("ge_fleet").insert({ from_l: a.name_l, to_l, to_npc, mission: b.mission, data, arrive, cid }).select("id").single();
-      if (r.error) { if (r.error.code === "23505" && cid) { const ex = must(await db.from("ge_fleet").select("id").eq("from_l", a.name_l).eq("cid", cid).maybeSingle()) as any; if (ex) return J({ id: ex.id, dup: true }); } throw new Error(r.error.message); }
-      return J({ id: (r.data as any).id });
+    if(P==='/api/fleet'&&req.method==='POST'){
+      const b=await jbody(req),cid=String(b.cid||'');if(!/^\d{1,16}$/.test(cid))return err('Aktions-ID fehlt');
+      const ex=must(await db.from('ge_fleet').select('id').eq('from_l',a.name_l).eq('cid',cid).maybeSingle()) as any;if(ex)return J({id:ex.id,dup:true});
+      const prev=await record(a.name_l),st=JSON.parse(await gunzip(prev.z)),f=st.fleets.find((f:any)=>String(f.id)===cid&&!f.npc&&f.pvp&&['out','pvp'].includes(f.phase));if(!f||!['attack','spy','transport'].includes(f.mission))return err('Keine bestätigte Mission',403);
+      const ctx=await contextFor(a.name_l),sl=ctx.slots[`${f.to.g}:${f.to.s}:${f.to.p}`];if(!sl)return err('Ziel nicht vorhanden');let to_l:any=null,to_npc:any=null;
+      if(sl.real){to_l=norm(sl.player);if(f.mission!=='transport'){const b=await pvpBlock(a.name_l,to_l);if(b)return err(b,403);}}else{to_npc=sl.npcid;if(f.mission==='transport')return err('Transport nur zu Spielern');}
+      const runtime=(globalThis as any).makeRuntime(st,ctx),pl=st.planets[f.from];
+      const data={from:a.name,fromC:f.fromC,to:f.to,ships:f.ships,cargo:f.cargo,tech:runtime.techOf(),esp:(st.tech.espionage||0)+(runtime.cmdActive('technocrat')?2:0),depart:f.depart,cid,pct:f.pct,dur:f.dur,bonus:f.bonus||runtime.combatBonus(pl)};
+      const r=await db.rpc('ge_start_fleet',{p_name:a.name_l,p_base:prev.rev,p_cid:cid,p_target:to_l,p_npc:to_npc,p_mission:f.mission,p_data:data,p_arrive:Math.round(f.depart+f.dur)});if(r.error)return err('Mission konnte nicht bestätigt werden: '+r.error.message,409);return J({id:r.data});
     }
     // Review V2 §7: friedliche Kernroute – 1 Stein je 7 reale Tage, frühestens nach 7 Kontotagen; Erfüllung aus dem akzeptierten Spielstand
-    if (P === "/api/gal/peace" && req.method === "POST") {
-      const now = Date.now(); if (now - (+a.created || 0) < E.GAL.PEACE_MS) return err("Frühestens nach 7 Kontotagen", 403);
-      const pk = "peace:" + a.name_l; const pm = ((await meta(pk)) || { n: 0, last: 0 }) as any; if (now - (+pm.last || 0) < E.GAL.PEACE_MS) return err("Höchstens 1 Stein je 7 Tage", 403);
-      const st = await loadSave(a.name_l); if (!st) return err("Kein Spielstand"); E.load(st); const I = E.peaceInfo(); if (!I.done) return err("Projekt im gespeicherten Stand noch nicht erfüllt – bitte kurz warten und erneut versuchen", 409);
-      const key = "p" + ((+pm.n || 0) + 1); const gk = "gal:" + a.name_l; const gv = ((await meta(gk)) || {}) as any; if (gv[key] != null) return J({ key, n: gv[key] });
-      gv[key] = 1; must(await db.from("ge_meta").upsert({ k: gk, v: gv })); must(await db.from("ge_meta").upsert({ k: pk, v: { n: (+pm.n || 0) + 1, last: now } }));
-      return J({ key, n: 1 });
+    if(P==='/api/gal/peace'&&req.method==='POST'){
+      const now=Date.now(),st=await loadSave(a.name_l);if(!st)return err('Kein Spielstand');E.load(st);
+      const pk='peace:'+a.name_l,pmRaw=await meta(pk),pm=pmRaw||{n:0,last:0},gk='gal:'+a.name_l,gvRaw=await meta(gk),gv={...(gvRaw||{})};
+      const outstanding='p'+((st.peace?.n||0)+1);if(pm.n>(st.peace?.n||0)&&gv[outstanding]===1)return J({key:outstanding,n:1});
+      if(now-a.created<E.GAL.PEACE_MS||now-(pm.last||0)<E.GAL.PEACE_MS)return err('Höchstens 1 Stein je 7 Tage, erster nach Tag 7',403);
+      if(!E.peaceInfo().done)return err('Projekt noch nicht erfüllt',409);const key='p'+(pm.n+1);gv[key]=1;
+      const tx=await db.rpc('ge_commit_game',{p_meta:[{k:gk,before:gvRaw,value:gv},{k:pk,before:pmRaw,value:{n:pm.n+1,last:now}}]});if(tx.error)return err('Gleichzeitiger Anspruch – erneut abrufen',409);return J({key,n:1});
     }
     if (P === "/api/fleet/resolve" && req.method === "POST") {
       const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const row = must(await db.from("ge_fleet").select("*").eq("id", +b.id).eq("from_l", a.name_l).maybeSingle()) as any;
       if (!row) return err("Flotte unbekannt", 404);
-      if (row.status === "done") return J({ result: row.result });
-      if (Date.now() < row.arrive - 3000) return J({ wait: row.arrive - Date.now() });
-      const res = await resolve(row); return J({ result: res });
+      if(row.status==="done")return J({result:row.result,save:await record(a.name_l)});
+      if (Date.now() < row.arrive) return J({ wait: row.arrive - Date.now() });
+      const res=await resolve(row);return J({result:res,save:await record(a.name_l)});
     }
-    if (P === "/api/fleet/recall" && req.method === "POST") { const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); must(await db.from("ge_fleet").update({ status: "recalled" }).eq("id", +b.id).eq("from_l", a.name_l).eq("status", "out")); return J({ ok: true }); }
+    if(P==='/api/fleet/recall')return err('Rückruf über bestätigte Spielaktion',409);
     if (P === "/api/ack" && req.method === "POST") { const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const ids = (b.ids || []).map((x: any) => +x).filter((x: number) => x > 0); if (ids.length) must(await db.from("ge_event").update({ acked: true }).in("id", ids).eq("name_l", a.name_l)); return J({ ok: true }); }
     // ---------- Stufe 3: Allianzen + Chat ----------
     if (P === "/api/ally/list") return J({ allies: must(await db.from("ge_ally").select("tag,name,founder,descr,members,apps,created")) });

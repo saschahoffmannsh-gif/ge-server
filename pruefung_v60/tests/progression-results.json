@@ -1,0 +1,4659 @@
+[
+  {
+    "profile": "casual",
+    "seed": 123,
+    "config": {
+      "sessions": [
+        0,
+        12
+      ],
+      "minutes": 10,
+      "policy": "balanced",
+      "pct": 100,
+      "raids": false
+    },
+    "snapshots": [
+      {
+        "profile": "casual",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            12
+          ],
+          "minutes": 10,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 1,
+        "tutorial_complete": false,
+        "tutorial_mission": "T05",
+        "tutorial_hour": null,
+        "regular_nebula_hour": null,
+        "colony_hour": null,
+        "first_core_hour": null,
+        "planets": 1,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 4,
+            "crystal_mine": 3,
+            "power": 3,
+            "gas_mine": 2
+          }
+        },
+        "tech": {},
+        "ships": {},
+        "dm": 5,
+        "liquid_total": 24904.031489474466,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0,
+        "liquid_home": {
+          "m": 10000,
+          "k": 10000,
+          "g": 4904.031489474464
+        },
+        "points": {
+          "b": 2,
+          "t": 0,
+          "f": 0,
+          "dev": 2,
+          "total": 2
+        },
+        "ship_value": 0,
+        "production_hour": {
+          "m": 1732.743657331137,
+          "k": 801.2471169686988,
+          "g": 252.60494233937402
+        },
+        "storage_home": 10000,
+        "field_home": [
+          12,
+          178
+        ],
+        "neb_starts": 0,
+        "neb_resolutions": 0,
+        "neb_found_value": 0,
+        "neb_resources": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "counts": {
+          "build": 12,
+          "research": 0,
+          "unit_orders": 0,
+          "unit_count": 0,
+          "starts": 0,
+          "pvp_attacks": 0,
+          "frames": 80,
+          "claims": 4,
+          "online_minutes": 20
+        },
+        "flow": {
+          "mines": {
+            "m": 10363,
+            "k": 9497,
+            "g": 4654.031489474464
+          },
+          "storage_wasted": {
+            "m": 22526.784684700542,
+            "k": 4447.9149659252,
+            "g": 2.1025958751863527e-12
+          },
+          "nebula": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 150,
+            "k": 75,
+            "g": 0
+          },
+          "campaign": {
+            "m": 137,
+            "k": 0,
+            "g": 0
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 1650,
+            "k": 572,
+            "g": 0
+          },
+          "spent_research": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_units": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 0,
+          "lost_ship_value": 0,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625
+        },
+        "active_build_worlds": 0,
+        "errors": {
+          "Bauschleife voll": 326
+        }
+      },
+      {
+        "profile": "casual",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            12
+          ],
+          "minutes": 10,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 7,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 72.0875,
+        "regular_nebula_hour": 144.5346114710829,
+        "colony_hour": null,
+        "first_core_hour": null,
+        "planets": 1,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 12,
+            "crystal_mine": 11,
+            "power": 10,
+            "gas_mine": 8,
+            "robotics": 4,
+            "lab": 3,
+            "shipyard": 4,
+            "store": 1
+          }
+        },
+        "tech": {
+          "energy": 2,
+          "combustion": 2,
+          "espionage": 3,
+          "impulse": 2,
+          "astro": 2
+        },
+        "ships": {
+          "sc": 1
+        },
+        "dm": 28,
+        "liquid_total": 60000,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 5.820766091346741e-11,
+        "liquid_home": {
+          "m": 20000,
+          "k": 20000,
+          "g": 20000
+        },
+        "points": {
+          "b": 95,
+          "t": 149,
+          "f": 4,
+          "dev": 245,
+          "total": 249
+        },
+        "ship_value": 4000,
+        "production_hour": {
+          "m": 10361.108952778966,
+          "k": 5739.504973766092,
+          "g": 1954.6660382270602
+        },
+        "storage_home": 20000,
+        "field_home": [
+          53,
+          178
+        ],
+        "neb_starts": 26,
+        "neb_resolutions": 26,
+        "neb_found_value": 0,
+        "neb_resources": {
+          "m": 1972,
+          "k": 1086,
+          "g": 511
+        },
+        "counts": {
+          "build": 53,
+          "research": 11,
+          "unit_orders": 1,
+          "unit_count": 1,
+          "starts": 26,
+          "pvp_attacks": 0,
+          "frames": 560,
+          "claims": 9,
+          "online_minutes": 140
+        },
+        "flow": {
+          "mines": {
+            "m": 87048.00000000013,
+            "k": 78857.99999999985,
+            "g": 38304.99999999994
+          },
+          "storage_wasted": {
+            "m": 649061.0852754462,
+            "k": 305971.9741955807,
+            "g": 73211.72554233178
+          },
+          "nebula": {
+            "m": 1972,
+            "k": 1086,
+            "g": 511
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 11489,
+            "k": 5935,
+            "g": 1596
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 63408,
+            "k": 26033,
+            "g": 6150
+          },
+          "spent_research": {
+            "m": 18434,
+            "k": 40092,
+            "g": 16314
+          },
+          "spent_units": {
+            "m": 2000,
+            "k": 2000,
+            "g": 0
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 52
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 0,
+          "lost_ship_value": 0,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 24.008333333333333,
+          "T05": 24.091666666666665,
+          "build_lab": 36,
+          "build_shipyard": 36.00416666666667,
+          "research_energy": 36.05,
+          "T06": 48.00416666666667,
+          "research_combustion": 48.00833333333333,
+          "T07": 60,
+          "T08": 72.00416666666666,
+          "research_espionage": 72.0125,
+          "training_return_event": 72.0846114710829,
+          "T09": 72.0875,
+          "research_impulse": 108,
+          "research_astro": 132,
+          "build_store": 144.00416666666666,
+          "regular_return_event": 144.5346114710829
+        },
+        "active_build_worlds": 0,
+        "errors": {
+          "Es läuft bereits eine Forschung": 542,
+          "Bauschleife voll": 468,
+          "Zu wenig Rohstoffe": 111,
+          "Forschung läuft": 93,
+          "Labor wird ausgebaut": 14
+        }
+      },
+      {
+        "profile": "casual",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            12
+          ],
+          "minutes": 10,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 30,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 72.0875,
+        "regular_nebula_hour": 144.5346114710829,
+        "colony_hour": 192.0240981563992,
+        "first_core_hour": null,
+        "planets": 5,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 27,
+            "crystal_mine": 25,
+            "power": 22,
+            "gas_mine": 23,
+            "robotics": 10,
+            "lab": 8,
+            "shipyard": 8,
+            "store": 10,
+            "nanite": 3
+          },
+          "P2": {
+            "metal_mine": 20,
+            "power": 16,
+            "crystal_mine": 18,
+            "gas_mine": 15,
+            "store": 4
+          },
+          "P3": {
+            "metal_mine": 19,
+            "power": 16,
+            "crystal_mine": 17,
+            "gas_mine": 15,
+            "store": 4
+          },
+          "P4": {
+            "metal_mine": 17,
+            "power": 14,
+            "crystal_mine": 15,
+            "gas_mine": 12,
+            "store": 3
+          },
+          "P5": {
+            "metal_mine": 13,
+            "power": 10,
+            "crystal_mine": 10,
+            "gas_mine": 7
+          }
+        },
+        "tech": {
+          "energy": 8,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 8,
+          "computer": 10,
+          "alloy": 6,
+          "dynpower": 2
+        },
+        "ships": {
+          "lf": 75,
+          "co": 1,
+          "pr": 2186,
+          "sc": 25,
+          "lc": 23
+        },
+        "dm": 225,
+        "liquid_total": 7886320.871453435,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -1.6298145055770874e-7,
+        "liquid_home": {
+          "m": 1958626.79860929,
+          "k": 1479655.7271043593,
+          "g": 3353038.3457397856
+        },
+        "points": {
+          "b": 34083,
+          "t": 4743,
+          "f": 2902,
+          "dev": 38827,
+          "total": 41729
+        },
+        "ship_value": 2902000,
+        "production_hour": {
+          "m": 239816.5829918812,
+          "k": 118523.8587188478,
+          "g": 52058.97479890088
+        },
+        "storage_home": 5355000,
+        "field_home": [
+          136,
+          178
+        ],
+        "neb_starts": 407,
+        "neb_resolutions": 407,
+        "neb_found_value": 817000,
+        "neb_resources": {
+          "m": 571467,
+          "k": 365591,
+          "g": 182676
+        },
+        "counts": {
+          "build": 388,
+          "research": 49,
+          "unit_orders": 83,
+          "unit_count": 2187,
+          "starts": 873,
+          "pvp_attacks": 0,
+          "frames": 2400,
+          "claims": 9,
+          "online_minutes": 600
+        },
+        "flow": {
+          "mines": {
+            "m": 25870975.798609298,
+            "k": 14395931.727104485,
+            "g": 5272830.345739808
+          },
+          "storage_wasted": {
+            "m": 36373327.16514214,
+            "k": 15136769.239528647,
+            "g": 6813743.645974838
+          },
+          "nebula": {
+            "m": 571467,
+            "k": 365591,
+            "g": 182676
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 1208872,
+            "k": 570409,
+            "g": 233554
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 24428605,
+            "k": 9450811,
+            "g": 970100
+          },
+          "spent_research": {
+            "m": 792916,
+            "k": 1719011,
+            "g": 915635
+          },
+          "spent_units": {
+            "m": 110000,
+            "k": 2320000,
+            "g": 40000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 47491
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 817000,
+          "lost_ship_value": 225000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 24.008333333333333,
+          "T05": 24.091666666666665,
+          "build_lab": 36,
+          "build_shipyard": 36.00416666666667,
+          "research_energy": 36.05,
+          "T06": 48.00416666666667,
+          "research_combustion": 48.00833333333333,
+          "T07": 60,
+          "T08": 72.00416666666666,
+          "research_espionage": 72.0125,
+          "training_return_event": 72.0846114710829,
+          "T09": 72.0875,
+          "research_impulse": 108,
+          "research_astro": 132,
+          "build_store": 144.00416666666666,
+          "regular_return_event": 144.5346114710829,
+          "first_colony_launch": 192.00833333333333,
+          "colony_created_event": 192.0240981563992,
+          "research_computer": 324.0125,
+          "build_nanite": 468.03333333333336,
+          "research_alloy": 480.0208333333333,
+          "research_dynpower": 624.0333333333333
+        },
+        "active_build_worlds": 3,
+        "errors": {
+          "Zu wenig Rohstoffe": 2728,
+          "Es läuft bereits eine Forschung": 1143,
+          "Forschung läuft": 1136,
+          "Bauschleife voll": 639,
+          "Werft wird ausgebaut": 248,
+          "Labor wird ausgebaut": 90,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 79
+        }
+      },
+      {
+        "profile": "casual",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            12
+          ],
+          "minutes": 10,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 90,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 72.0875,
+        "regular_nebula_hour": 144.5346114710829,
+        "colony_hour": 192.0240981563992,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 34,
+            "crystal_mine": 33,
+            "power": 27,
+            "gas_mine": 32,
+            "robotics": 12,
+            "lab": 8,
+            "shipyard": 8,
+            "store": 14,
+            "nanite": 4
+          },
+          "P2": {
+            "metal_mine": 24,
+            "power": 19,
+            "crystal_mine": 21,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P3": {
+            "metal_mine": 23,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P4": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P5": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P6": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 20,
+            "gas_mine": 18,
+            "store": 6
+          },
+          "P7": {
+            "metal_mine": 21,
+            "power": 17,
+            "crystal_mine": 19,
+            "gas_mine": 17,
+            "store": 6
+          }
+        },
+        "tech": {
+          "energy": 11,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 8,
+          "dynpower": 9
+        },
+        "ships": {
+          "lf": 3894,
+          "co": 40,
+          "lc": 765,
+          "sc": 1145,
+          "pr": 11649
+        },
+        "dm": 407,
+        "liquid_total": 161644488.36566383,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -0.000006735324859619141,
+        "liquid_home": {
+          "m": 37263862.68020814,
+          "k": 49070167.6854557,
+          "g": 62110458
+        },
+        "points": {
+          "b": 514726,
+          "t": 93071,
+          "f": 42585,
+          "dev": 607798,
+          "total": 650383
+        },
+        "ship_value": 42585000,
+        "production_hour": {
+          "m": 685097.8387984948,
+          "k": 364385.24886465434,
+          "g": 191947.0417071065
+        },
+        "storage_home": 60510000,
+        "field_home": [
+          172,
+          178
+        ],
+        "neb_starts": 1435,
+        "neb_resolutions": 1435,
+        "neb_found_value": 43832000,
+        "neb_resources": {
+          "m": 34644457,
+          "k": 22057179,
+          "g": 10469010
+        },
+        "counts": {
+          "build": 713,
+          "research": 67,
+          "unit_orders": 141,
+          "unit_count": 8977,
+          "starts": 4933,
+          "pvp_attacks": 0,
+          "frames": 7200,
+          "claims": 9,
+          "online_minutes": 1800
+        },
+        "flow": {
+          "mines": {
+            "m": 378771967.6802175,
+            "k": 198569954.6854545,
+            "g": 74868832.99999855
+          },
+          "storage_wasted": {
+            "m": 405352492.1791002,
+            "k": 196062918.3761173,
+            "g": 121433002.28088446
+          },
+          "nebula": {
+            "m": 34644457,
+            "k": 22057179,
+            "g": 10469010
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 15993611,
+            "k": 8037480,
+            "g": 3999728
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 374820045,
+            "k": 142271485,
+            "g": 6129750
+          },
+          "spent_research": {
+            "m": 12819961,
+            "k": 23815507,
+            "g": 12946485
+          },
+          "spent_units": {
+            "m": 110000,
+            "k": 9110000,
+            "g": 40000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 3713082
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 43832000,
+          "lost_ship_value": 10267000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 24.008333333333333,
+          "T05": 24.091666666666665,
+          "build_lab": 36,
+          "build_shipyard": 36.00416666666667,
+          "research_energy": 36.05,
+          "T06": 48.00416666666667,
+          "research_combustion": 48.00833333333333,
+          "T07": 60,
+          "T08": 72.00416666666666,
+          "research_espionage": 72.0125,
+          "training_return_event": 72.0846114710829,
+          "T09": 72.0875,
+          "research_impulse": 108,
+          "research_astro": 132,
+          "build_store": 144.00416666666666,
+          "regular_return_event": 144.5346114710829,
+          "first_colony_launch": 192.00833333333333,
+          "colony_created_event": 192.0240981563992,
+          "research_computer": 324.0125,
+          "build_nanite": 468.03333333333336,
+          "research_alloy": 480.0208333333333,
+          "research_dynpower": 624.0333333333333
+        },
+        "active_build_worlds": 6,
+        "errors": {
+          "Zu wenig Rohstoffe": 5427,
+          "Forschung läuft": 2620,
+          "Es läuft bereits eine Forschung": 1766,
+          "Bauschleife voll": 639,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 382,
+          "Werft wird ausgebaut": 277,
+          "Labor wird ausgebaut": 90,
+          "Werft ist beschäftigt": 22
+        }
+      },
+      {
+        "profile": "casual",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            12
+          ],
+          "minutes": 10,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 180,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 72.0875,
+        "regular_nebula_hour": 144.5346114710829,
+        "colony_hour": 192.0240981563992,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 37,
+            "crystal_mine": 37,
+            "power": 29,
+            "gas_mine": 35,
+            "robotics": 12,
+            "lab": 14,
+            "shipyard": 8,
+            "store": 16,
+            "nanite": 4,
+            "terraformer": 3
+          },
+          "P2": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P3": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P4": {
+            "metal_mine": 26,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P5": {
+            "metal_mine": 26,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 22,
+            "store": 9
+          },
+          "P6": {
+            "metal_mine": 26,
+            "power": 19,
+            "crystal_mine": 24,
+            "gas_mine": 22,
+            "store": 8
+          },
+          "P7": {
+            "metal_mine": 25,
+            "power": 19,
+            "crystal_mine": 24,
+            "gas_mine": 21,
+            "store": 8
+          }
+        },
+        "tech": {
+          "energy": 12,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 9,
+          "dynpower": 15,
+          "armour": 10,
+          "shielding": 10,
+          "weapons": 10
+        },
+        "ships": {
+          "lf": 10986,
+          "co": 84,
+          "hf": 408,
+          "sc": 1544,
+          "lc": 1279,
+          "rc": 240,
+          "pr": 12463
+        },
+        "dm": 632,
+        "liquid_total": 550176945.8729677,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0.0001621246337890625,
+        "liquid_home": {
+          "m": 95465289.87296773,
+          "k": 203837526,
+          "g": 206294130
+        },
+        "points": {
+          "b": 1668526,
+          "t": 378841,
+          "f": 89691,
+          "dev": 2047367,
+          "total": 2137058
+        },
+        "ship_value": 89691000,
+        "production_hour": {
+          "m": 1016312.5664211415,
+          "k": 574769.2080526559,
+          "g": 284386.5723837562
+        },
+        "storage_home": 203350000,
+        "field_home": [
+          192,
+          193
+        ],
+        "neb_starts": 2981,
+        "neb_resolutions": 2981,
+        "neb_found_value": 120130000,
+        "neb_resources": {
+          "m": 142716632,
+          "k": 91757494,
+          "g": 42292538
+        },
+        "counts": {
+          "build": 820,
+          "research": 104,
+          "unit_orders": 141,
+          "unit_count": 8977,
+          "starts": 11392,
+          "pvp_attacks": 0,
+          "frames": 14400,
+          "claims": 9,
+          "online_minutes": 3600
+        },
+        "flow": {
+          "mines": {
+            "m": 1226415078.8728175,
+            "k": 662601270.9999812,
+            "g": 264406486.00000677
+          },
+          "storage_wasted": {
+            "m": 1422103879.1714358,
+            "k": 764530732.2134645,
+            "g": 462491049.54237115
+          },
+          "nebula": {
+            "m": 142716632,
+            "k": 91757494,
+            "g": 42292538
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 54368108,
+            "k": 29266095,
+            "g": 14915757
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 1253443989,
+            "k": 485020332,
+            "g": 23927350
+          },
+          "spent_research": {
+            "m": 59624373,
+            "k": 70799548,
+            "g": 58996712
+          },
+          "spent_units": {
+            "m": 110000,
+            "k": 9110000,
+            "g": 40000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 17498793
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 120130000,
+          "lost_ship_value": 39459000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 24.008333333333333,
+          "T05": 24.091666666666665,
+          "build_lab": 36,
+          "build_shipyard": 36.00416666666667,
+          "research_energy": 36.05,
+          "T06": 48.00416666666667,
+          "research_combustion": 48.00833333333333,
+          "T07": 60,
+          "T08": 72.00416666666666,
+          "research_espionage": 72.0125,
+          "training_return_event": 72.0846114710829,
+          "T09": 72.0875,
+          "research_impulse": 108,
+          "research_astro": 132,
+          "build_store": 144.00416666666666,
+          "regular_return_event": 144.5346114710829,
+          "first_colony_launch": 192.00833333333333,
+          "colony_created_event": 192.0240981563992,
+          "research_computer": 324.0125,
+          "build_nanite": 468.03333333333336,
+          "research_alloy": 480.0208333333333,
+          "research_dynpower": 624.0333333333333,
+          "build_terraformer": 2688.0833333333335,
+          "research_armour": 3216.0416666666665,
+          "research_shielding": 3324.0333333333333,
+          "research_weapons": 3432.0416666666665
+        },
+        "active_build_worlds": 7,
+        "errors": {
+          "Zu wenig Rohstoffe": 7083,
+          "Forschung läuft": 3562,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 2482,
+          "Es läuft bereits eine Forschung": 1766,
+          "Bauschleife voll": 680,
+          "Werft wird ausgebaut": 277,
+          "Labor wird ausgebaut": 90,
+          "Werft ist beschäftigt": 22
+        }
+      }
+    ],
+    "final": {
+      "profile": "casual",
+      "seed": 123,
+      "config": {
+        "sessions": [
+          0,
+          12
+        ],
+        "minutes": 10,
+        "policy": "balanced",
+        "pct": 100,
+        "raids": false
+      },
+      "rules": {
+        "full": true,
+        "weekly": false
+      },
+      "day": 180,
+      "tutorial_complete": true,
+      "tutorial_mission": null,
+      "tutorial_hour": 72.0875,
+      "regular_nebula_hour": 144.5346114710829,
+      "colony_hour": 192.0240981563992,
+      "first_core_hour": null,
+      "planets": 7,
+      "cores": 0,
+      "galactonite": {
+        "v": 2,
+        "st": 0,
+        "base": 0,
+        "src": {},
+        "lost": 0,
+        "shards": {},
+        "gems": [],
+        "energy": 0,
+        "nextGem": 1
+      },
+      "buildings": {
+        "P1": {
+          "metal_mine": 37,
+          "crystal_mine": 37,
+          "power": 29,
+          "gas_mine": 35,
+          "robotics": 12,
+          "lab": 14,
+          "shipyard": 8,
+          "store": 16,
+          "nanite": 4,
+          "terraformer": 3
+        },
+        "P2": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P3": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P4": {
+          "metal_mine": 26,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P5": {
+          "metal_mine": 26,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 22,
+          "store": 9
+        },
+        "P6": {
+          "metal_mine": 26,
+          "power": 19,
+          "crystal_mine": 24,
+          "gas_mine": 22,
+          "store": 8
+        },
+        "P7": {
+          "metal_mine": 25,
+          "power": 19,
+          "crystal_mine": 24,
+          "gas_mine": 21,
+          "store": 8
+        }
+      },
+      "tech": {
+        "energy": 12,
+        "combustion": 6,
+        "espionage": 5,
+        "impulse": 3,
+        "astro": 14,
+        "computer": 10,
+        "alloy": 9,
+        "dynpower": 15,
+        "armour": 10,
+        "shielding": 10,
+        "weapons": 10
+      },
+      "ships": {
+        "lf": 10986,
+        "co": 84,
+        "hf": 408,
+        "sc": 1544,
+        "lc": 1279,
+        "rc": 240,
+        "pr": 12463
+      },
+      "dm": 632,
+      "liquid_total": 550176945.8729677,
+      "liquid_in_transit": 0,
+      "cash_accounting_error": 0.0001621246337890625,
+      "liquid_home": {
+        "m": 95465289.87296773,
+        "k": 203837526,
+        "g": 206294130
+      },
+      "points": {
+        "b": 1668526,
+        "t": 378841,
+        "f": 89691,
+        "dev": 2047367,
+        "total": 2137058
+      },
+      "ship_value": 89691000,
+      "production_hour": {
+        "m": 1016312.5664211415,
+        "k": 574769.2080526559,
+        "g": 284386.5723837562
+      },
+      "storage_home": 203350000,
+      "field_home": [
+        192,
+        193
+      ],
+      "neb_starts": 2981,
+      "neb_resolutions": 2981,
+      "neb_found_value": 120130000,
+      "neb_resources": {
+        "m": 142716632,
+        "k": 91757494,
+        "g": 42292538
+      },
+      "counts": {
+        "build": 820,
+        "research": 104,
+        "unit_orders": 141,
+        "unit_count": 8977,
+        "starts": 11392,
+        "pvp_attacks": 0,
+        "frames": 14400,
+        "claims": 9,
+        "online_minutes": 3600
+      },
+      "flow": {
+        "mines": {
+          "m": 1226415078.8728175,
+          "k": 662601270.9999812,
+          "g": 264406486.00000677
+        },
+        "storage_wasted": {
+          "m": 1422103879.1714358,
+          "k": 764530732.2134645,
+          "g": 462491049.54237115
+        },
+        "nebula": {
+          "m": 142716632,
+          "k": 91757494,
+          "g": 42292538
+        },
+        "npc_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "recycle": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "gifts": {
+          "m": 54368108,
+          "k": 29266095,
+          "g": 14915757
+        },
+        "campaign": {
+          "m": 2333,
+          "k": 1246,
+          "g": 1854
+        },
+        "transport_internal": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "spent_build": {
+          "m": 1253443989,
+          "k": 485020332,
+          "g": 23927350
+        },
+        "spent_research": {
+          "m": 59624373,
+          "k": 70799548,
+          "g": 58996712
+        },
+        "spent_units": {
+          "m": 110000,
+          "k": 9110000,
+          "g": 40000
+        },
+        "fuel": {
+          "m": 0,
+          "k": 0,
+          "g": 17498793
+        },
+        "raid_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "found_ship_value": 120130000,
+        "lost_ship_value": 39459000,
+        "raid_lost_value": 0,
+        "weekly_stones": 0,
+        "cores": 0
+      },
+      "milestones": {
+        "T01": 0.004166666666666667,
+        "build_metal_mine": 0.008333333333333333,
+        "build_crystal_mine": 0.016666666666666666,
+        "T02": 0.025,
+        "build_power": 0.029166666666666667,
+        "build_gas_mine": 0.05416666666666667,
+        "T03": 0.15833333333333333,
+        "T04": 0.1625,
+        "build_robotics": 24.008333333333333,
+        "T05": 24.091666666666665,
+        "build_lab": 36,
+        "build_shipyard": 36.00416666666667,
+        "research_energy": 36.05,
+        "T06": 48.00416666666667,
+        "research_combustion": 48.00833333333333,
+        "T07": 60,
+        "T08": 72.00416666666666,
+        "research_espionage": 72.0125,
+        "training_return_event": 72.0846114710829,
+        "T09": 72.0875,
+        "research_impulse": 108,
+        "research_astro": 132,
+        "build_store": 144.00416666666666,
+        "regular_return_event": 144.5346114710829,
+        "first_colony_launch": 192.00833333333333,
+        "colony_created_event": 192.0240981563992,
+        "research_computer": 324.0125,
+        "build_nanite": 468.03333333333336,
+        "research_alloy": 480.0208333333333,
+        "research_dynpower": 624.0333333333333,
+        "build_terraformer": 2688.0833333333335,
+        "research_armour": 3216.0416666666665,
+        "research_shielding": 3324.0333333333333,
+        "research_weapons": 3432.0416666666665
+      },
+      "active_build_worlds": 7,
+      "errors": {
+        "Zu wenig Rohstoffe": 7083,
+        "Forschung läuft": 3562,
+        "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 2482,
+        "Es läuft bereits eine Forschung": 1766,
+        "Bauschleife voll": 680,
+        "Werft wird ausgebaut": 277,
+        "Labor wird ausgebaut": 90,
+        "Werft ist beschäftigt": 22
+      }
+    }
+  },
+  {
+    "profile": "active",
+    "seed": 123,
+    "config": {
+      "sessions": [
+        0,
+        4,
+        10,
+        14
+      ],
+      "minutes": 15,
+      "policy": "balanced",
+      "pct": 100,
+      "raids": false
+    },
+    "snapshots": [
+      {
+        "profile": "active",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            4,
+            10,
+            14
+          ],
+          "minutes": 15,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 1,
+        "tutorial_complete": false,
+        "tutorial_mission": "T07",
+        "tutorial_hour": null,
+        "regular_nebula_hour": null,
+        "colony_hour": null,
+        "first_core_hour": null,
+        "planets": 1,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 4,
+            "crystal_mine": 3,
+            "power": 4,
+            "gas_mine": 2,
+            "robotics": 2,
+            "lab": 1,
+            "shipyard": 2
+          }
+        },
+        "tech": {
+          "energy": 1,
+          "combustion": 2
+        },
+        "ships": {},
+        "dm": 5,
+        "liquid_total": 25535.758375416408,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0,
+        "liquid_home": {
+          "m": 10000,
+          "k": 10000,
+          "g": 5535.758375416408
+        },
+        "points": {
+          "b": 7,
+          "t": 7,
+          "f": 0,
+          "dev": 15,
+          "total": 15
+        },
+        "ship_value": 0,
+        "production_hour": {
+          "m": 2056.9200000000005,
+          "k": 948.6000000000003,
+          "g": 309.76000000000005
+        },
+        "storage_home": 10000,
+        "field_home": [
+          18,
+          178
+        ],
+        "neb_starts": 0,
+        "neb_resolutions": 0,
+        "neb_found_value": 0,
+        "neb_resources": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "counts": {
+          "build": 18,
+          "research": 3,
+          "unit_orders": 0,
+          "unit_count": 0,
+          "starts": 0,
+          "pvp_attacks": 0,
+          "frames": 240,
+          "claims": 6,
+          "online_minutes": 60
+        },
+        "flow": {
+          "mines": {
+            "m": 12080,
+            "k": 10512,
+            "g": 6521.758375416408
+          },
+          "storage_wasted": {
+            "m": 34723.76407559018,
+            "k": 10245.887806516452,
+            "g": 2.5346391652192324e-13
+          },
+          "nebula": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 150,
+            "k": 75,
+            "g": 0
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 4503,
+            "k": 2033,
+            "g": 1100
+          },
+          "spent_research": {
+            "m": 1060,
+            "k": 800,
+            "g": 1990
+          },
+          "spent_units": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 0,
+          "lost_ship_value": 0,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 4.154166666666667,
+          "T05": 10,
+          "build_lab": 10.004166666666666,
+          "research_energy": 10.079166666666667,
+          "build_shipyard": 10.204166666666667,
+          "T06": 14,
+          "research_combustion": 14.004166666666666
+        },
+        "active_build_worlds": 0,
+        "errors": {
+          "Bauschleife voll": 451,
+          "Es läuft bereits eine Forschung": 84
+        }
+      },
+      {
+        "profile": "active",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            4,
+            10,
+            14
+          ],
+          "minutes": 15,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 7,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 28,
+        "regular_nebula_hour": 58.530444804416234,
+        "colony_hour": 82.01433165737576,
+        "first_core_hour": null,
+        "planets": 2,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 17,
+            "crystal_mine": 15,
+            "power": 15,
+            "gas_mine": 13,
+            "robotics": 6,
+            "lab": 7,
+            "shipyard": 5,
+            "store": 3
+          },
+          "P2": {
+            "metal_mine": 15,
+            "power": 12,
+            "crystal_mine": 13,
+            "gas_mine": 9,
+            "store": 1
+          }
+        },
+        "tech": {
+          "energy": 5,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 2,
+          "computer": 6,
+          "alloy": 3
+        },
+        "ships": {
+          "pr": 72,
+          "sc": 2,
+          "lc": 10
+        },
+        "dm": 42,
+        "liquid_total": 297132.70953280735,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -1.862645149230957e-9,
+        "liquid_home": {
+          "m": 79880,
+          "k": 78138,
+          "g": 79114.70953280735
+        },
+        "points": {
+          "b": 845,
+          "t": 504,
+          "f": 200,
+          "dev": 1350,
+          "total": 1550
+        },
+        "ship_value": 200000,
+        "production_hour": {
+          "m": 48292.04483594028,
+          "k": 23318.126120970217,
+          "g": 9218.042973366144
+        },
+        "storage_home": 75000,
+        "field_home": [
+          81,
+          178
+        ],
+        "neb_starts": 100,
+        "neb_resolutions": 100,
+        "neb_found_value": 21000,
+        "neb_resources": {
+          "m": 51597,
+          "k": 33108,
+          "g": 13044
+        },
+        "counts": {
+          "build": 131,
+          "research": 30,
+          "unit_orders": 49,
+          "unit_count": 73,
+          "starts": 112,
+          "pvp_attacks": 0,
+          "frames": 1680,
+          "claims": 9,
+          "online_minutes": 420
+        },
+        "flow": {
+          "mines": {
+            "m": 686483.9999999971,
+            "k": 556271.0000000044,
+            "g": 204095.70953280787
+          },
+          "storage_wasted": {
+            "m": 2475528.7999674357,
+            "k": 852284.2444542818,
+            "g": 371506.36570187175
+          },
+          "nebula": {
+            "m": 51597,
+            "k": 33108,
+            "g": 13044
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 50195,
+            "k": 22022,
+            "g": 8864
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 558413,
+            "k": 243788,
+            "g": 43100
+          },
+          "spent_research": {
+            "m": 55816,
+            "k": 124021,
+            "g": 72535
+          },
+          "spent_units": {
+            "m": 78000,
+            "k": 148000,
+            "g": 10000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 3458
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 21000,
+          "lost_ship_value": 17000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 4.154166666666667,
+          "T05": 10,
+          "build_lab": 10.004166666666666,
+          "research_energy": 10.079166666666667,
+          "build_shipyard": 10.204166666666667,
+          "T06": 14,
+          "research_combustion": 14.004166666666666,
+          "T07": 24.004166666666666,
+          "T08": 24.179166666666667,
+          "training_return_event": 24.2596114710829,
+          "T09": 28,
+          "research_espionage": 28.004166666666666,
+          "research_impulse": 38,
+          "research_astro": 52,
+          "build_store": 58,
+          "regular_return_event": 58.530444804416234,
+          "first_colony_launch": 82,
+          "colony_created_event": 82.01433165737576,
+          "research_computer": 110,
+          "research_alloy": 148.00833333333333
+        },
+        "active_build_worlds": 0,
+        "errors": {
+          "Zu wenig Rohstoffe": 2161,
+          "Forschung läuft": 1025,
+          "Es läuft bereits eine Forschung": 845,
+          "Bauschleife voll": 573,
+          "ship_resources_lc": 221,
+          "Labor wird ausgebaut": 103,
+          "Werft wird ausgebaut": 54
+        }
+      },
+      {
+        "profile": "active",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            4,
+            10,
+            14
+          ],
+          "minutes": 15,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 30,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 28,
+        "regular_nebula_hour": 58.530444804416234,
+        "colony_hour": 82.01433165737576,
+        "first_core_hour": null,
+        "planets": 5,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 30,
+            "crystal_mine": 26,
+            "power": 24,
+            "gas_mine": 25,
+            "robotics": 12,
+            "lab": 7,
+            "shipyard": 8,
+            "store": 12,
+            "nanite": 4
+          },
+          "P2": {
+            "metal_mine": 21,
+            "power": 17,
+            "crystal_mine": 19,
+            "gas_mine": 17,
+            "store": 5
+          },
+          "P3": {
+            "metal_mine": 20,
+            "power": 17,
+            "crystal_mine": 18,
+            "gas_mine": 16,
+            "store": 5
+          },
+          "P4": {
+            "metal_mine": 19,
+            "power": 15,
+            "crystal_mine": 17,
+            "gas_mine": 14,
+            "store": 4
+          },
+          "P5": {
+            "metal_mine": 16,
+            "power": 13,
+            "crystal_mine": 14,
+            "gas_mine": 12,
+            "store": 2
+          }
+        },
+        "tech": {
+          "energy": 9,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 8,
+          "computer": 10,
+          "alloy": 6,
+          "dynpower": 9
+        },
+        "ships": {
+          "lf": 738,
+          "sc": 272,
+          "lc": 134,
+          "pr": 7627
+        },
+        "dm": 208,
+        "liquid_total": 12873324.539585192,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -0.000004392117261886597,
+        "liquid_home": {
+          "m": 1852465.6719597746,
+          "k": 834851.8661544954,
+          "g": 8116007.001470921
+        },
+        "points": {
+          "b": 80113,
+          "t": 11946,
+          "f": 13275,
+          "dev": 92059,
+          "total": 105334
+        },
+        "ship_value": 13275000,
+        "production_hour": {
+          "m": 332076.61982245225,
+          "k": 146874.08139528034,
+          "g": 72368.88153871239
+        },
+        "storage_home": 18005000,
+        "field_home": [
+          148,
+          178
+        ],
+        "neb_starts": 568,
+        "neb_resolutions": 568,
+        "neb_found_value": 6578000,
+        "neb_resources": {
+          "m": 3532362,
+          "k": 2248600,
+          "g": 1118816
+        },
+        "counts": {
+          "build": 437,
+          "research": 57,
+          "unit_orders": 355,
+          "unit_count": 7620,
+          "starts": 2481,
+          "pvp_attacks": 0,
+          "frames": 7200,
+          "claims": 9,
+          "online_minutes": 1800
+        },
+        "flow": {
+          "mines": {
+            "m": 57464493.67196336,
+            "k": 30321340.866155244,
+            "g": 13213705.00147098
+          },
+          "storage_wasted": {
+            "m": 51049245.39016434,
+            "k": 19335379.523927588,
+            "g": 10699918.629394358
+          },
+          "nebula": {
+            "m": 3532362,
+            "k": 2248600,
+            "g": 1118816
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 2121432,
+            "k": 977235,
+            "g": 468042
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 57698912,
+            "k": 20812974,
+            "g": 2821650
+          },
+          "spent_research": {
+            "m": 2722743,
+            "k": 3428896,
+            "g": 2867437
+          },
+          "spent_units": {
+            "m": 158000,
+            "k": 7783000,
+            "g": 30000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 277673
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 6578000,
+          "lost_ship_value": 1114000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 4.154166666666667,
+          "T05": 10,
+          "build_lab": 10.004166666666666,
+          "research_energy": 10.079166666666667,
+          "build_shipyard": 10.204166666666667,
+          "T06": 14,
+          "research_combustion": 14.004166666666666,
+          "T07": 24.004166666666666,
+          "T08": 24.179166666666667,
+          "training_return_event": 24.2596114710829,
+          "T09": 28,
+          "research_espionage": 28.004166666666666,
+          "research_impulse": 38,
+          "research_astro": 52,
+          "build_store": 58,
+          "regular_return_event": 58.530444804416234,
+          "first_colony_launch": 82,
+          "colony_created_event": 82.01433165737576,
+          "research_computer": 110,
+          "research_alloy": 148.00833333333333,
+          "research_dynpower": 192.02083333333334,
+          "build_nanite": 230.0125
+        },
+        "active_build_worlds": 4,
+        "errors": {
+          "Zu wenig Rohstoffe": 8497,
+          "Forschung läuft": 4138,
+          "Es läuft bereits eine Forschung": 1562,
+          "Bauschleife voll": 894,
+          "Werft wird ausgebaut": 596,
+          "Werft ist beschäftigt": 480,
+          "ship_resources_lc": 221,
+          "Labor wird ausgebaut": 103,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 1
+        }
+      },
+      {
+        "profile": "active",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            4,
+            10,
+            14
+          ],
+          "minutes": 15,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 90,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 28,
+        "regular_nebula_hour": 58.530444804416234,
+        "colony_hour": 82.01433165737576,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 34,
+            "crystal_mine": 34,
+            "power": 28,
+            "gas_mine": 33,
+            "robotics": 12,
+            "lab": 7,
+            "shipyard": 8,
+            "store": 14,
+            "nanite": 4
+          },
+          "P2": {
+            "metal_mine": 24,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 8
+          },
+          "P3": {
+            "metal_mine": 24,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P4": {
+            "metal_mine": 23,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P5": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P6": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 18,
+            "store": 6
+          },
+          "P7": {
+            "metal_mine": 21,
+            "power": 17,
+            "crystal_mine": 19,
+            "gas_mine": 18,
+            "store": 6
+          }
+        },
+        "tech": {
+          "energy": 11,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 8,
+          "dynpower": 11
+        },
+        "ships": {
+          "lf": 4641,
+          "co": 27,
+          "sc": 1171,
+          "lc": 912,
+          "pr": 10066
+        },
+        "dm": 395,
+        "liquid_total": 184196712.0771024,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0.000009149312973022461,
+        "liquid_home": {
+          "m": 45222702.11389628,
+          "k": 60510000,
+          "g": 63089009.96320611
+        },
+        "points": {
+          "b": 629807,
+          "t": 110434,
+          "f": 45338,
+          "dev": 740241,
+          "total": 785579
+        },
+        "ship_value": 45338000,
+        "production_hour": {
+          "m": 697541.1930328973,
+          "k": 403080.5385994866,
+          "g": 207341.0089452962
+        },
+        "storage_home": 60510000,
+        "field_home": [
+          174,
+          178
+        ],
+        "neb_starts": 1802,
+        "neb_resolutions": 1802,
+        "neb_found_value": 53300000,
+        "neb_resources": {
+          "m": 56666036,
+          "k": 36406759,
+          "g": 16638209
+        },
+        "counts": {
+          "build": 721,
+          "research": 69,
+          "unit_orders": 355,
+          "unit_count": 7620,
+          "starts": 12514,
+          "pvp_attacks": 0,
+          "frames": 21600,
+          "claims": 9,
+          "online_minutes": 5400
+        },
+        "flow": {
+          "mines": {
+            "m": 448917719.11389863,
+            "k": 234525875.9999917,
+            "g": 77055167.96320297
+          },
+          "storage_wasted": {
+            "m": 439629828.16781,
+            "k": 226375568.79588583,
+            "g": 157755298.57252246
+          },
+          "nebula": {
+            "m": 56666036,
+            "k": 36406759,
+            "g": 16638209
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 18027738,
+            "k": 9346685,
+            "g": 4761854
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 454936357,
+            "k": 177695053,
+            "g": 6136150
+          },
+          "spent_research": {
+            "m": 18173267,
+            "k": 29168813,
+            "g": 18299791
+          },
+          "spent_units": {
+            "m": 158000,
+            "k": 7783000,
+            "g": 30000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 5777484
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 53300000,
+          "lost_ship_value": 15693000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 4.154166666666667,
+          "T05": 10,
+          "build_lab": 10.004166666666666,
+          "research_energy": 10.079166666666667,
+          "build_shipyard": 10.204166666666667,
+          "T06": 14,
+          "research_combustion": 14.004166666666666,
+          "T07": 24.004166666666666,
+          "T08": 24.179166666666667,
+          "training_return_event": 24.2596114710829,
+          "T09": 28,
+          "research_espionage": 28.004166666666666,
+          "research_impulse": 38,
+          "research_astro": 52,
+          "build_store": 58,
+          "regular_return_event": 58.530444804416234,
+          "first_colony_launch": 82,
+          "colony_created_event": 82.01433165737576,
+          "research_computer": 110,
+          "research_alloy": 148.00833333333333,
+          "research_dynpower": 192.02083333333334,
+          "build_nanite": 230.0125
+        },
+        "active_build_worlds": 6,
+        "errors": {
+          "Zu wenig Rohstoffe": 17819,
+          "Forschung läuft": 9312,
+          "Es läuft bereits eine Forschung": 3723,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 987,
+          "Bauschleife voll": 894,
+          "Werft wird ausgebaut": 596,
+          "Werft ist beschäftigt": 480,
+          "ship_resources_lc": 221,
+          "Labor wird ausgebaut": 103
+        }
+      },
+      {
+        "profile": "active",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            4,
+            10,
+            14
+          ],
+          "minutes": 15,
+          "policy": "balanced",
+          "pct": 100,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 180,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 28,
+        "regular_nebula_hour": 58.530444804416234,
+        "colony_hour": 82.01433165737576,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 37,
+            "crystal_mine": 37,
+            "power": 29,
+            "gas_mine": 36,
+            "robotics": 12,
+            "lab": 14,
+            "shipyard": 8,
+            "store": 16,
+            "nanite": 4,
+            "terraformer": 4
+          },
+          "P2": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 25,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P3": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 25,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P4": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P5": {
+            "metal_mine": 26,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P6": {
+            "metal_mine": 26,
+            "power": 19,
+            "crystal_mine": 24,
+            "gas_mine": 22,
+            "store": 9
+          },
+          "P7": {
+            "metal_mine": 26,
+            "power": 19,
+            "crystal_mine": 23,
+            "gas_mine": 21,
+            "store": 8
+          }
+        },
+        "tech": {
+          "energy": 12,
+          "combustion": 6,
+          "espionage": 5,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 9,
+          "dynpower": 15,
+          "armour": 10,
+          "shielding": 10,
+          "weapons": 10
+        },
+        "ships": {
+          "lf": 12388,
+          "co": 82,
+          "hf": 813,
+          "sc": 1430,
+          "lc": 1291,
+          "rc": 341,
+          "pr": 10893
+        },
+        "dm": 606,
+        "liquid_total": 536333855.4247251,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0.0001755356788635254,
+        "liquid_home": {
+          "m": 70962546.05930704,
+          "k": 205242290,
+          "g": 214522429
+        },
+        "points": {
+          "b": 1745953,
+          "t": 378841,
+          "f": 99205,
+          "dev": 2124794,
+          "total": 2223999
+        },
+        "ship_value": 99205000,
+        "production_hour": {
+          "m": 1028568.282634469,
+          "k": 575701.6312443672,
+          "g": 302797.50629977987
+        },
+        "storage_home": 203350000,
+        "field_home": [
+          193,
+          198
+        ],
+        "neb_starts": 3588,
+        "neb_resolutions": 3588,
+        "neb_found_value": 139315000,
+        "neb_resources": {
+          "m": 188006270,
+          "k": 121283098,
+          "g": 54352947
+        },
+        "counts": {
+          "build": 825,
+          "research": 104,
+          "unit_orders": 355,
+          "unit_count": 7620,
+          "starts": 28686,
+          "pvp_attacks": 0,
+          "frames": 43200,
+          "claims": 9,
+          "online_minutes": 10800
+        },
+        "flow": {
+          "mines": {
+            "m": 1353795110.250761,
+            "k": 681750174.2857912,
+            "g": 265468457.88799733
+          },
+          "storage_wasted": {
+            "m": 1468579370.0994856,
+            "k": 847141472.981028,
+            "g": 521301767.86836123
+          },
+          "nebula": {
+            "m": 188006270,
+            "k": 121283098,
+            "g": 54352947
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 57888375,
+            "k": 31375769,
+            "g": 16147678
+          },
+          "campaign": {
+            "m": 2333,
+            "k": 1246,
+            "g": 1854
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 1453494381,
+            "k": 535424522,
+            "g": 24055350
+          },
+          "spent_research": {
+            "m": 59624373,
+            "k": 70799548,
+            "g": 58996712
+          },
+          "spent_units": {
+            "m": 158000,
+            "k": 7783000,
+            "g": 30000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 23376721
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 139315000,
+          "lost_ship_value": 47841000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 4.154166666666667,
+          "T05": 10,
+          "build_lab": 10.004166666666666,
+          "research_energy": 10.079166666666667,
+          "build_shipyard": 10.204166666666667,
+          "T06": 14,
+          "research_combustion": 14.004166666666666,
+          "T07": 24.004166666666666,
+          "T08": 24.179166666666667,
+          "training_return_event": 24.2596114710829,
+          "T09": 28,
+          "research_espionage": 28.004166666666666,
+          "research_impulse": 38,
+          "research_astro": 52,
+          "build_store": 58,
+          "regular_return_event": 58.530444804416234,
+          "first_colony_launch": 82,
+          "colony_created_event": 82.01433165737576,
+          "research_computer": 110,
+          "research_alloy": 148.00833333333333,
+          "research_dynpower": 192.02083333333334,
+          "build_nanite": 230.0125,
+          "build_terraformer": 2534.0416666666665,
+          "research_armour": 2962.0333333333333,
+          "research_shielding": 3028.0375,
+          "research_weapons": 3082.0333333333333
+        },
+        "active_build_worlds": 7,
+        "errors": {
+          "Zu wenig Rohstoffe": 23652,
+          "Forschung läuft": 12214,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 8007,
+          "Es läuft bereits eine Forschung": 3723,
+          "Bauschleife voll": 902,
+          "Werft wird ausgebaut": 596,
+          "Werft ist beschäftigt": 480,
+          "ship_resources_lc": 221,
+          "Labor wird ausgebaut": 103
+        }
+      }
+    ],
+    "final": {
+      "profile": "active",
+      "seed": 123,
+      "config": {
+        "sessions": [
+          0,
+          4,
+          10,
+          14
+        ],
+        "minutes": 15,
+        "policy": "balanced",
+        "pct": 100,
+        "raids": false
+      },
+      "rules": {
+        "full": true,
+        "weekly": false
+      },
+      "day": 180,
+      "tutorial_complete": true,
+      "tutorial_mission": null,
+      "tutorial_hour": 28,
+      "regular_nebula_hour": 58.530444804416234,
+      "colony_hour": 82.01433165737576,
+      "first_core_hour": null,
+      "planets": 7,
+      "cores": 0,
+      "galactonite": {
+        "v": 2,
+        "st": 0,
+        "base": 0,
+        "src": {},
+        "lost": 0,
+        "shards": {},
+        "gems": [],
+        "energy": 0,
+        "nextGem": 1
+      },
+      "buildings": {
+        "P1": {
+          "metal_mine": 37,
+          "crystal_mine": 37,
+          "power": 29,
+          "gas_mine": 36,
+          "robotics": 12,
+          "lab": 14,
+          "shipyard": 8,
+          "store": 16,
+          "nanite": 4,
+          "terraformer": 4
+        },
+        "P2": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 25,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P3": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 25,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P4": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P5": {
+          "metal_mine": 26,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P6": {
+          "metal_mine": 26,
+          "power": 19,
+          "crystal_mine": 24,
+          "gas_mine": 22,
+          "store": 9
+        },
+        "P7": {
+          "metal_mine": 26,
+          "power": 19,
+          "crystal_mine": 23,
+          "gas_mine": 21,
+          "store": 8
+        }
+      },
+      "tech": {
+        "energy": 12,
+        "combustion": 6,
+        "espionage": 5,
+        "impulse": 3,
+        "astro": 14,
+        "computer": 10,
+        "alloy": 9,
+        "dynpower": 15,
+        "armour": 10,
+        "shielding": 10,
+        "weapons": 10
+      },
+      "ships": {
+        "lf": 12388,
+        "co": 82,
+        "hf": 813,
+        "sc": 1430,
+        "lc": 1291,
+        "rc": 341,
+        "pr": 10893
+      },
+      "dm": 606,
+      "liquid_total": 536333855.4247251,
+      "liquid_in_transit": 0,
+      "cash_accounting_error": 0.0001755356788635254,
+      "liquid_home": {
+        "m": 70962546.05930704,
+        "k": 205242290,
+        "g": 214522429
+      },
+      "points": {
+        "b": 1745953,
+        "t": 378841,
+        "f": 99205,
+        "dev": 2124794,
+        "total": 2223999
+      },
+      "ship_value": 99205000,
+      "production_hour": {
+        "m": 1028568.282634469,
+        "k": 575701.6312443672,
+        "g": 302797.50629977987
+      },
+      "storage_home": 203350000,
+      "field_home": [
+        193,
+        198
+      ],
+      "neb_starts": 3588,
+      "neb_resolutions": 3588,
+      "neb_found_value": 139315000,
+      "neb_resources": {
+        "m": 188006270,
+        "k": 121283098,
+        "g": 54352947
+      },
+      "counts": {
+        "build": 825,
+        "research": 104,
+        "unit_orders": 355,
+        "unit_count": 7620,
+        "starts": 28686,
+        "pvp_attacks": 0,
+        "frames": 43200,
+        "claims": 9,
+        "online_minutes": 10800
+      },
+      "flow": {
+        "mines": {
+          "m": 1353795110.250761,
+          "k": 681750174.2857912,
+          "g": 265468457.88799733
+        },
+        "storage_wasted": {
+          "m": 1468579370.0994856,
+          "k": 847141472.981028,
+          "g": 521301767.86836123
+        },
+        "nebula": {
+          "m": 188006270,
+          "k": 121283098,
+          "g": 54352947
+        },
+        "npc_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "recycle": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "gifts": {
+          "m": 57888375,
+          "k": 31375769,
+          "g": 16147678
+        },
+        "campaign": {
+          "m": 2333,
+          "k": 1246,
+          "g": 1854
+        },
+        "transport_internal": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "spent_build": {
+          "m": 1453494381,
+          "k": 535424522,
+          "g": 24055350
+        },
+        "spent_research": {
+          "m": 59624373,
+          "k": 70799548,
+          "g": 58996712
+        },
+        "spent_units": {
+          "m": 158000,
+          "k": 7783000,
+          "g": 30000
+        },
+        "fuel": {
+          "m": 0,
+          "k": 0,
+          "g": 23376721
+        },
+        "raid_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "found_ship_value": 139315000,
+        "lost_ship_value": 47841000,
+        "raid_lost_value": 0,
+        "weekly_stones": 0,
+        "cores": 0
+      },
+      "milestones": {
+        "T01": 0.004166666666666667,
+        "build_metal_mine": 0.008333333333333333,
+        "build_crystal_mine": 0.016666666666666666,
+        "T02": 0.025,
+        "build_power": 0.029166666666666667,
+        "build_gas_mine": 0.05416666666666667,
+        "T03": 0.15833333333333333,
+        "T04": 0.1625,
+        "build_robotics": 4.154166666666667,
+        "T05": 10,
+        "build_lab": 10.004166666666666,
+        "research_energy": 10.079166666666667,
+        "build_shipyard": 10.204166666666667,
+        "T06": 14,
+        "research_combustion": 14.004166666666666,
+        "T07": 24.004166666666666,
+        "T08": 24.179166666666667,
+        "training_return_event": 24.2596114710829,
+        "T09": 28,
+        "research_espionage": 28.004166666666666,
+        "research_impulse": 38,
+        "research_astro": 52,
+        "build_store": 58,
+        "regular_return_event": 58.530444804416234,
+        "first_colony_launch": 82,
+        "colony_created_event": 82.01433165737576,
+        "research_computer": 110,
+        "research_alloy": 148.00833333333333,
+        "research_dynpower": 192.02083333333334,
+        "build_nanite": 230.0125,
+        "build_terraformer": 2534.0416666666665,
+        "research_armour": 2962.0333333333333,
+        "research_shielding": 3028.0375,
+        "research_weapons": 3082.0333333333333
+      },
+      "active_build_worlds": 7,
+      "errors": {
+        "Zu wenig Rohstoffe": 23652,
+        "Forschung läuft": 12214,
+        "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 8007,
+        "Es läuft bereits eine Forschung": 3723,
+        "Bauschleife voll": 902,
+        "Werft wird ausgebaut": 596,
+        "Werft ist beschäftigt": 480,
+        "ship_resources_lc": 221,
+        "Labor wird ausgebaut": 103
+      }
+    }
+  },
+  {
+    "profile": "optimized",
+    "seed": 123,
+    "config": {
+      "sessions": [
+        0,
+        2,
+        4,
+        6,
+        9,
+        12,
+        15,
+        18
+      ],
+      "minutes": 20,
+      "policy": "nebula",
+      "pct": 10,
+      "raids": false
+    },
+    "snapshots": [
+      {
+        "profile": "optimized",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            2,
+            4,
+            6,
+            9,
+            12,
+            15,
+            18
+          ],
+          "minutes": 20,
+          "policy": "nebula",
+          "pct": 10,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 1,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 9.3125,
+        "regular_nebula_hour": null,
+        "colony_hour": null,
+        "first_core_hour": null,
+        "planets": 1,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 11,
+            "crystal_mine": 9,
+            "power": 10,
+            "gas_mine": 6,
+            "robotics": 4,
+            "lab": 3,
+            "shipyard": 4
+          }
+        },
+        "tech": {
+          "energy": 1,
+          "combustion": 2,
+          "espionage": 3,
+          "armour": 1,
+          "impulse": 1
+        },
+        "ships": {
+          "sc": 1
+        },
+        "dm": 5,
+        "liquid_total": 29425.169316101543,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -2.1827872842550278e-10,
+        "liquid_home": {
+          "m": 10000,
+          "k": 10000,
+          "g": 9425.169316101543
+        },
+        "points": {
+          "b": 65,
+          "t": 37,
+          "f": 4,
+          "dev": 103,
+          "total": 107
+        },
+        "ship_value": 4000,
+        "production_hour": {
+          "m": 9715.285130163009,
+          "k": 4394.3058438000035,
+          "g": 1360.5588480000006
+        },
+        "storage_home": 10000,
+        "field_home": [
+          47,
+          178
+        ],
+        "neb_starts": 1,
+        "neb_resolutions": 1,
+        "neb_found_value": 0,
+        "neb_resources": {
+          "m": 2977,
+          "k": 1019,
+          "g": 137
+        },
+        "counts": {
+          "build": 47,
+          "research": 8,
+          "unit_orders": 1,
+          "unit_count": 1,
+          "starts": 1,
+          "pvp_attacks": 0,
+          "frames": 640,
+          "claims": 9,
+          "online_minutes": 160
+        },
+        "flow": {
+          "mines": {
+            "m": 51554.00000000014,
+            "k": 35368.00000000003,
+            "g": 16096.169316101583
+          },
+          "storage_wasted": {
+            "m": 111906.39209898208,
+            "k": 31873.229865380777,
+            "g": 1.0863754340562082e-11
+          },
+          "nebula": {
+            "m": 2977,
+            "k": 1019,
+            "g": 137
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 150,
+            "k": 75,
+            "g": 0
+          },
+          "campaign": {
+            "m": 3691,
+            "k": 2524,
+            "g": 2507
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 42238,
+            "k": 17814,
+            "g": 5900
+          },
+          "spent_research": {
+            "m": 5134,
+            "k": 10172,
+            "g": 3664
+          },
+          "spent_units": {
+            "m": 2000,
+            "k": 2000,
+            "g": 0
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 1
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 0,
+          "lost_ship_value": 0,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 2.004166666666667,
+          "build_lab": 2.183333333333333,
+          "T05": 2.2666666666666666,
+          "research_energy": 4,
+          "build_shipyard": 4.004166666666666,
+          "T06": 4.25,
+          "research_combustion": 4.254166666666666,
+          "T07": 6.208333333333333,
+          "T08": 9,
+          "research_espionage": 9.208333333333334,
+          "training_return_event": 9.311948044162326,
+          "T09": 9.3125,
+          "research_armour": 12.3125,
+          "research_impulse": 18
+        },
+        "active_build_worlds": 0,
+        "errors": {
+          "Bauschleife voll": 1260,
+          "Es läuft bereits eine Forschung": 298,
+          "Zu wenig Rohstoffe": 231,
+          "Forschung läuft": 105,
+          "Labor wird ausgebaut": 46
+        }
+      },
+      {
+        "profile": "optimized",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            2,
+            4,
+            6,
+            9,
+            12,
+            15,
+            18
+          ],
+          "minutes": 20,
+          "policy": "nebula",
+          "pct": 10,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 7,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 9.3125,
+        "regular_nebula_hour": 28.766114710828994,
+        "colony_hour": 42.141043846299915,
+        "first_core_hour": null,
+        "planets": 2,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 21,
+            "crystal_mine": 18,
+            "power": 17,
+            "gas_mine": 17,
+            "robotics": 8,
+            "lab": 5,
+            "shipyard": 8,
+            "store": 6
+          },
+          "P2": {
+            "metal_mine": 17,
+            "power": 13,
+            "crystal_mine": 15,
+            "gas_mine": 13,
+            "store": 2
+          }
+        },
+        "tech": {
+          "energy": 7,
+          "combustion": 6,
+          "espionage": 10,
+          "armour": 5,
+          "impulse": 3,
+          "astro": 2,
+          "computer": 8,
+          "alloy": 4,
+          "dynpower": 5
+        },
+        "ships": {
+          "lf": 21,
+          "hf": 2,
+          "pr": 479,
+          "sc": 5,
+          "lc": 14
+        },
+        "dm": 57,
+        "liquid_total": 1042616.9826078243,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 1.0710209608078003e-8,
+        "liquid_home": {
+          "m": 472944,
+          "k": 144065.62307655744,
+          "g": 305607.3595312668
+        },
+        "points": {
+          "b": 2963,
+          "t": 2045,
+          "f": 771,
+          "dev": 5009,
+          "total": 5780
+        },
+        "ship_value": 771000,
+        "production_hour": {
+          "m": 70236.46698165266,
+          "k": 31458.448567764244,
+          "g": 16323.519418503198
+        },
+        "storage_home": 470000,
+        "field_home": [
+          100,
+          178
+        ],
+        "neb_starts": 132,
+        "neb_resolutions": 132,
+        "neb_found_value": 173000,
+        "neb_resources": {
+          "m": 106814,
+          "k": 68018,
+          "g": 26393
+        },
+        "counts": {
+          "build": 162,
+          "research": 51,
+          "unit_orders": 184,
+          "unit_count": 501,
+          "starts": 154,
+          "pvp_attacks": 0,
+          "frames": 4480,
+          "claims": 9,
+          "online_minutes": 1120
+        },
+        "flow": {
+          "mines": {
+            "m": 2823219.999999959,
+            "k": 2021912.623076562,
+            "g": 763463.3595312923
+          },
+          "storage_wasted": {
+            "m": 3961273.1707028155,
+            "k": 905583.6506411541,
+            "g": 539176.2382735151
+          },
+          "nebula": {
+            "m": 106814,
+            "k": 68018,
+            "g": 26393
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 112408,
+            "k": 48964,
+            "g": 22105
+          },
+          "campaign": {
+            "m": 3691,
+            "k": 2524,
+            "g": 2507
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 2123126,
+            "k": 768092,
+            "g": 100200
+          },
+          "spent_research": {
+            "m": 321563,
+            "k": 604561,
+            "g": 356448
+          },
+          "spent_units": {
+            "m": 90000,
+            "k": 586000,
+            "g": 10000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 2563
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 173000,
+          "lost_ship_value": 48000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 2.004166666666667,
+          "build_lab": 2.183333333333333,
+          "T05": 2.2666666666666666,
+          "research_energy": 4,
+          "build_shipyard": 4.004166666666666,
+          "T06": 4.25,
+          "research_combustion": 4.254166666666666,
+          "T07": 6.208333333333333,
+          "T08": 9,
+          "research_espionage": 9.208333333333334,
+          "training_return_event": 9.311948044162326,
+          "T09": 9.3125,
+          "research_armour": 12.3125,
+          "research_impulse": 18,
+          "research_astro": 26.004166666666666,
+          "build_store": 28.004166666666666,
+          "regular_return_event": 28.766114710828994,
+          "first_colony_launch": 42,
+          "colony_created_event": 42.141043846299915,
+          "research_computer": 66.00416666666666,
+          "research_alloy": 74,
+          "research_dynpower": 78.00416666666666
+        },
+        "active_build_worlds": 1,
+        "errors": {
+          "Zu wenig Rohstoffe": 6383,
+          "Forschung läuft": 3416,
+          "Bauschleife voll": 1714,
+          "Es läuft bereits eine Forschung": 1270,
+          "ship_resources_lc": 452,
+          "Werft wird ausgebaut": 287,
+          "Labor wird ausgebaut": 227,
+          "Werft ist beschäftigt": 151
+        }
+      },
+      {
+        "profile": "optimized",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            2,
+            4,
+            6,
+            9,
+            12,
+            15,
+            18
+          ],
+          "minutes": 20,
+          "policy": "nebula",
+          "pct": 10,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 30,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 9.3125,
+        "regular_nebula_hour": 28.766114710828994,
+        "colony_hour": 42.141043846299915,
+        "first_core_hour": null,
+        "planets": 5,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 28,
+            "crystal_mine": 24,
+            "power": 22,
+            "gas_mine": 23,
+            "robotics": 10,
+            "lab": 11,
+            "shipyard": 8,
+            "store": 10,
+            "nanite": 3
+          },
+          "P2": {
+            "metal_mine": 21,
+            "power": 17,
+            "crystal_mine": 19,
+            "gas_mine": 18,
+            "store": 6
+          },
+          "P3": {
+            "metal_mine": 20,
+            "power": 17,
+            "crystal_mine": 18,
+            "gas_mine": 17,
+            "store": 5
+          },
+          "P4": {
+            "metal_mine": 19,
+            "power": 15,
+            "crystal_mine": 18,
+            "gas_mine": 16,
+            "store": 4
+          },
+          "P5": {
+            "metal_mine": 18,
+            "power": 14,
+            "crystal_mine": 15,
+            "gas_mine": 13,
+            "store": 3
+          }
+        },
+        "tech": {
+          "energy": 9,
+          "combustion": 6,
+          "espionage": 12,
+          "armour": 9,
+          "impulse": 3,
+          "astro": 9,
+          "computer": 10,
+          "alloy": 6,
+          "dynpower": 9,
+          "shielding": 9,
+          "weapons": 9
+        },
+        "ships": {
+          "lf": 1269,
+          "hf": 153,
+          "co": 1,
+          "pr": 18058,
+          "sc": 544,
+          "rc": 419,
+          "lc": 105
+        },
+        "dm": 158,
+        "liquid_total": 15387497.83074268,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": -0.000004567205905914307,
+        "liquid_home": {
+          "m": 6218209,
+          "k": 547807.8307426791,
+          "g": 5801481
+        },
+        "points": {
+          "b": 40110,
+          "t": 16900,
+          "f": 35682,
+          "dev": 57011,
+          "total": 92693
+        },
+        "ship_value": 35682000,
+        "production_hour": {
+          "m": 292503.13445781416,
+          "k": 131056.89803318567,
+          "g": 68249.91746889226
+        },
+        "storage_home": 5355000,
+        "field_home": [
+          139,
+          178
+        ],
+        "neb_starts": 617,
+        "neb_resolutions": 616,
+        "neb_found_value": 14841000,
+        "neb_resources": {
+          "m": 13605087,
+          "k": 8689240,
+          "g": 4138111
+        },
+        "counts": {
+          "build": 443,
+          "research": 92,
+          "unit_orders": 840,
+          "unit_count": 18442,
+          "starts": 1362,
+          "pvp_attacks": 0,
+          "frames": 19200,
+          "claims": 9,
+          "online_minutes": 4800
+        },
+        "flow": {
+          "mines": {
+            "m": 26658078.000004616,
+            "k": 27588783.830741946,
+            "g": 7809310.000000681
+          },
+          "storage_wasted": {
+            "m": 86406669.12074794,
+            "k": 23326472.45102004,
+            "g": 17130494.182540957
+          },
+          "nebula": {
+            "m": 13605087,
+            "k": 8689240,
+            "g": 4138111
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 2246580,
+            "k": 1015903,
+            "g": 497066
+          },
+          "campaign": {
+            "m": 3691,
+            "k": 2524,
+            "g": 2507
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 29414262,
+            "k": 11188202,
+            "g": 1350250
+          },
+          "spent_research": {
+            "m": 2962465,
+            "k": 4635741,
+            "g": 2699337
+          },
+          "spent_units": {
+            "m": 2980000,
+            "k": 19986000,
+            "g": 596000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 1060276
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 14841000,
+          "lost_ship_value": 2561000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 2.004166666666667,
+          "build_lab": 2.183333333333333,
+          "T05": 2.2666666666666666,
+          "research_energy": 4,
+          "build_shipyard": 4.004166666666666,
+          "T06": 4.25,
+          "research_combustion": 4.254166666666666,
+          "T07": 6.208333333333333,
+          "T08": 9,
+          "research_espionage": 9.208333333333334,
+          "training_return_event": 9.311948044162326,
+          "T09": 9.3125,
+          "research_armour": 12.3125,
+          "research_impulse": 18,
+          "research_astro": 26.004166666666666,
+          "build_store": 28.004166666666666,
+          "regular_return_event": 28.766114710828994,
+          "first_colony_launch": 42,
+          "colony_created_event": 42.141043846299915,
+          "research_computer": 66.00416666666666,
+          "research_alloy": 74,
+          "research_dynpower": 78.00416666666666,
+          "build_nanite": 240.02083333333334,
+          "research_shielding": 255.0125,
+          "research_weapons": 306.0083333333333
+        },
+        "active_build_worlds": 4,
+        "errors": {
+          "Zu wenig Rohstoffe": 36210,
+          "Forschung läuft": 11447,
+          "Werft wird ausgebaut": 4011,
+          "Bauschleife voll": 3775,
+          "Werft ist beschäftigt": 3749,
+          "Es läuft bereits eine Forschung": 3685,
+          "Labor wird ausgebaut": 1796,
+          "ship_resources_lc": 452,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 2
+        }
+      },
+      {
+        "profile": "optimized",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            2,
+            4,
+            6,
+            9,
+            12,
+            15,
+            18
+          ],
+          "minutes": 20,
+          "policy": "nebula",
+          "pct": 10,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 90,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 9.3125,
+        "regular_nebula_hour": 28.766114710828994,
+        "colony_hour": 42.141043846299915,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 34,
+            "crystal_mine": 34,
+            "power": 28,
+            "gas_mine": 33,
+            "robotics": 12,
+            "lab": 11,
+            "shipyard": 8,
+            "store": 14,
+            "nanite": 4,
+            "terraformer": 1
+          },
+          "P2": {
+            "metal_mine": 24,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 21,
+            "store": 8
+          },
+          "P3": {
+            "metal_mine": 24,
+            "power": 19,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 8
+          },
+          "P4": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 22,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P5": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 20,
+            "store": 7
+          },
+          "P6": {
+            "metal_mine": 23,
+            "power": 18,
+            "crystal_mine": 21,
+            "gas_mine": 19,
+            "store": 7
+          },
+          "P7": {
+            "metal_mine": 22,
+            "power": 17,
+            "crystal_mine": 20,
+            "gas_mine": 18,
+            "store": 6
+          }
+        },
+        "tech": {
+          "energy": 11,
+          "combustion": 6,
+          "espionage": 12,
+          "armour": 9,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 8,
+          "dynpower": 11,
+          "shielding": 9,
+          "weapons": 9
+        },
+        "ships": {
+          "lf": 9204,
+          "hf": 1724,
+          "co": 84,
+          "lc": 1624,
+          "sc": 2529,
+          "rc": 1234,
+          "pr": 24902
+        },
+        "dm": 370,
+        "liquid_total": 209689118.450431,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0.0001360177993774414,
+        "liquid_home": {
+          "m": 59814005.03551283,
+          "k": 66739414,
+          "g": 66188539
+        },
+        "points": {
+          "b": 633438,
+          "t": 113277,
+          "f": 134134,
+          "dev": 746715,
+          "total": 880849
+        },
+        "ship_value": 134134000,
+        "production_hour": {
+          "m": 699243.6045087462,
+          "k": 403679.4989613686,
+          "g": 210790.71537218365
+        },
+        "storage_home": 60510000,
+        "field_home": [
+          178,
+          183
+        ],
+        "neb_starts": 1854,
+        "neb_resolutions": 1854,
+        "neb_found_value": 141539000,
+        "neb_resources": {
+          "m": 136271127,
+          "k": 87396320,
+          "g": 39636839
+        },
+        "counts": {
+          "build": 732,
+          "research": 103,
+          "unit_orders": 852,
+          "unit_count": 19437,
+          "starts": 5743,
+          "pvp_attacks": 0,
+          "frames": 57600,
+          "claims": 9,
+          "online_minutes": 14400
+        },
+        "flow": {
+          "mines": {
+            "m": 391600771.0004664,
+            "k": 206490779.79047927,
+            "g": 66060558.65934938
+          },
+          "storage_wasted": {
+            "m": 517817533.5002629,
+            "k": 260810051.46813962,
+            "g": 172212387.8208479
+          },
+          "nebula": {
+            "m": 136271127,
+            "k": 87396320,
+            "g": 39636839
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 18422687,
+            "k": 9448520,
+            "g": 4825497
+          },
+          "campaign": {
+            "m": 3691,
+            "k": 2524,
+            "g": 2507
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 459283345,
+            "k": 179902588,
+            "g": 6620150
+          },
+          "spent_research": {
+            "m": 18702614,
+            "k": 29939580,
+            "g": 18421316
+          },
+          "spent_units": {
+            "m": 3140000,
+            "k": 21061000,
+            "g": 628000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 12777260
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 141539000,
+          "lost_ship_value": 31994000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 2.004166666666667,
+          "build_lab": 2.183333333333333,
+          "T05": 2.2666666666666666,
+          "research_energy": 4,
+          "build_shipyard": 4.004166666666666,
+          "T06": 4.25,
+          "research_combustion": 4.254166666666666,
+          "T07": 6.208333333333333,
+          "T08": 9,
+          "research_espionage": 9.208333333333334,
+          "training_return_event": 9.311948044162326,
+          "T09": 9.3125,
+          "research_armour": 12.3125,
+          "research_impulse": 18,
+          "research_astro": 26.004166666666666,
+          "build_store": 28.004166666666666,
+          "regular_return_event": 28.766114710828994,
+          "first_colony_launch": 42,
+          "colony_created_event": 42.141043846299915,
+          "research_computer": 66.00416666666666,
+          "research_alloy": 74,
+          "research_dynpower": 78.00416666666666,
+          "build_nanite": 240.02083333333334,
+          "research_shielding": 255.0125,
+          "research_weapons": 306.0083333333333,
+          "build_terraformer": 2079.0291666666667
+        },
+        "active_build_worlds": 6,
+        "errors": {
+          "Zu wenig Rohstoffe": 93015,
+          "Forschung läuft": 46104,
+          "Es läuft bereits eine Forschung": 14790,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 9891,
+          "Werft wird ausgebaut": 4011,
+          "Bauschleife voll": 3775,
+          "Werft ist beschäftigt": 3749,
+          "Labor wird ausgebaut": 1796,
+          "ship_resources_lc": 452
+        }
+      },
+      {
+        "profile": "optimized",
+        "seed": 123,
+        "config": {
+          "sessions": [
+            0,
+            2,
+            4,
+            6,
+            9,
+            12,
+            15,
+            18
+          ],
+          "minutes": 20,
+          "policy": "nebula",
+          "pct": 10,
+          "raids": false
+        },
+        "rules": {
+          "full": true,
+          "weekly": false
+        },
+        "day": 180,
+        "tutorial_complete": true,
+        "tutorial_mission": null,
+        "tutorial_hour": 9.3125,
+        "regular_nebula_hour": 28.766114710828994,
+        "colony_hour": 42.141043846299915,
+        "first_core_hour": null,
+        "planets": 7,
+        "cores": 0,
+        "galactonite": {
+          "v": 2,
+          "st": 0,
+          "base": 0,
+          "src": {},
+          "lost": 0,
+          "shards": {},
+          "gems": [],
+          "energy": 0,
+          "nextGem": 1
+        },
+        "buildings": {
+          "P1": {
+            "metal_mine": 38,
+            "crystal_mine": 37,
+            "power": 29,
+            "gas_mine": 36,
+            "robotics": 12,
+            "lab": 14,
+            "shipyard": 8,
+            "store": 17,
+            "nanite": 4,
+            "terraformer": 4
+          },
+          "P2": {
+            "metal_mine": 27,
+            "power": 21,
+            "crystal_mine": 25,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P3": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 25,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P4": {
+            "metal_mine": 27,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P5": {
+            "metal_mine": 26,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 23,
+            "store": 9
+          },
+          "P6": {
+            "metal_mine": 26,
+            "power": 20,
+            "crystal_mine": 24,
+            "gas_mine": 22,
+            "store": 9
+          },
+          "P7": {
+            "metal_mine": 25,
+            "power": 19,
+            "crystal_mine": 24,
+            "gas_mine": 22,
+            "store": 8
+          }
+        },
+        "tech": {
+          "energy": 12,
+          "combustion": 6,
+          "espionage": 12,
+          "armour": 10,
+          "impulse": 3,
+          "astro": 14,
+          "computer": 10,
+          "alloy": 10,
+          "dynpower": 15,
+          "shielding": 10,
+          "weapons": 10
+        },
+        "ships": {
+          "lf": 28268,
+          "hf": 4679,
+          "co": 210,
+          "pr": 29549,
+          "sc": 6052,
+          "lc": 2813,
+          "rc": 2178
+        },
+        "dm": 663,
+        "liquid_total": 474065433.8989633,
+        "liquid_in_transit": 0,
+        "cash_accounting_error": 0.0006960034370422363,
+        "liquid_home": {
+          "m": 35591079.67831426,
+          "k": 161715693.92634797,
+          "g": 228188660.29430103
+        },
+        "points": {
+          "b": 2107965,
+          "t": 386126,
+          "f": 294979,
+          "dev": 2494092,
+          "total": 2789071
+        },
+        "ship_value": 294979000,
+        "production_hour": {
+          "m": 1076234.027505096,
+          "k": 583748.6159905912,
+          "g": 305824.7760439432
+        },
+        "storage_home": 372785000,
+        "field_home": [
+          195,
+          198
+        ],
+        "neb_starts": 3742,
+        "neb_resolutions": 3742,
+        "neb_found_value": 404168000,
+        "neb_resources": {
+          "m": 439716989,
+          "k": 282251274,
+          "g": 128480973
+        },
+        "counts": {
+          "build": 830,
+          "research": 112,
+          "unit_orders": 852,
+          "unit_count": 19437,
+          "starts": 12671,
+          "pvp_attacks": 0,
+          "frames": 115200,
+          "claims": 9,
+          "online_minutes": 28800
+        },
+        "flow": {
+          "mines": {
+            "m": 1308429093.6779275,
+            "k": 611073226.926116,
+            "g": 245583517.29422393
+          },
+          "storage_wasted": {
+            "m": 1567214021.4206119,
+            "k": 967265050.8199817,
+            "g": 562592540.0777835
+          },
+          "nebula": {
+            "m": 439716989,
+            "k": 282251274,
+            "g": 128480973
+          },
+          "npc_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "recycle": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "gifts": {
+            "m": 58637720,
+            "k": 32196428,
+            "g": 16493848
+          },
+          "campaign": {
+            "m": 3691,
+            "k": 2524,
+            "g": 2507
+          },
+          "transport_internal": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "spent_build": {
+            "m": 1691360522,
+            "k": 653627880,
+            "g": 40439350
+          },
+          "spent_research": {
+            "m": 60507392,
+            "k": 72930179,
+            "g": 59625900
+          },
+          "spent_units": {
+            "m": 3140000,
+            "k": 21061000,
+            "g": 628000
+          },
+          "fuel": {
+            "m": 0,
+            "k": 0,
+            "g": 45489285
+          },
+          "raid_loot": {
+            "m": 0,
+            "k": 0,
+            "g": 0
+          },
+          "found_ship_value": 404168000,
+          "lost_ship_value": 133778000,
+          "raid_lost_value": 0,
+          "weekly_stones": 0,
+          "cores": 0
+        },
+        "milestones": {
+          "T01": 0.004166666666666667,
+          "build_metal_mine": 0.008333333333333333,
+          "build_crystal_mine": 0.016666666666666666,
+          "T02": 0.025,
+          "build_power": 0.029166666666666667,
+          "build_gas_mine": 0.05416666666666667,
+          "T03": 0.15833333333333333,
+          "T04": 0.1625,
+          "build_robotics": 2.004166666666667,
+          "build_lab": 2.183333333333333,
+          "T05": 2.2666666666666666,
+          "research_energy": 4,
+          "build_shipyard": 4.004166666666666,
+          "T06": 4.25,
+          "research_combustion": 4.254166666666666,
+          "T07": 6.208333333333333,
+          "T08": 9,
+          "research_espionage": 9.208333333333334,
+          "training_return_event": 9.311948044162326,
+          "T09": 9.3125,
+          "research_armour": 12.3125,
+          "research_impulse": 18,
+          "research_astro": 26.004166666666666,
+          "build_store": 28.004166666666666,
+          "regular_return_event": 28.766114710828994,
+          "first_colony_launch": 42,
+          "colony_created_event": 42.141043846299915,
+          "research_computer": 66.00416666666666,
+          "research_alloy": 74,
+          "research_dynpower": 78.00416666666666,
+          "build_nanite": 240.02083333333334,
+          "research_shielding": 255.0125,
+          "research_weapons": 306.0083333333333,
+          "build_terraformer": 2079.0291666666667
+        },
+        "active_build_worlds": 7,
+        "errors": {
+          "Zu wenig Rohstoffe": 136229,
+          "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 62255,
+          "Forschung läuft": 57858,
+          "Es läuft bereits eine Forschung": 14790,
+          "Werft wird ausgebaut": 4011,
+          "Bauschleife voll": 3775,
+          "Werft ist beschäftigt": 3749,
+          "Labor wird ausgebaut": 1796,
+          "ship_resources_lc": 452
+        }
+      }
+    ],
+    "final": {
+      "profile": "optimized",
+      "seed": 123,
+      "config": {
+        "sessions": [
+          0,
+          2,
+          4,
+          6,
+          9,
+          12,
+          15,
+          18
+        ],
+        "minutes": 20,
+        "policy": "nebula",
+        "pct": 10,
+        "raids": false
+      },
+      "rules": {
+        "full": true,
+        "weekly": false
+      },
+      "day": 180,
+      "tutorial_complete": true,
+      "tutorial_mission": null,
+      "tutorial_hour": 9.3125,
+      "regular_nebula_hour": 28.766114710828994,
+      "colony_hour": 42.141043846299915,
+      "first_core_hour": null,
+      "planets": 7,
+      "cores": 0,
+      "galactonite": {
+        "v": 2,
+        "st": 0,
+        "base": 0,
+        "src": {},
+        "lost": 0,
+        "shards": {},
+        "gems": [],
+        "energy": 0,
+        "nextGem": 1
+      },
+      "buildings": {
+        "P1": {
+          "metal_mine": 38,
+          "crystal_mine": 37,
+          "power": 29,
+          "gas_mine": 36,
+          "robotics": 12,
+          "lab": 14,
+          "shipyard": 8,
+          "store": 17,
+          "nanite": 4,
+          "terraformer": 4
+        },
+        "P2": {
+          "metal_mine": 27,
+          "power": 21,
+          "crystal_mine": 25,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P3": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 25,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P4": {
+          "metal_mine": 27,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P5": {
+          "metal_mine": 26,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 23,
+          "store": 9
+        },
+        "P6": {
+          "metal_mine": 26,
+          "power": 20,
+          "crystal_mine": 24,
+          "gas_mine": 22,
+          "store": 9
+        },
+        "P7": {
+          "metal_mine": 25,
+          "power": 19,
+          "crystal_mine": 24,
+          "gas_mine": 22,
+          "store": 8
+        }
+      },
+      "tech": {
+        "energy": 12,
+        "combustion": 6,
+        "espionage": 12,
+        "armour": 10,
+        "impulse": 3,
+        "astro": 14,
+        "computer": 10,
+        "alloy": 10,
+        "dynpower": 15,
+        "shielding": 10,
+        "weapons": 10
+      },
+      "ships": {
+        "lf": 28268,
+        "hf": 4679,
+        "co": 210,
+        "pr": 29549,
+        "sc": 6052,
+        "lc": 2813,
+        "rc": 2178
+      },
+      "dm": 663,
+      "liquid_total": 474065433.8989633,
+      "liquid_in_transit": 0,
+      "cash_accounting_error": 0.0006960034370422363,
+      "liquid_home": {
+        "m": 35591079.67831426,
+        "k": 161715693.92634797,
+        "g": 228188660.29430103
+      },
+      "points": {
+        "b": 2107965,
+        "t": 386126,
+        "f": 294979,
+        "dev": 2494092,
+        "total": 2789071
+      },
+      "ship_value": 294979000,
+      "production_hour": {
+        "m": 1076234.027505096,
+        "k": 583748.6159905912,
+        "g": 305824.7760439432
+      },
+      "storage_home": 372785000,
+      "field_home": [
+        195,
+        198
+      ],
+      "neb_starts": 3742,
+      "neb_resolutions": 3742,
+      "neb_found_value": 404168000,
+      "neb_resources": {
+        "m": 439716989,
+        "k": 282251274,
+        "g": 128480973
+      },
+      "counts": {
+        "build": 830,
+        "research": 112,
+        "unit_orders": 852,
+        "unit_count": 19437,
+        "starts": 12671,
+        "pvp_attacks": 0,
+        "frames": 115200,
+        "claims": 9,
+        "online_minutes": 28800
+      },
+      "flow": {
+        "mines": {
+          "m": 1308429093.6779275,
+          "k": 611073226.926116,
+          "g": 245583517.29422393
+        },
+        "storage_wasted": {
+          "m": 1567214021.4206119,
+          "k": 967265050.8199817,
+          "g": 562592540.0777835
+        },
+        "nebula": {
+          "m": 439716989,
+          "k": 282251274,
+          "g": 128480973
+        },
+        "npc_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "recycle": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "gifts": {
+          "m": 58637720,
+          "k": 32196428,
+          "g": 16493848
+        },
+        "campaign": {
+          "m": 3691,
+          "k": 2524,
+          "g": 2507
+        },
+        "transport_internal": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "spent_build": {
+          "m": 1691360522,
+          "k": 653627880,
+          "g": 40439350
+        },
+        "spent_research": {
+          "m": 60507392,
+          "k": 72930179,
+          "g": 59625900
+        },
+        "spent_units": {
+          "m": 3140000,
+          "k": 21061000,
+          "g": 628000
+        },
+        "fuel": {
+          "m": 0,
+          "k": 0,
+          "g": 45489285
+        },
+        "raid_loot": {
+          "m": 0,
+          "k": 0,
+          "g": 0
+        },
+        "found_ship_value": 404168000,
+        "lost_ship_value": 133778000,
+        "raid_lost_value": 0,
+        "weekly_stones": 0,
+        "cores": 0
+      },
+      "milestones": {
+        "T01": 0.004166666666666667,
+        "build_metal_mine": 0.008333333333333333,
+        "build_crystal_mine": 0.016666666666666666,
+        "T02": 0.025,
+        "build_power": 0.029166666666666667,
+        "build_gas_mine": 0.05416666666666667,
+        "T03": 0.15833333333333333,
+        "T04": 0.1625,
+        "build_robotics": 2.004166666666667,
+        "build_lab": 2.183333333333333,
+        "T05": 2.2666666666666666,
+        "research_energy": 4,
+        "build_shipyard": 4.004166666666666,
+        "T06": 4.25,
+        "research_combustion": 4.254166666666666,
+        "T07": 6.208333333333333,
+        "T08": 9,
+        "research_espionage": 9.208333333333334,
+        "training_return_event": 9.311948044162326,
+        "T09": 9.3125,
+        "research_armour": 12.3125,
+        "research_impulse": 18,
+        "research_astro": 26.004166666666666,
+        "build_store": 28.004166666666666,
+        "regular_return_event": 28.766114710828994,
+        "first_colony_launch": 42,
+        "colony_created_event": 42.141043846299915,
+        "research_computer": 66.00416666666666,
+        "research_alloy": 74,
+        "research_dynpower": 78.00416666666666,
+        "build_nanite": 240.02083333333334,
+        "research_shielding": 255.0125,
+        "research_weapons": 306.0083333333333,
+        "build_terraformer": 2079.0291666666667
+      },
+      "active_build_worlds": 7,
+      "errors": {
+        "Zu wenig Rohstoffe": 136229,
+        "Alle Flottenslots belegt (Computertechnik erhöht die Slots)": 62255,
+        "Forschung läuft": 57858,
+        "Es läuft bereits eine Forschung": 14790,
+        "Werft wird ausgebaut": 4011,
+        "Bauschleife voll": 3775,
+        "Werft ist beschäftigt": 3749,
+        "Labor wird ausgebaut": 1796,
+        "ship_resources_lc": 452
+      }
+    }
+  }
+]

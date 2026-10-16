@@ -1,0 +1,141 @@
+{
+  "passed": 27,
+  "total": 27,
+  "results": [
+    {
+      "name": "Labor 14/15/20/40: echte Wirkung, Zeitminimum und Tempo",
+      "ok": true,
+      "ms": 63
+    },
+    {
+      "name": "Client und Server sind bytegleich",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Kosten aller Gebäude/Forschungen 1–40 exakt rational",
+      "ok": true,
+      "ms": 45
+    },
+    {
+      "name": "Forschung wird bezahlt, am Endzeitpunkt beendet, alte Buchung bleibt",
+      "ok": true,
+      "ms": 7
+    },
+    {
+      "name": "Items: getrennte starke/schwache Zeit, volle 24 h, maximal 72 h",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "48 h Offline-Tick == 2.880 Minutenticks, Buffbeginn und Offiziersende",
+      "ok": true,
+      "ms": 58
+    },
+    {
+      "name": "Training: selbst gebaut, Rückruf ohne Abschluss, erneuter Versuch",
+      "ok": true,
+      "ms": 19
+    },
+    {
+      "name": "25 kontoweite Starts, keine rückgerufene reguläre Auflösung, Freigabe nach 24 h",
+      "ok": true,
+      "ms": 8
+    },
+    {
+      "name": "Wochenziele: 6 h Industrie, 3 h Forschung, 12 reguläre Nebel, je 4 DM",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Wochenstein: sieben Tage, nur frischer Fortschritt, kein Doppelanspruch",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "NPC-Trümmerbudget lässt eigene bezahlte Trümmer unberührt",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "NPC: kein Gratis-Wiedererscheinen der Flotte",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Anfängerschutz: mindestens 7, höchstens 14 Tage",
+      "ok": true,
+      "ms": 2
+    },
+    {
+      "name": "Kampf: 29.999/30.000/30.001, seltene Klasse bleibt exakt, Trümmer aus Verlusten",
+      "ok": true,
+      "ms": 143
+    },
+    {
+      "name": "Command replay: gleiche Quelle, einmal bezahlt; manipulierte Snapshots ohne Erwerb",
+      "ok": true,
+      "ms": 8
+    },
+    {
+      "name": "Produktionsregler/Tempo/Offiziersdauer: keine freien Multiplikatoren",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "15 Tutorialaufgaben; Quellen, Guide und Freischaltungen passen",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "Zuschüsse frieren bei Freischaltung ein, gemeinsame Voraussetzungen nur einmal",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Vormerken bezahlt offline Forschung, Frachter und genau ein Training",
+      "ok": true,
+      "ms": 7
+    },
+    {
+      "name": "Drei getrennte Werften werden bezahlt und parallel abgeschlossen",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "Abgeschlossene Stufen und tatsächliche Laborvorschau werden gerendert",
+      "ok": true,
+      "ms": 6
+    },
+    {
+      "name": "Tore: nur Schiffe, 5 Sekunden, beide Endpunkte, niedrigere Stufe",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Wartende Serverflotte bleibt nach JSON-Rundlauf ohne erneute Ankunft",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "Unbestätigte Serverflotte bleibt rückrufbar; bestätigte Auflösung ist geschützt",
+      "ok": true,
+      "ms": 3
+    },
+    {
+      "name": "Transport und Flottenergebnis erzeugen genau einen dauerhaften Bericht",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "Gemeinsame Trümmer werden bei zwei Offline-Konten chronologisch nur einmal geborgen",
+      "ok": true,
+      "ms": 4
+    },
+    {
+      "name": "Optionaler PvE-Modus wird als bestätigte Aktion erhalten",
+      "ok": true,
+      "ms": 7
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 # ge-server
 Multiplayer-Server für Galaxy Empire.
 
-Aktiv: Supabase Edge Function `supabase/functions/ge` (Tabellen in `supabase/schema.sql`, stündlicher pg_cron-Job ge-tick).
+Aktiv: Supabase Edge Function `supabase/functions/ge` (Tabellen in `supabase/schema.sql`, Cron-Vorlage für einen stündlichen Aufruf ge-tick).
 Deploy: `supabase functions deploy ge --project-ref <ref> --no-verify-jwt --use-api`
 
-`main.ts` ist ein veralteter Deno-KV-Prototyp **ohne** Validator/Galactonit/Nebel/PvP-Prüfungen und nicht Teil des unterstützten Produktionsumfangs (keine gleiche API).
-Prüfung: `deno task check` (Typprüfung der Function); Spiel-Regressionstests liegen im Client-Repo-Umfeld (Validator-/Nebel-/Galactonit-Tests).
+`main.ts` ist als alter, ungesicherter Deno-KV-Zugang deaktiviert. Die aktive Funktion verwendet das Aktionsprotokoll und die Transaktionen aus schema.sql.
+Prüfung: `deno task check` (Typprüfung der Function); Regressionen sowie Deno-/SQL-/Browser-Integrationstests liegen in `../tests/`.
 
 ## Review V2 (2026-10-15)
 - Registrierung legt den Startzustand serverseitig an (F02); `/pub` wird aus dem akzeptierten Spielstand abgeleitet (F07).

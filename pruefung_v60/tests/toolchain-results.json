@@ -1,0 +1,7 @@
+{
+  "syntax_files": 35,
+  "syntax_ok": true,
+  "node": "v24.19.0",
+  "deno": "deno 2.9.6 (stable, release, x86_64-unknown-linux-gnu)\nv8 15.0.245.2-rusty\ntypescript 6.0.3",
+  "deno_check": true
+}

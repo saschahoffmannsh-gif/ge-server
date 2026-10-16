@@ -1,0 +1,14 @@
+{
+  "passed": 8,
+  "tests": [
+    "snapshot injection",
+    "100 concurrent saves",
+    "repeated command",
+    "forged gift",
+    "100 fleet starts",
+    "20 concurrent transport resolves",
+    "20 concurrent combat resolves",
+    "rollback"
+  ],
+  "limits": "Actual HTTP handler with in-memory Supabase/transaction model. Not a deployed Supabase or live PostgreSQL test."
+}

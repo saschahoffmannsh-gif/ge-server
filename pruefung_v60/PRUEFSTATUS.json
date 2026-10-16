@@ -1,0 +1,277 @@
+{
+  "version": 60,
+  "datum": "2026-10-16",
+  "eingang_sha256": "05c111afea8a0b8df7cdcca9f1a3ad29dc25ce233ed9f97ceb10094382ed6203",
+  "labor": {
+    "formel": "max(15, min(alterZeitdeckel * min(1, 15/(1+Labor)), bisherigeRoheForschungszeit))",
+    "waffen20_tempo10_tage": {
+      "labor14": 9.486832980505138,
+      "labor20": 6.776309271789384
+    },
+    "laufende_bezahlte_auftraege": "Gebuchte Dauer und Kosten bleiben erhalten."
+  },
+  "korrigiert": [
+    "Laborwirkung oberhalb 14 trotz Zeitdeckel",
+    "15 Tutorialaufgaben, vollständiger Guide und optionale Vorausplanung von drei Schritten",
+    "Training: selbst gebauter SC, Erfolg nur nach Auflösung und Rückkehr; Rückruf erneut versuchbar",
+    "Zuschüsse beim Freischalten eingefroren und nach Vorrat begrenzt",
+    "Items: getrennte Stärkeabschnitte, 24 reale Stunden, maximal 72 Stunden",
+    "Offline-Ereignisgrenzen einschließlich Offiziersende und Wochenbeginn",
+    "Wochenziele: 6 h bezahlte Industrie, 3 h Forschung, zwölf reguläre Erkundungen, je 4 DM",
+    "Friedliches Projekt: sieben Tage, frischer Fortschritt, idempotenter Steinanspruch",
+    "Anfängerschutz in Client und Server vereinheitlicht",
+    "NPC-Verluste persistent und Ersatz bezahlt; NPC-Trümmer und Beute teilen Budget",
+    "Exakte Kampfverluste statt Stichprobenvergrößerung seltener Klassen",
+    "Tore: Schiffe ohne Ladung, beide Endpunkte, niedrigere Stufe",
+    "Kosten aller Kurven rational berechnet; unsichere Käufe abgelehnt",
+    "Forschungs- und Gebäudeabschlüsse sowie tatsächliche Laborwirkung sichtbar",
+    "Server führt Aktionen aus bestätigtem Stand aus; Snapshots sind keine Erwerbsquelle",
+    "Aktionsfolgen, Revisionen, eindeutige Missionen, Transaktionen, dauerhafte Ereignis-IDs und gemeinsames Trümmerfeld",
+    "Atomare Registrierung, Anmeldeversuchsbegrenzung, deaktivierter alter Serverzugang",
+    "Wartende Serverflotten besitzen keinen lokalen Ankunftstimer; JSON-Rundlauf löst sie nicht erneut aus",
+    "Während der Komprimierung neu erteilte Aktionen bleiben beim kanonischen Abgleich erhalten",
+    "Fehlgeschlagene Speicherungen brechen abhängige Flottenbestätigungen ab; verlorene Antworten sind erneut abrufbar",
+    "Rückgerufene Flotten können nicht nachträglich als Lieferung registriert werden; fällige bestätigte Flotten sind gegen späten Rückruf geschützt",
+    "Kampf- und Transportberichte werden zusammen mit dem Ergebnis gespeichert und dedupliziert",
+    "Gemeinsame Trümmer-/NPC-Ereignisse beider Kampfkonten werden auf einem gemeinsamen Weltbestand fortgeschrieben",
+    "Bestehende Heimatwelten und veröffentlichte Kolonien werden im Positionsregister nachgetragen; neue unpublizierte Heimatwelten sind reserviert",
+    "Kontoname und optionaler PvE-Modus überstehen den Serverabgleich",
+    "Grafiklose Quellcodefassung startet mit Ersatzgrafiken ohne ART-/B3-Fehler",
+    "NPC-Wiederaufbau verändert keine Referenzvorräte über geteilte Objektreferenzen",
+    "Ungültige Aktionslisten werden mit 409 abgelehnt; Supabase-SDK ist auf geprüfte Version 2.118.0 festgelegt"
+  ],
+  "bereits_enthalten_bestaetigt": [
+    "Stückweise Kristall-, Gas- und Lagerkosten",
+    "25 kontoweite Nebelstarts in rollierenden realen 24 Stunden, keine neue Rohstoff-Tagesgrenze",
+    "30 Minuten reguläre Haltezeit, Schiffsfunde einschließlich großer Sondenflotten",
+    "Forschungsdeckel Laser12/Ionen4/Hyper7/Antigrav6/Astro14/Dynpower20",
+    "DN-Fuel5000/IB-Fuel10000",
+    "70 % Abwehrreparatur, 85 % mit Ingenieur",
+    "Start1000/1000/250, zwei Gutscheine, Heimat40°C, Saveflugpunkte, kein totes Schleifangebot"
+  ],
+  "tests": {
+    "komponenten_gruppen": 27,
+    "http_transaktionsmodell_gruppen": 8,
+    "kostenvektoren_stufen1_bis40": 1480,
+    "aufbaulaeufe_180tage": 6,
+    "stichtage": [
+      1,
+      7,
+      30,
+      90,
+      180
+    ],
+    "seeds": [
+      123
+    ],
+    "profile": [
+      "Gelegenheit",
+      "Aktiv",
+      "Optimierungsheuristik"
+    ],
+    "mit_vorausplanung_tutorial_stunden": {
+      "casual": 24.008333333333333,
+      "active": 10.091666666666667,
+      "optimized": 4.008333333333334
+    },
+    "ohne_vorausplanung_tutorial_stunden": {
+      "casual": 72.0875,
+      "active": 28,
+      "optimized": 9.3125
+    },
+    "max_bilanzabweichung_rohstoffe": 0.0006960034370422363,
+    "kampf_stress_einheiten": 1000001,
+    "kampf_stress_lokale_ms": 801.41,
+    "syntax_js_ts_dateien": 35,
+    "deno_sql_browser_integrationsgruppen": 18,
+    "testgruppen_gesamt": 53,
+    "deno_typpruefung": "bestanden, Deno 2.9.6",
+    "browser": "Chromium 153.0.8010.0",
+    "datenbank": "PostgreSQL 18.6 / PGlite 0.5.10",
+    "supabase_sdk": "2.118.0",
+    "datenbank_nebenlaeufigkeit": "20 gleichzeitige HTTP-Anfragen für Save, Login, Transportbestätigung, Auflösung, Geschenk und friedlichen Stein; PGlite führt SQL auf einer isolierten Instanz aus",
+    "aufbaulaeufe_180tage_revision60": 6,
+    "deno_version": "2.9.6"
+  },
+  "grenzen": [
+    "Echte Deno-Laufzeit und Supabase-SDK gegen einen lokalen REST-Testadapter mit PostgreSQL/PGlite; keine verwaltete Supabase-Instanz geprüft.",
+    "PGlite ist eine einzelne eingebettete PostgreSQL-Instanz. Gleichzeitige HTTP-Aufrufe und SQL-CAS/Rollback sind geprüft; kein Mehrknoten- oder Mehrverbindungs-Lastbeweis.",
+    "pg_cron und pg_net wurden im isolierten SQL-Test ausgelassen; produktive Zeitplanung, Gateway und RLS-Integration mit Supabase bleiben auf einer Staging-Instanz zu prüfen.",
+    "Browserprüfung für Anmeldung, Neustart, Grafikfallback, Speichern und verlorene Flottenbestätigung; kein vollständiger Oberflächen- oder Mobilgeräte-/Performance-Test. Grafiken und Audio fehlen absichtlich im Eingangspaket.",
+    "Sechs erneut ausgeführte 180-Tage-Läufe mit einem Seed und heuristischen Strategien beweisen kein endgültiges Balancing.",
+    "Friedliche Kernprojekte und PvP sind in diesen sechs Aufbauläufen nicht als zusätzliche Einkommensquellen genutzt; dafür getrennte Funktions- und SQL/HTTP-Prüfungen.",
+    "Keine produktiven Konten verändert oder zurückgesetzt; keine Migration einer echten bestehenden Produktionsdatenbank ausgeführt."
+  ],
+  "bewusst_nicht_freigegeben": [
+    "Allianzdepot bleibt als Beitrittsgebäude auf Stufe1, bis echtes gemeinsames Depot unterstützt ist.",
+    "EU-X bleibt gesperrt bis zum echten autorisierten Scan.",
+    "Aufholbonus und zusätzliches 3x-Flottenlimit bleiben entsprechend dem letzten Auftrag deaktiviert."
+  ],
+  "offene_designfragen_ohne_festgelegte_ersatzwerte": [
+    "Späte absolute Lagergrenzen bei Naniten31/Terraformer33/Hyperantrieb40",
+    "Technokratenbonus bei weiterhin gedeckelter Forschungszeit",
+    "Gesamtziel für sehr hohe Forschungskosten und Endspiel nach Minen40"
+  ],
+  "dateiaenderungen": [
+    {
+      "file": "PRUEFBERICHT.md",
+      "status": "added"
+    },
+    {
+      "file": "README.md",
+      "status": "modified"
+    },
+    {
+      "file": "client/index.html",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/actions.js",
+      "status": "added"
+    },
+    {
+      "file": "client/js/art.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/base2.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/campaign.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/data.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/engine.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/net.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/planning.js",
+      "status": "added"
+    },
+    {
+      "file": "client/js/ui1.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/ui2.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/js/ui3.js",
+      "status": "modified"
+    },
+    {
+      "file": "client/sw.js",
+      "status": "modified"
+    },
+    {
+      "file": "package-lock.json",
+      "status": "added"
+    },
+    {
+      "file": "package.json",
+      "status": "added"
+    },
+    {
+      "file": "server/README.md",
+      "status": "modified"
+    },
+    {
+      "file": "server/deno.json",
+      "status": "modified"
+    },
+    {
+      "file": "server/deno.lock",
+      "status": "modified"
+    },
+    {
+      "file": "server/main.ts",
+      "status": "modified"
+    },
+    {
+      "file": "server/supabase/functions/ge/actions.js",
+      "status": "added"
+    },
+    {
+      "file": "server/supabase/functions/ge/campaign.js",
+      "status": "added"
+    },
+    {
+      "file": "server/supabase/functions/ge/data.js",
+      "status": "modified"
+    },
+    {
+      "file": "server/supabase/functions/ge/engine.js",
+      "status": "modified"
+    },
+    {
+      "file": "server/supabase/functions/ge/index.ts",
+      "status": "modified"
+    },
+    {
+      "file": "server/supabase/functions/ge/planning.js",
+      "status": "added"
+    },
+    {
+      "file": "server/supabase/functions/ge/protocol.js",
+      "status": "added"
+    },
+    {
+      "file": "server/supabase/schema.sql",
+      "status": "modified"
+    },
+    {
+      "file": "tests/harness.cjs",
+      "status": "added"
+    },
+    {
+      "file": "tests/integration-results.json",
+      "status": "added"
+    },
+    {
+      "file": "tests/integration.cjs",
+      "status": "added"
+    },
+    {
+      "file": "tests/planning-180-results.json",
+      "status": "added"
+    },
+    {
+      "file": "tests/progression-results.json",
+      "status": "added"
+    },
+    {
+      "file": "tests/progression.cjs",
+      "status": "added"
+    },
+    {
+      "file": "tests/regression.cjs",
+      "status": "added"
+    },
+    {
+      "file": "tests/results.json",
+      "status": "added"
+    },
+    {
+      "file": "tests/server-results.json",
+      "status": "added"
+    },
+    {
+      "file": "tests/server.cjs",
+      "status": "added"
+    },
+    {
+      "file": "tests/toolchain-results.json",
+      "status": "added"
+    }
+  ]
+}
