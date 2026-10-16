@@ -241,7 +241,7 @@ function progressYard(pl,t){
    let st=sqEnd(q);for(const n of pl.sq){n.start=st;st=sqEnd(n)}}else break;}
 }
 // ---------- Beschleunigen (1 DM je angefangene 15 Min) ----------
-E.FREE_MS=30e3; // Progression v1: Gratis-Fertigstellung nur noch unter 30 s Restzeit
+E.FREE_MS=300e3; // Gratis-Fertigstellung bis 5 Min. Restzeit (Entscheidung Sascha 16.10.2026)
 E.speedCost=ms=>ms<=E.FREE_MS?0:Math.max(1,Math.ceil(Math.pow((ms-E.FREE_MS)/MIN,.9)*.75));
 E.isFree=ms=>ms>0&&ms<=E.FREE_MS;
 E.speedupBuild=function(pid){const pl=S.planets[pid];const q=pl.bq[0];if(!q)return;const rem=q.end-now();const c=E.speedCost(rem);
@@ -868,7 +868,7 @@ S=next;const dt=Math.max(0,dtMs);const t0=+prev.t||0;const days=dt/864e5;
     if(npc>E.BUDGET_H.npc*refS*days1*1.3+1000)errs.push(`NPC-Beute ${Math.round(npc)} > Budget`);
     if(gift>E.BUDGET_H.gift*refS*days1*1.3+1000)errs.push(`Tagesgeschenk-Rohstoffe ${Math.round(gift)} > Budget`)}}
   const dmSpent=Math.max(0,(+prev.dm||0)+earned-(+next.dm||0));const dmMs=Math.pow(dmSpent/0.75,1/0.9)*60e3+Math.max(0,(+((next.flags||{}).vUsed)||0)-(+((prev.flags||{}).vUsed)||0))*E.VOUCHER_MS;
-  const tech0=prev.tech||{},tech1=next.tech||{};const qMax=2;let costAll=0,resPrev=0,prodH=0,timeT=0;
+  const tech0=prev.tech||{},tech1=next.tech||{};const qMax=((next.flags&&next.flags.tutDone)?4:2)+((next.cmd&&next.cmd.commander>(next.t||0))?1:0);/* = E.queueMax() für den geprüften Save */let costAll=0,resPrev=0,prodH=0,timeT=0;
   // Nebel v2: Startfenster (≤25 je rollierenden realen 24 h, keine gelöschten Starts) und Fund-Ledger (Schiffe/Rohstoffe je Auflösung begrenzt)
   const nebShip={},nebRes={m:0,k:0,g:0};let nebResAllow=0;
   {const N=E.NEB2,L0=prev.nebL||{n:0,r:0,ships:{},res:{}},L1=next.nebL||{n:0,r:0,ships:{},res:{}};const T0=(prev.nebT||[]).slice().sort((a,b)=>a-b),T1=(next.nebT||[]).slice().sort((a,b)=>a-b);
