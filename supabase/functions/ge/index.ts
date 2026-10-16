@@ -95,6 +95,45 @@ function publication(st:any,a:any,old:any){const E=(globalThis as any).ENGINE.fo
  return{name:a.name,home:a.home,tag:old?.tag||null,ally:old?.ally||null,pts:{b:pts.b,t:pts.t,f:Math.max(0,pts.f-Math.floor(df)),d:Math.floor(df)},planets:ps.map((p:any)=>({g:p.g,s:p.s,p:p.p,name:p.name,type:p.type,moon:!!p.moon})),snap:ps.filter((p:any)=>!p.moon).map((p:any)=>({g:p.g,s:p.s,p:p.p,r:p.r,ships:p.ships,def:p.def,core:p.core,radar:E.bEff(p,'radar')})),tech:{...st.tech},t:st.t,tutEnd:st.flags.tutEnd||null,prot:Date.now()<protEnd(a.created,st.flags.tutEnd),devMax:Math.max(old?.devMax||0,pts.dev),pve:!!st.flags.pveMode};}
 async function stateWrite(a:any,prev:any,st:any){for(const id of st.order)for(const r of ['m','k','g'])if(!Number.isFinite(st.planets[id].r[r])||st.planets[id].r[r]<0||st.planets[id].r[r]>Number.MAX_SAFE_INTEGER)throw new Error('Unsicherer Rohstoffbestand');const old=(must(await db.from('ge_pub').select('data').eq('name_l',a.name_l).maybeSingle()) as any)?.data;return{name_l:a.name_l,base:prev.rev,z:await gzip(JSON.stringify(st)),t:st.t,positions:st.order.map((i:string)=>st.planets[i]).filter((p:any)=>!p.moon).map((p:any)=>`${p.g}:${p.s}:${p.p}`),pub:publication(st,a,old)};}
 function debrisWrites(before:any,after:any){const out:any[]=[];for(const coord of new Set([...Object.keys(before),...Object.keys(after)])){if(JSON.stringify(before[coord]||null)!==JSON.stringify(after[coord]||null))out.push({coord,before:before[coord]||null,value:after[coord]||null});}return out;}
+// ---------- v62 Allianz: Ränge/Rechte, Wappen, Tresor, Shop ----------
+const ALLY_PERMS = ["acc", "kick", "rank", "set", "msg", "treas", "shop"];
+const ALLY_SHOP: any[] = [
+  { id: "prod24", n: "Förderprogramm (+5 % Produktion, 24 h)", buff: "prod", v: 0.05, h: 24, c: [400000, 250000, 100000] },
+  { id: "hull24", n: "Panzerkonvoi (+5 % Hülle, 24 h)", buff: "hull", v: 0.05, h: 24, c: [250000, 250000, 150000] },
+  { id: "energy24", n: "Energienetz (+5 % Energie, 24 h)", buff: "energy", v: 0.05, h: 24, c: [200000, 300000, 100000] },
+  { id: "gold", n: "Wappen: Goldrahmen", cos: "gold", c: [200000, 200000, 0] },
+  { id: "glow", n: "Wappen: Nebelglühen", cos: "glow", c: [0, 0, 0], dm: 60 },
+  { id: "sym", n: "Wappen: 4 Zusatzsymbole", cos: "sym", c: [100000, 100000, 50000] },
+];
+function allyDefaults(cfg: any) {
+  const c: any = { ...(cfg || {}) }; if (!c.id) c.id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  if (!["open", "apply", "closed"].includes(c.mode)) c.mode = "apply";
+  if (!Array.isArray(c.ranks) || !c.ranks.length) c.ranks = [{ id: "officer", n: "Offizier", p: ["acc", "kick", "msg"] }, { id: "member", n: "Mitglied", p: [] }];
+  if (!c.ranks.some((r: any) => r.id === "member")) c.ranks.push({ id: "member", n: "Mitglied", p: [] });
+  if (!c.logo) c.logo = { sh: 0, s: 0, c: 0, c2: 7 }; return c;
+}
+function allyNorm(r: any) { const al = { ...r, apps: r.apps || [], cfg: allyDefaults(r.cfg) }; const ids = new Set(al.cfg.ranks.map((x: any) => x.id));
+  al.members = (r.members || []).map((m: any) => ({ ...m, rank: m.rank === "founder" || ids.has(m.rank) ? m.rank : "member" })); return al; }
+const allyRankOf = (al: any, n: string) => (al.members.find((m: any) => m.n === n) || {}).rank;
+const allyRankPerms = (al: any, rank: string) => rank === "founder" ? ALLY_PERMS : ((al.cfg.ranks.find((r: any) => r.id === rank) || {}).p || []);
+const allyHas = (al: any, n: string, p: string) => allyRankPerms(al, allyRankOf(al, n)).includes(p);
+const allyCovers = (al: any, n: string, ps: string[]) => { const mine = allyRankPerms(al, allyRankOf(al, n)); return (ps || []).every((p) => mine.includes(p)); };
+// Optimistische Sperre über die Versionsspalte ver
+async function allyCas(al: any, up: any) { const r = must(await db.from("ge_ally").update({ ...up, cfg: up.cfg || al.cfg, ver: (+al.ver || 0) + 1 }).eq("tag", al.tag).eq("ver", +al.ver || 0).select("tag")) as any[]; return r.length > 0; }
+async function dropApps(name: string) { for (const r of must(await db.from("ge_ally").select("tag,apps,ver,cfg")) as any[]) if ((r.apps || []).some((x: any) => x.n === name)) await db.from("ge_ally").update({ apps: r.apps.filter((x: any) => x.n !== name), ver: (+r.ver || 0) + 1 }).eq("tag", r.tag).eq("ver", +r.ver || 0); }
+async function allyDisband(al: any) { must(await db.from("ge_ally").delete().eq("tag", al.tag)); must(await db.from("ge_chat").delete().eq("ch", "ally:" + al.tag)); must(await db.from("ge_meta").delete().eq("k", "treas:" + al.cfg.id)); }
+function treasNorm(v: any) { const t: any = structuredClone(v || {}); t.r = { m: +t.r?.m || 0, k: +t.r?.k || 0, g: +t.r?.g || 0 }; t.dm = +t.dm || 0; t.ships = t.ships || {}; t.log = t.log || []; t.don = t.don || {}; t.cos = t.cos || []; t.buffs = (t.buffs || []).filter((b: any) => b.end > Date.now()); return t; }
+function logoClean(l: any, cos: string[]) { const i = (v: any, n: number) => Math.max(0, Math.min(n - 1, Math.floor(+v || 0)));
+  const o: any = { sh: i(l?.sh, 5), s: i(l?.s, cos.includes("sym") ? 10 : 6), c: i(l?.c, 8), c2: i(l?.c2, 8) }; if (l?.fr === "gold" && cos.includes("gold")) o.fr = "gold"; if (l?.gl && cos.includes("glow")) o.gl = 1; return o; }
+function allyState(al: any, tr: any) { return al ? { name: al.name, tag: al.tag, mp: 1, buffs: (tr?.buffs || []).filter((b: any) => b.end > Date.now()).map((b: any) => ({ buff: b.buff, v: b.v, start: b.start, end: b.end })) } : null; }
+// Zustand eines Kontos serverseitig auf jetzt fortschreiben (wie beim Speichern, ohne Aktionen)
+async function advanceAcct(acc: any, al: any): Promise<any> {
+  await resolveDue({ to_l: acc.name_l }); const prev = await record(acc.name_l); const st = JSON.parse(await gunzip(prev.z)); const ctx = await contextFor(acc.name_l); const originalNpc = ctx.npc;
+  hydrate(st, ctx); st.speed = CFG.speed; st.created = acc.created; st.cmdName = acc.name; st.mp = 1; st.ally = allyState(al, treasNorm(await meta("treas:" + al.cfg.id)));
+  let next: any; try { next = (globalThis as any).commandState(st, [], Date.now(), ctx); } catch (e) { return { error: "Spielstand: " + (e as Error).message }; }
+  const metaWrites: any[] = []; if (JSON.stringify(originalNpc) !== JSON.stringify(next.npc)) metaWrites.push({ k: "npcworld", before: ctx.npcBefore, value: next.npc });
+  return { prev, next, metaWrites, debris: debrisWrites(ctx.debris, next.debris) };
+}
 function clean(t: string) { return String(t || "").replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().slice(0, 200); }
 async function rateOk(name: string) { const since = Date.now() - 60e3; const rows = must(await db.from("ge_chat").select("t").eq("name", name).gt("t", since).order("t", { ascending: false }).limit(8)) as any[];
   if (rows.length && Date.now() - rows[0].t < 2500) return "Zu schnell – kurz warten"; if (rows.length >= 8) return "Zu viele Nachrichten – bitte 1 Minute warten"; return null; }
@@ -116,8 +155,10 @@ async function personal(a: any) {
       o.arrive = lv >= 1 ? f.arrive : Math.ceil(f.arrive / 900e3) * 900e3; if (lv < 1) o.approx = 1; // Warnung immer; präzise Ankunft erst ab Radar 1
       if (lv >= 2) { o.mission = f.mission; o.from = f.data.from; } if (lv >= 3) o.nRough = n < 10 ? "<10" : n < 100 ? "10–99" : n < 1000 ? "100–999" : "≥1000";
       if (lv >= 4) o.classes = Object.keys(f.data.ships || {}); if (lv >= 5 && myEsp >= (+(f.data.esp) || 0)) { o.n = n; o.ships = f.data.ships; } return o; }),
-    events: ev.map((e) => ({ id: e.id, ...e.data })), ally: al ? { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members, apps: al.apps } : null };
+    events: ev.map((e) => ({ id: e.id, ...e.data })), ally: al ? await allyPersonal(al, a.name) : null };
 }
+async function allyPersonal(r: any, me: string) { const al = allyNorm(r); const tr = treasNorm(await meta("treas:" + al.cfg.id)); const perms = allyRankPerms(al, allyRankOf(al, me));
+  return { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members, apps: perms.includes("acc") ? al.apps : [], mode: al.cfg.mode, logo: al.cfg.logo, ranks: al.cfg.ranks, perms, rank: allyRankOf(al, me), cos: tr.cos, buffs: allyState(al, tr)!.buffs, shop: ALLY_SHOP, allPerms: ALLY_PERMS }; }
 async function resolveDue(f: { to_l: string }) { const rows = must(await db.from("ge_fleet").select("*").eq("to_l", f.to_l).or(`status.eq.out,and(status.eq.busy,busy_at.lt.${Date.now()-120000})`).lte("arrive", Date.now())) as any[]; for (const r of rows) await resolve(r); }
 const val = (o: any, T: any) => { let v = 0; for (const k in o) { const d = T[k]; if (d) v += o[k] * (d.c[0] + d.c[1] + d.c[2]); } return v; };
 function npcTarget(id: string) { // NPC-Spieler: Rohstoffe aus dem Wirtschaftsmodell, Flotte/Verteidigung aus ihren Punkten
@@ -246,7 +287,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       if(typeof b.z!=='string'||b.z.length>5_000_000)return err('Ungültiger Spielstand');
       let nx:any;try{nx=JSON.parse(await gunzip(b.z));}catch(_){return err('Spielstand unlesbar');}
       const prev=await record(a.name_l);if(!Number.isSafeInteger(b.base)||b.base!==prev.rev)return J({error:'Spielstand veraltet',code:'reject'},409);
-      const st=JSON.parse(await gunzip(prev.z)),ctx=await contextFor(a.name_l);const membership=await myAlly(a.name);st.ally=membership?{name:membership.name,tag:membership.tag,mp:1}:null;if((nx.rid||null)!==(st.rid||null))return J({error:'Andere Konto-Version',code:'reject'},409);
+      const st=JSON.parse(await gunzip(prev.z)),ctx=await contextFor(a.name_l);const membership=await myAlly(a.name);st.ally=membership?allyState(allyNorm(membership),treasNorm(await meta('treas:'+allyNorm(membership).cfg.id))):null;if((nx.rid||null)!==(st.rid||null))return J({error:'Andere Konto-Version',code:'reject'},409);
       const actions=b.actions||[];if(!Array.isArray(actions)||actions.length>1000||actions.some((x:any)=>!x||!Number.isSafeInteger(x.seq)||!Number.isFinite(x.t)))return J({error:'Ungültige Aktionsliste',code:'reject'},409);const maxT=Math.max(st.t,+nx.t||0,...actions.map((x:any)=>+x.t||0));if(maxT>Date.now()+5000)return J({error:'Spielstand aus der Zukunft',code:'reject'},409);
       const originalNpc=ctx.npc;hydrate(st,ctx);st.speed=CFG.speed;st.created=a.created;st.cmdName=a.name;st.mp=1;
       // These flags are UI acknowledgements, never acquisition assertions.
@@ -289,55 +330,150 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
     }
     if(P==='/api/fleet/recall')return err('Rückruf über bestätigte Spielaktion',409);
     if (P === "/api/ack" && req.method === "POST") { const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const ids = (b.ids || []).map((x: any) => +x).filter((x: number) => x > 0); if (ids.length) must(await db.from("ge_event").update({ acked: true }).in("id", ids).eq("name_l", a.name_l)); return J({ ok: true }); }
-    // ---------- Stufe 3: Allianzen + Chat ----------
-    if (P === "/api/ally/list") return J({ allies: must(await db.from("ge_ally").select("tag,name,founder,descr,members,apps,created")) });
-    if (P === "/api/ally/create" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const tag = String(b.tag || "").trim().toUpperCase(); const name = String(b.name || "").trim();
-      if (!/^[A-Z0-9]{2,5}$/.test(tag) || name.length < 3 || name.length > 30) return err("Name (3–30) und Kürzel (2–5 Buchstaben/Ziffern) angeben");
-      if (await myAlly(a.name)) return err("Du bist bereits in einer Allianz");
-      const r = await db.from("ge_ally").insert({ tag, name, founder: a.name, descr: String(b.descr || "").slice(0, 300), members: [{ n: a.name, rank: "founder", t: Date.now() }], apps: [], created: Date.now() });
-      if (r.error) return err(r.error.code === "23505" ? "Kürzel vergeben" : r.error.message, 409);
-      await chatSys("ally:" + tag, `${a.name} hat die Allianz gegründet.`); return J({ ok: true, tag });
+    // ---------- Stufe 3: Allianzen + Chat (v62: Einstellungen, Bewerbungen, Ränge mit Rechten, Wappen, Tresor, Shop) ----------
+    if (P.startsWith("/api/ally/")) {
+      const b: any = req.method === "POST" ? await jbody(req, ACTION_MAX) : {};
+      const now = Date.now(), me = a.name;
+      if (P === "/api/ally/list") { const rows = must(await db.from("ge_ally").select("tag,name,founder,descr,members,apps,created,cfg")) as any[];
+        return J({ allies: rows.map((r) => { const al = allyNorm(r); return { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members.map((m: any) => ({ n: m.n })), apps: (al.apps || []).map((x: any) => ({ n: x.n })), created: al.created, mode: al.cfg.mode, logo: al.cfg.logo }; }) }); }
+      if (P === "/api/ally/create") {
+        const tag = String(b.tag || "").trim().toUpperCase(); const name = clean(b.name).slice(0, 30);
+        if (!/^[A-Z0-9]{2,5}$/.test(tag) || name.length < 3) return err("Name (3–30) und Kürzel (2–5 Buchstaben/Ziffern) angeben");
+        if (await myAlly(me)) return err("Du bist bereits in einer Allianz");
+        const cfg = allyDefaults({}); cfg.logo = logoClean(b.logo, []);
+        const r = await db.from("ge_ally").insert({ tag, name, founder: me, descr: clean(b.descr).slice(0, 300), members: [{ n: me, rank: "founder", t: now }], apps: [], created: now, cfg });
+        if (r.error) return err(r.error.code === "23505" ? "Kürzel vergeben" : r.error.message, 409);
+        await dropApps(me); await chatSys("ally:" + tag, `${me} hat die Allianz gegründet.`); return J({ ok: true, tag });
+      }
+      if (P === "/api/ally/apply") {
+        const al0 = must(await db.from("ge_ally").select("*").eq("tag", String(b.tag || "").toUpperCase()).maybeSingle()) as any; if (!al0) return err("Allianz unbekannt");
+        if (await myAlly(me)) return err("Du bist bereits in einer Allianz"); const al = allyNorm(al0); const msg = clean(b.msg).slice(0, 300);
+        if (al.cfg.mode === "closed") return err("Diese Allianz nimmt derzeit niemanden auf", 403);
+        if (al.cfg.mode === "open") { if (!(await allyCas(al, { members: al.members.concat([{ n: me, rank: "member", t: now }]), apps: al.apps.filter((x: any) => x.n !== me) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+          await dropApps(me); await chatSys("ally:" + al.tag, `${me} ist der Allianz beigetreten.`); return J({ ok: true, joined: true }); }
+        const apps = al.apps.filter((x: any) => x.n !== me).concat([{ n: me, msg, t: now }]).slice(-50);
+        if (!(await allyCas(al, { apps }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        for (const m of al.members) if (allyHas(al, m.n, "acc")) await event(norm(m.n), { kind: "allyapp", tag: al.tag, from: me, msg });
+        return J({ ok: true });
+      }
+      if (P === "/api/ally/withdraw") {
+        const al0 = must(await db.from("ge_ally").select("*").eq("tag", String(b.tag || "").toUpperCase()).maybeSingle()) as any; if (!al0) return err("Allianz unbekannt"); const al = allyNorm(al0);
+        if (!al.apps.some((x: any) => x.n === me)) return err("Keine Bewerbung vorhanden"); if (!(await allyCas(al, { apps: al.apps.filter((x: any) => x.n !== me) }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
+      }
+      // Ab hier nur Mitglieder
+      const al0 = await myAlly(me); if (!al0) return err("Keine Allianz"); const al = allyNorm(al0); const can = (p: string) => allyHas(al, me, p);
+      const target = (n: any) => al.members.find((m: any) => m.n === String(n || ""));
+      if (P === "/api/ally/decide") {
+        if (!can("acc")) return err("Keine Berechtigung: Bewerbungen annehmen", 403);
+        const ap = al.apps.find((x: any) => x.n === b.name); if (!ap) return err("Bewerbung nicht gefunden");
+        let members = al.members; if (b.accept) { if (await myAlly(b.name)) return err("Spieler ist schon in einer Allianz"); members = members.concat([{ n: ap.n, rank: "member", t: now }]); }
+        if (!(await allyCas(al, { apps: al.apps.filter((x: any) => x.n !== ap.n), members }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        if (b.accept) await dropApps(ap.n);
+        await event(norm(ap.n), { kind: "allydecision", tag: al.tag, name: al.name, accept: !!b.accept }); if (b.accept) await chatSys("ally:" + al.tag, `${ap.n} ist der Allianz beigetreten.`); return J({ ok: true });
+      }
+      if (P === "/api/ally/rank") {
+        if (!can("rank")) return err("Keine Berechtigung: Ränge vergeben", 403);
+        const t = target(b.name); if (!t) return err("Mitglied unbekannt"); if (t.rank === "founder") return err("Der Gründer behält seinen Rang", 403); if (t.n === me) return err("Den eigenen Rang kann man nicht ändern", 403);
+        const nr = al.cfg.ranks.find((r: any) => r.id === b.rank); if (!nr) return err("Rang unbekannt");
+        if (!allyCovers(al, me, allyRankPerms(al, t.rank)) || !allyCovers(al, me, nr.p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403);
+        if (!(await allyCas(al, { members: al.members.map((m: any) => m.n === t.n ? { ...m, rank: nr.id } : m) }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
+      }
+      if (P === "/api/ally/rankdef") {
+        if (!can("rank")) return err("Keine Berechtigung: Ränge bearbeiten", 403); const cfg = structuredClone(al.cfg);
+        const p: string[] = ([...new Set((Array.isArray(b.p) ? b.p : []).map(String))] as string[]).filter((x) => ALLY_PERMS.includes(x));
+        if (b.id) { const r = cfg.ranks.find((x: any) => x.id === b.id); if (!r) return err("Rang unbekannt"); if (!allyCovers(al, me, r.p)) return err("Dieser Rang hat mehr Rechte als du", 403);
+          if (b.del) { if (r.id === "member") return err("Der Standardrang bleibt bestehen"); cfg.ranks = cfg.ranks.filter((x: any) => x !== r);
+            const members = al.members.map((m: any) => m.rank === r.id ? { ...m, rank: "member" } : m); if (!(await allyCas(al, { cfg, members }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true }); }
+          if (allyRankOf(al, me) === r.id && !al.members.some((m: any) => m.n === me && m.rank === "founder")) return err("Den eigenen Rang kann man nicht bearbeiten", 403);
+          if (!allyCovers(al, me, p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403); r.n = clean(b.n).slice(0, 20) || r.n; r.p = p;
+        } else { if (cfg.ranks.length >= 10) return err("Höchstens 10 Ränge"); const n = clean(b.n).slice(0, 20); if (!n) return err("Rangname fehlt"); if (!allyCovers(al, me, p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403);
+          cfg.ranks.push({ id: "r" + now.toString(36), n, p }); }
+        if (!(await allyCas(al, { cfg }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
+      }
+      if (P === "/api/ally/kick") {
+        if (!can("kick")) return err("Keine Berechtigung: Mitglieder entfernen", 403); const t = target(b.name); if (!t) return err("Mitglied unbekannt");
+        if (t.rank === "founder") return err("Der Gründer kann nicht entfernt werden", 403); if (t.n === me) return err("Zum Austreten „Allianz verlassen“ verwenden");
+        if (!allyCovers(al, me, allyRankPerms(al, t.rank))) return err("Mitglieder mit mehr Rechten kannst du nicht entfernen", 403);
+        if (!(await allyCas(al, { members: al.members.filter((m: any) => m.n !== t.n) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        await event(norm(t.n), { kind: "allykick", tag: al.tag }); await chatSys("ally:" + al.tag, `${t.n} wurde aus der Allianz entfernt.`); return J({ ok: true });
+      }
+      if (P === "/api/ally/leave") {
+        const members = al.members.filter((m: any) => m.n !== me);
+        if (!members.length) { await allyDisband(al); return J({ ok: true, disbanded: true }); }
+        let founder = al.founder; if (al.founder === me) { members.sort((x: any, y: any) => allyRankPerms(al, y.rank).length - allyRankPerms(al, x.rank).length || x.t - y.t); members[0] = { ...members[0], rank: "founder" }; founder = members[0].n; }
+        if (!(await allyCas(al, { members, founder }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Allianz verlassen.` + (founder !== al.founder ? ` Neuer Gründer: ${founder}.` : "")); return J({ ok: true });
+      }
+      if (P === "/api/ally/handover") {
+        if (al.founder !== me) return err("Nur der Gründer", 403); const t = target(b.name); if (!t || t.n === me) return err("Mitglied wählen");
+        const best = [...al.cfg.ranks].sort((x: any, y: any) => y.p.length - x.p.length)[0];
+        const members = al.members.map((m: any) => m.n === t.n ? { ...m, rank: "founder" } : m.n === me ? { ...m, rank: best.id } : m);
+        if (!(await allyCas(al, { members, founder: t.n }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Führung an ${t.n} übergeben.`); return J({ ok: true });
+      }
+      if (P === "/api/ally/disband") {
+        if (al.founder !== me) return err("Nur der Gründer", 403); if (String(b.confirm || "").toUpperCase() !== al.tag) return err("Zur Bestätigung das Kürzel eingeben");
+        const tr = await meta("treas:" + al.cfg.id); if (tr && (tr.r.m + tr.r.k + tr.r.g > 0 || Object.values(tr.ships || {}).some((n: any) => n > 0))) return err("Der Tresor muss zuerst verteilt werden (Rohstoffe und Schiffe)", 409);
+        for (const m of al.members) if (m.n !== me) await event(norm(m.n), { kind: "allydisband", tag: al.tag, name: al.name }); await allyDisband(al); return J({ ok: true });
+      }
+      if (P === "/api/ally/descr" || P === "/api/ally/settings") {
+        if (!can("set")) return err("Keine Berechtigung: Einstellungen", 403); const up: any = {}; const cfg = structuredClone(al.cfg);
+        if (b.descr != null) up.descr = clean(String(b.descr).replace(/\n/g, " ")).slice(0, 300);
+        if (b.name != null) { const n = clean(b.name).slice(0, 30); if (n.length < 3) return err("Name 3–30 Zeichen"); up.name = n; }
+        if (b.mode != null) { if (!["open", "apply", "closed"].includes(b.mode)) return err("Aufnahmemodus unbekannt"); cfg.mode = b.mode; }
+        if (b.logo != null) cfg.logo = logoClean(b.logo, treasNorm(await meta("treas:" + al.cfg.id)).cos);
+        up.cfg = cfg; let newTag = al.tag;
+        if (b.tag != null && String(b.tag).trim().toUpperCase() !== al.tag) { newTag = String(b.tag).trim().toUpperCase(); if (!/^[A-Z0-9]{2,5}$/.test(newTag)) return err("Kürzel: 2–5 Buchstaben/Ziffern");
+          if (must(await db.from("ge_ally").select("tag").eq("tag", newTag).maybeSingle())) return err("Kürzel vergeben", 409); up.tag = newTag; }
+        if (!(await allyCas(al, up))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        if (newTag !== al.tag) { must(await db.from("ge_chat").update({ ch: "ally:" + newTag }).eq("ch", "ally:" + al.tag)); await chatSys("ally:" + newTag, `Kürzel geändert: [${al.tag}] → [${newTag}]`); }
+        return J({ ok: true, tag: newTag });
+      }
+      if (P === "/api/ally/circular") {
+        if (!can("msg")) return err("Keine Berechtigung: Rundmail", 403); const txt = clean(b.txt).slice(0, 300); if (!txt) return err("Leer");
+        { const rl = await rateOk(me); if (rl) return err(rl, 429); }
+        for (const m of al.members) if (m.n !== me) await event(norm(m.n), { kind: "allymsg", tag: al.tag, from: me, txt });
+        await chatSys("ally:" + al.tag, `📣 Rundmail von ${me}: ${txt}`); return J({ ok: true });
+      }
+      if (P === "/api/ally/treasury") { const tr = treasNorm(await meta("treas:" + al.cfg.id)); return J({ treasury: tr }); }
+      if (P === "/api/ally/donate" || P === "/api/ally/give") {
+        // Atomar: Spielstand(e) per Revision + Tresor per Vorher-Wert in einer Transaktion (ge_commit_game)
+        const give = P === "/api/ally/give"; if (give && !can("treas")) return err("Keine Berechtigung: Tresor verwalten", 403);
+        const res: any = {}; for (const r of ["m", "k", "g"]) { const v = Math.floor(+(b.res?.[r]) || 0); if (!Number.isSafeInteger(v) || v < 0) return err("Ungültige Menge"); res[r] = v; }
+        const ships: any = {}; for (const [k, v] of Object.entries(b.ships || {})) { const n = Math.floor(+(v as any) || 0); if (!GE.SHIP[k] || !Number.isSafeInteger(n) || n < 0) return err("Ungültige Schiffe"); if (n) ships[k] = n; }
+        const dm = give ? 0 : Math.floor(+b.dm || 0); if (!Number.isSafeInteger(dm) || dm < 0) return err("Ungültige DM");
+        if (!(res.m + res.k + res.g + dm) && !Object.keys(ships).length) return err("Nichts ausgewählt");
+        const who = give ? target(b.to) : al.members.find((m: any) => m.n === me); if (!who) return err("Mitglied unbekannt");
+        const acc = must(await db.from("ge_acct").select("*").eq("name_l", norm(who.n)).maybeSingle()) as any; if (!acc) return err("Konto unbekannt");
+        const adv = await advanceAcct(acc, al); if ("error" in adv) return err(adv.error, 409); const st = adv.next;
+        const pid = give ? st.home : (st.planets[b.pid] ? b.pid : st.home); const pl = st.planets[pid]; if (!pl) return err("Planet unbekannt");
+        const kb = "treas:" + al.cfg.id, before = await meta(kb), tr = treasNorm(before);
+        if (give) { for (const r of ["m", "k", "g"]) { if (tr.r[r] < res[r]) return err("Zu wenig im Tresor"); tr.r[r] -= res[r]; pl.r[r] += res[r]; }
+          for (const [k, n] of Object.entries(ships) as any) { if ((tr.ships[k] || 0) < n) return err("Zu wenig Schiffe im Tresor"); tr.ships[k] -= n; if (!tr.ships[k]) delete tr.ships[k]; pl.ships[k] = (pl.ships[k] || 0) + n; }
+        } else { for (const r of ["m", "k", "g"]) { if ((pl.r[r] || 0) < res[r]) return err("Zu wenig Rohstoffe auf dem Planeten"); pl.r[r] -= res[r]; tr.r[r] += res[r]; }
+          for (const [k, n] of Object.entries(ships) as any) { if ((pl.ships[k] || 0) < n) return err("Zu wenig Schiffe auf dem Planeten (unterwegs zählen nicht)"); pl.ships[k] -= n; if (!pl.ships[k]) delete pl.ships[k]; tr.ships[k] = (tr.ships[k] || 0) + n; }
+          if ((+st.dm || 0) < dm) return err("Zu wenig Dunkle Materie"); st.dm -= dm; tr.dm += dm; }
+        tr.log.unshift({ t: now, kind: give ? "give" : "donate", by: me, to: give ? who.n : null, res, ships, dm }); tr.log = tr.log.slice(0, 100);
+        if (!give) { tr.don[me] = tr.don[me] || { v: 0, dm: 0 }; tr.don[me].v += res.m + res.k + res.g + Object.entries(ships).reduce((s: number, [k, n]: any) => s + n * (GE.SHIP[k].c[0] + GE.SHIP[k].c[1] + GE.SHIP[k].c[2]), 0); tr.don[me].dm += dm; }
+        const write = await stateWrite(acc, adv.prev, st);
+        const tx = await db.rpc("ge_commit_game", { p_states: [write], p_meta: [...adv.metaWrites, { k: kb, before, value: tr }], p_debris: adv.debris });
+        if (tx.error) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        if (give && who.n !== me) await event(norm(who.n), { kind: "allygive", tag: al.tag, from: me, res, ships });
+        await chatSys("ally:" + al.tag, give ? `${me} hat ${who.n} aus dem Tresor versorgt.` : `${me} hat in den Tresor gespendet.`);
+        return J({ ok: true, treasury: tr, ...(who.n === me ? { z: write.z, rev: tx.data[acc.name_l] } : {}) });
+      }
+      if (P === "/api/ally/buy") {
+        if (!can("shop")) return err("Keine Berechtigung: Shop nutzen", 403); const it = ALLY_SHOP.find((x) => x.id === b.item); if (!it) return err("Artikel unbekannt");
+        const kb = "treas:" + al.cfg.id, before = await meta(kb), tr = treasNorm(before);
+        if (it.cos && tr.cos.includes(it.cos)) return err("Bereits freigeschaltet");
+        if (it.buff) { const cur = tr.buffs.find((x: any) => x.buff === it.buff && x.end > now); if (cur && cur.end - now > 48 * 3600e3) return err("Höchstens 72 Stunden im Voraus"); }
+        for (const [i, r] of ["m", "k", "g"].entries()) if (tr.r[r] < it.c[i]) return err("Zu wenig im Tresor"); if (tr.dm < (it.dm || 0)) return err("Zu wenig DM im Tresor");
+        for (const [i, r] of ["m", "k", "g"].entries()) tr.r[r] -= it.c[i]; tr.dm -= it.dm || 0; if (it.cos) tr.cos.push(it.cos);
+        if (it.buff) { tr.buffs = tr.buffs.filter((x: any) => x.end > now); const cur = tr.buffs.find((x: any) => x.buff === it.buff); if (cur) cur.end += it.h * 3600e3; else tr.buffs.push({ buff: it.buff, v: it.v, start: now, end: now + it.h * 3600e3 }); }
+        tr.log.unshift({ t: now, kind: "buy", by: me, item: it.id, res: { m: it.c[0], k: it.c[1], g: it.c[2] }, dm: it.dm || 0 }); tr.log = tr.log.slice(0, 100);
+        const metaW = [{ k: kb, before, value: tr }]; const tx = await db.rpc("ge_commit_game", { p_meta: metaW }); if (tx.error) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        await chatSys("ally:" + al.tag, `${me} hat im Allianz-Shop „${it.n}“ gekauft.`); return J({ ok: true, treasury: tr });
+      }
+      return err("Unbekannte Allianz-Aktion", 404);
     }
-    if (P === "/api/ally/apply" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const al = must(await db.from("ge_ally").select("*").eq("tag", String(b.tag).toUpperCase()).maybeSingle()) as any; if (!al) return err("Allianz unbekannt");
-      if (await myAlly(a.name)) return err("Du bist bereits in einer Allianz");
-      const apps = (al.apps || []).filter((x: any) => x.n !== a.name).concat([{ n: a.name, msg: String(b.msg || "").slice(0, 200), t: Date.now() }]);
-      must(await db.from("ge_ally").update({ apps }).eq("tag", al.tag));
-      for (const m of al.members) if (m.rank === "founder" || m.rank === "officer") await event(norm(m.n), { kind: "allyapp", tag: al.tag, from: a.name, msg: String(b.msg || "").slice(0, 200) });
-      return J({ ok: true });
-    }
-    if (P === "/api/ally/decide" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const al = await myAlly(a.name); if (!al) return err("Keine Allianz");
-      const me = al.members.find((m: any) => m.n === a.name); if (!me || !["founder", "officer"].includes(me.rank)) return err("Keine Berechtigung", 403);
-      const ap = (al.apps || []).find((x: any) => x.n === b.name); if (!ap) return err("Bewerbung nicht gefunden");
-      const apps = al.apps.filter((x: any) => x.n !== b.name); let members = al.members;
-      if (b.accept) { if (await myAlly(b.name)) return err("Spieler ist schon in einer Allianz"); members = members.concat([{ n: b.name, rank: "member", t: Date.now() }]); }
-      must(await db.from("ge_ally").update({ apps, members }).eq("tag", al.tag));
-      await event(norm(b.name), { kind: "allydecision", tag: al.tag, name: al.name, accept: !!b.accept });
-      if (b.accept) await chatSys("ally:" + al.tag, `${b.name} ist der Allianz beigetreten.`);
-      return J({ ok: true });
-    }
-    if (P === "/api/ally/rank" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const al = await myAlly(a.name); if (!al || al.founder !== a.name) return err("Nur der Gründer", 403);
-      const members = al.members.map((m: any) => m.n === b.name && m.rank !== "founder" ? { ...m, rank: b.rank === "officer" ? "officer" : "member" } : m);
-      must(await db.from("ge_ally").update({ members }).eq("tag", al.tag)); return J({ ok: true });
-    }
-    if (P === "/api/ally/kick" && req.method === "POST") {
-      const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const al = await myAlly(a.name); const me = al && al.members.find((m: any) => m.n === a.name);
-      if (!me || !["founder", "officer"].includes(me.rank) || b.name === al.founder) return err("Keine Berechtigung", 403);
-      must(await db.from("ge_ally").update({ members: al.members.filter((m: any) => m.n !== b.name) }).eq("tag", al.tag));
-      await event(norm(b.name), { kind: "allykick", tag: al.tag }); await chatSys("ally:" + al.tag, `${b.name} wurde aus der Allianz entfernt.`); return J({ ok: true });
-    }
-    if (P === "/api/ally/leave" && req.method === "POST") {
-      const al = await myAlly(a.name); if (!al) return err("Keine Allianz");
-      const members = al.members.filter((m: any) => m.n !== a.name);
-      if (!members.length) must(await db.from("ge_ally").delete().eq("tag", al.tag));
-      else { if (al.founder === a.name) { members.sort((x: any, y: any) => (x.rank === "officer" ? -1 : 0) - (y.rank === "officer" ? -1 : 0)); members[0].rank = "founder"; }
-        must(await db.from("ge_ally").update({ members, founder: members.find((m: any) => m.rank === "founder").n }).eq("tag", al.tag)); await chatSys("ally:" + al.tag, `${a.name} hat die Allianz verlassen.`); }
-      return J({ ok: true });
-    }
-    if (P === "/api/ally/descr" && req.method === "POST") { const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const al = await myAlly(a.name); if (!al || al.founder !== a.name) return err("Nur der Gründer", 403); must(await db.from("ge_ally").update({ descr: String(b.descr || "").slice(0, 300) }).eq("tag", al.tag)); return J({ ok: true }); }
     if (P === "/api/chat" && req.method === "GET") {
       const u = new URL(req.url); const ch = u.searchParams.get("ch") || "global"; const since = +(u.searchParams.get("since") || 0);
       if (ch.startsWith("ally:")) { const al = await myAlly(a.name); if (!al || "ally:" + al.tag !== ch) return err("Kein Zugriff", 403); } else if (ch !== "global") return err("Kein Zugriff", 403);

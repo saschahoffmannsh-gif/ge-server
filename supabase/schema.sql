@@ -146,3 +146,10 @@ begin
 end $$;
 revoke all on function ge_login_attempt(text,bigint) from public,anon,authenticated;
 grant execute on function ge_login_attempt(text,bigint) to service_role;
+
+-- v62 Allianz: Einstellungen/Ränge/Wappen (cfg), optimistische Version (ver); Tresor liegt in ge_meta 'treas:<cfg.id>'
+alter table ge_ally add column if not exists cfg jsonb not null default '{}';
+alter table ge_ally add column if not exists ver bigint not null default 0;
+update ge_ally set cfg = jsonb_build_object('id', substr(replace(gen_random_uuid()::text,'-',''),1,16), 'mode','apply',
+  'ranks', '[{"id":"officer","n":"Offizier","p":["acc","kick","msg"]},{"id":"member","n":"Mitglied","p":[]}]'::jsonb,
+  'logo', '{"sh":0,"s":0,"c":0,"c2":7}'::jsonb) where not (cfg ? 'id');

@@ -78,7 +78,7 @@ E.tl=id=>S.tech[id]||0;
 E.maxB=id=>Math.max(0,...S.order.map(i=>S.planets[i].b[id]||0));
 const cmdActive=k=>(S.cmd[k]||0)>now();
 E.cmdActive=cmdActive;
-function buff(kind){if(E._nb)return 0;let v=0;for(const b of S.buffs)if(b.buff===kind&&(!b.start||b.start<=now())&&b.end>now())v=Math.max(v,b.v);return v}
+function buff(kind){if(E._nb)return 0;let v=0;for(const b of S.buffs.concat((S.ally&&S.ally.buffs)||[]))if(b.buff===kind&&(!b.start||b.start<=now())&&b.end>now())v=Math.max(v,b.v);return v} // Allianz-Shop-Buffs (v62) zählen wie Items: stärkster gilt, kein Stapeln
 E.buff=buff;
 function gemBonus(pl,stat){if(!pl||!pl.core)return 0;const C=GE.CORES[pl.core];if(!C)return 0;return C.stats.includes(stat)?C.v:0}
 E.gemBonus=gemBonus;
