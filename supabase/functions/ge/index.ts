@@ -290,6 +290,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       const salt = tokenNew(); const a = { name_l: n, name: String(b.name).trim(), salt, hash: await pbkdf2(salt, String(b.pin)), token: tokenNew(), token_t: Date.now(), home: await freeHome(), created: Date.now() };
       const st=E.newGame({speed:CFG.speed,seed:CFG.seed}),hp=st.planets[st.home];hp.g=a.home[0];hp.s=a.home[1];hp.p=a.home[2];hp.temp=40;st.created=a.created;st.t=a.created;st.cmdName=a.name;st.mp=1;st.srv=1;st.rand=crypto.getRandomValues(new Uint32Array(1))[0];
       const r=await db.rpc('ge_register_game',{p_account:a,p_z:await gzip(JSON.stringify(st)),p_t:st.t});if(r.error)return err(r.error.code==='23505'?'Name oder Heimatposition bereits vergeben':r.error.message,409);
+      if(/^zz/.test(n)){try{await db.from('ge_acct').update({kind:'test'}).eq('name_l',n)}catch(_){}}
       return J({ token: a.token, ...pubAcct(a), hasSave: true });
     }
     if (P === "/api/login" && req.method === "POST") {
