@@ -381,6 +381,7 @@ E.missionsFor=function(g,s,p,kindHint){
  if(sl.kind==='empty')m.push('colonize');
  if(deb&&(deb.m+deb.k)>0)m.push('recycle');
  return m;};
+E.AID_PCT=0.2;E.AID_CD=48*3600e3;
 E.send=function(pid,ships,to,mission,pct,cargo){
  const pl=S.planets[pid];pct=pct??100;cargo=cargo||{m:0,k:0,g:0};if(!pl)return 'Startplanet fehlt';if(!Number.isInteger(pct)||pct<10||pct>100)return 'Tempo muss zwischen 10 und 100 liegen';if(!to||!Number.isInteger(to.g)||to.g<1||to.g>9||!Number.isInteger(to.s)||to.s<1||to.s>499||!Number.isInteger(to.p)||to.p<1||to.p>16)return 'Ungültige Koordinate';if(['m','k','g'].some(r=>!Number.isFinite(cargo[r]??0)||(cargo[r]??0)<0))return 'Ungültige Ladung';
  ships={...ships};for(const id in ships){if(!GE.SHIP[id]||!Number.isSafeInteger(ships[id])||ships[id]<0)return 'Ungültige Schiffsanzahl';ships[id]=Math.floor(ships[id]);if(!(ships[id]>0))delete ships[id]}
@@ -410,10 +411,13 @@ E.send=function(pid,ships,to,mission,pct,cargo){
  if(pl.r.g<fuel+cargo.g)return `Zu wenig Gas (Treibstoff: ${Math.ceil(fuel)})`;
  if(pl.r.m<cargo.m||pl.r.k<cargo.k)return 'Zu wenig Rohstoffe für die Ladung';
  let dur=gate?5000:E.flightTime(pl,to,ships,pct)*1000;
+ // Lieferung an andere Spieler: je Ressource höchstens 20 % des aktuellen Bestands des Startplaneten (vor Abzug von Ladung/Treibstoff)
+ const s0=mission==='transport'&&!dst&&(E.mp||S.mp)?{m:Math.floor(pl.r.m),k:Math.floor(pl.r.k),g:Math.floor(pl.r.g)}:null;
+ if(s0)for(const r of['m','k','g'])if(cargo[r]>Math.floor(s0[r]*E.AID_PCT))return 'Höchstens 20 % deines Bestands je Rohstoff pro Lieferung';
  pl.r.g-=fuel+cargo.g;pl.r.m-=cargo.m;pl.r.k-=cargo.k;for(const id in ships){pl.ships[id]-=ships[id];if(!pl.ships[id])delete pl.ships[id]}
  if(gate){const cd=E.gateCd(gate.lv);pl.gcd=now()+cd;gate.dst.gcd=now()+cd}
  const f={id:S.nextFleet++,mission,from:pid,fromC:{g:pl.g,s:pl.s,p:pl.p,moon:!!pl.moon},to:{g:to.g,s:to.s,p:to.p,moon:!!to.moon},ships,cargo,pct,depart:now(),arrive:now()+dur,dur,phase:'out'};
- if(mission==='attack')f.bonus=E.combatBonus(pl);if(gate)f.gate=gate.gs;
+ if(mission==='attack')f.bonus=E.combatBonus(pl);if(gate)f.gate=gate.gs;if(s0)f.s0=s0;
  if(mission==='explore'){const N=E.NEB2;S.flags.nebula=1;f.nv=N.V;f.snap=E.nebSnap();S.nebT=(S.nebT||[]).filter(x=>x>now()-N.WIN);S.nebT.push(now());E.nebL().n++;
   // Haltezeit 30 echte Minuten; die erste (sichere) Tutorial-Erkundung bleibt kurz (30 Min. Spielzeit), damit das Tutorial nicht hängt
   if(!S.flags.expSafeDone){S.flags.expSafeDone=1;f.safe=1;f.hold=30*MIN/S.speed}else f.hold=N.HOLD}

@@ -236,25 +236,23 @@ create or replace function ge_aid_state(p_to text,p_now bigint) returns jsonb la
 $$;
 -- Hilfsreservierung (gemeinsam für Flotten und Sofortwege); wirft GE:-Fehler bei Ablehnung
 create or replace function ge_aid_reserve(p jsonb,p_fleet bigint) returns void language plpgsql security definer set search_path=public as $$
-declare nowv bigint := (p->>'now')::bigint; ref ge_aidref%rowtype; um numeric; uk numeric; ug numeric; dfv numeric; dtv numeric; rm numeric; rk numeric; rg numeric; req jsonb := p->'res';
+-- v2 (Sascha 16.10.): je Lieferung höchstens 20 % des Bestands des Startplaneten je Rohstoff (Bestand vor dem Versand, s0),
+-- und je Spenderkonto nur eine Lieferung alle 48 h (reserviert oder zugestellt; zurückgerufene/abgelehnte zählen nicht). Kein Empfängerbudget, keine Richtungsprüfung.
+declare nowv bigint := (p->>'now')::bigint; req jsonb := p->'res'; s0 jsonb := p->'s0'; lastv bigint; r text;
 begin
- if p->>'from_l' is not null then
-  select greatest(1,coalesce((data->>'devMax')::numeric,0)) into dfv from ge_pub where name_l=p->>'from_l'; select greatest(1,coalesce((data->>'devMax')::numeric,0)) into dtv from ge_pub where name_l=p->>'to_l';
-  if coalesce(dfv,1)<coalesce(dtv,1) then raise exception 'GE:Hilfe nur an gleich starke oder schwächere Spieler (Entwicklung % < %)',floor(coalesce(dfv,1)),floor(coalesce(dtv,1)) using errcode='P0001'; end if;
- end if;
- select * into ref from ge_aidref where name_l=p->>'to_l' for update;
- if ref.name_l is null or nowv-ref.t>=86400000 then
-  insert into ge_aidref(name_l,m,k,g,t) values(p->>'to_l',greatest(0,(p->'ref'->>'m')::numeric),greatest(0,(p->'ref'->>'k')::numeric),greatest(0,(p->'ref'->>'g')::numeric),nowv)
-   on conflict(name_l) do update set m=excluded.m,k=excluded.k,g=excluded.g,t=excluded.t;
-  select * into ref from ge_aidref where name_l=p->>'to_l';
- end if;
- select coalesce(sum(m),0),coalesce(sum(k),0),coalesce(sum(g),0) into um,uk,ug from ge_aid where to_l=p->>'to_l' and (status='reserved' or (status='delivered' and delivered_at>nowv-86400000));
- rm:=floor(ref.m)-um; rk:=floor(ref.k)-uk; rg:=floor(ref.g)-ug;
- if (req->>'m')::numeric>greatest(0,rm) or (req->>'k')::numeric>greatest(0,rk) or (req->>'g')::numeric>greatest(0,rg) then
-  raise exception 'GE:Hilfsbudget des Empfängers überschritten – frei: % Metall, % Kristall, % Gas (24 h, 1 h Produktion)',greatest(0,rm)::bigint,greatest(0,rk)::bigint,greatest(0,rg)::bigint using errcode='P0001'; end if;
- insert into ge_aid(fleet_id,src,from_l,to_l,coord,m,k,g,d_from,d_to,ref,status,reserved_at,delivered_at)
-  values(p_fleet,coalesce(p->>'src','fleet'),p->>'from_l',p->>'to_l',p->>'coord',(req->>'m')::bigint,(req->>'k')::bigint,(req->>'g')::bigint,dfv,dtv,to_jsonb(ref),case when p_fleet is null then 'delivered' else 'reserved' end,nowv,case when p_fleet is null then nowv end);
+ if p->>'from_l' is null then return; end if; -- Tresor & Co.: keine Begrenzung
+ if s0 is null or jsonb_typeof(s0)<>'object' then raise exception 'GE:Bitte Spiel neu laden (Lieferung ohne Bestandsangabe)' using errcode='P0001'; end if;
+ foreach r in array array['m','k','g'] loop
+  if coalesce((req->>r)::numeric,0)>floor(greatest(0,coalesce((s0->>r)::numeric,0))*0.2) then raise exception 'GE:Höchstens 20 %% deines Bestands je Rohstoff pro Lieferung' using errcode='P0001'; end if;
+ end loop;
+ select max(reserved_at) into lastv from ge_aid where from_l=p->>'from_l' and src='fleet' and status in ('reserved','delivered') and reserved_at>nowv-172800000;
+ if lastv is not null then raise exception 'GE:Nur eine Lieferung alle 48 h – wieder möglich ab %',to_char(to_timestamp((lastv+172800000)/1000.0) at time zone 'Europe/Berlin','DD.MM. HH24:MI') using errcode='P0001'; end if;
+ insert into ge_aid(fleet_id,src,from_l,to_l,coord,m,k,g,ref,status,reserved_at)
+  values(p_fleet,'fleet',p->>'from_l',p->>'to_l',p->>'coord',(req->>'m')::bigint,(req->>'k')::bigint,(req->>'g')::bigint,jsonb_build_object('s0',s0,'pct',0.2),'reserved',nowv);
 end $$;
+create or replace function ge_aid_next(p_from text,p_now bigint) returns bigint language sql security definer set search_path=public as $$
+ select max(reserved_at)+172800000 from ge_aid where from_l=p_from and src='fleet' and status in ('reserved','delivered') and reserved_at>p_now-172800000 $$;
+revoke all on function ge_aid_next(text,bigint) from public,anon,authenticated; grant execute on function ge_aid_next(text,bigint) to service_role;
 
 drop function if exists ge_start_fleet(text,bigint,text,text,text,text,jsonb,bigint);
 create or replace function ge_start_fleet(p_name text,p_base bigint,p_cid text,p_target text,p_npc text,p_mission text,p_data jsonb,p_arrive bigint,p_rules jsonb default null)
@@ -282,7 +280,7 @@ begin
   insert into ge_atk(fleet_id,cid,from_l,to_l,coord,allys,status,reserved_at) values(i,p_cid,p_name,p_target,coordv,coalesce((select array_agg(key) from jsonb_each(c->'allys')),'{}'),'reserved',nowv);
  end if;
  if p_rules is not null and p_target is not null and p_mission='transport' and p_target<>p_name and coalesce((p_rules->>'aidOn')::boolean,false) then
-  perform ge_aid_reserve(jsonb_build_object('now',nowv,'from_l',p_name,'to_l',p_target,'coord',coordv,'res',p_data->'cargo','ref',p_rules->'ref','src','fleet'),i);
+  perform ge_aid_reserve(jsonb_build_object('now',nowv,'from_l',p_name,'to_l',p_target,'coord',coordv,'res',p_data->'cargo','s0',p_data->'s0','src','fleet'),i);
  end if;
  return i;
 end $$;

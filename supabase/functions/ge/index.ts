@@ -322,7 +322,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
     if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t,rev").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
     if(P==='/api/save'&&req.method==='POST'){
       await resolveDue({to_l:a.name_l});
-      const b=await jbody(req,6_000_000);if((+b.cv||0)<61)return J({error:'Neue App-Version erforderlich',code:'reject'},409);
+      const b=await jbody(req,6_000_000);if((+b.cv||0)<62)return J({error:'Neue App-Version erforderlich',code:'reject'},409);
       if(typeof b.z!=='string'||b.z.length>5_000_000)return err('Ungültiger Spielstand');
       let nx:any;try{nx=JSON.parse(await gunzip(b.z));}catch(_){return err('Spielstand unlesbar');}
       const prev=await record(a.name_l);if(!Number.isSafeInteger(b.base)||b.base!==prev.rev)return J({error:'Spielstand veraltet',code:'reject'},409);
@@ -350,8 +350,8 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       const ctx=await contextFor(a.name_l),sl=ctx.slots[`${f.to.g}:${f.to.s}:${f.to.p}`];if(!sl)return err('Ziel nicht vorhanden');let to_l:any=null,to_npc:any=null;
       if(sl.real){to_l=norm(sl.player);if(f.mission!=='transport'){const b=await pvpBlock(a.name_l,to_l);if(b)return err(b,403);}}else{to_npc=sl.npcid;if(f.mission==='transport')return err('Transport nur zu Spielern');}
       const runtime=(globalThis as any).makeRuntime(st,ctx),pl=st.planets[f.from];
-      const data={from:a.name,fromC:f.fromC,to:f.to,ships:f.ships,cargo:f.cargo,tech:runtime.techOf(),esp:(st.tech.espionage||0)+(runtime.cmdActive('technocrat')?2:0),depart:f.depart,cid,pct:f.pct,dur:f.dur,bonus:f.bonus||runtime.combatBonus(pl)};
-      const R155=await rules155(),now155=Date.now();let pr:any=null;if(to_l&&(R155.protect||R155.aid)){pr={now:now155,protect:!!R155.protect,aidOn:!!R155.aid,ally:!!b.ally};if(f.mission==='transport'&&to_l!==a.name_l&&R155.aid)pr.ref=await refOf(to_l);}
+      const data={from:a.name,fromC:f.fromC,to:f.to,ships:f.ships,cargo:f.cargo,tech:runtime.techOf(),esp:(st.tech.espionage||0)+(runtime.cmdActive('technocrat')?2:0),depart:f.depart,cid,pct:f.pct,dur:f.dur,...(f.s0?{s0:f.s0}:{}),bonus:f.bonus||runtime.combatBonus(pl)};
+      const R155=await rules155(),now155=Date.now();let pr:any=null;if(to_l&&(R155.protect||R155.aid)){pr={now:now155,protect:!!R155.protect,aidOn:!!R155.aid,ally:!!b.ally};}
       const r=await db.rpc('ge_start_fleet',{p_name:a.name_l,p_base:prev.rev,p_cid:cid,p_target:to_l,p_npc:to_npc,p_mission:f.mission,p_data:data,p_arrive:Math.round(f.depart+f.dur),p_rules:pr});if(r.error){const gm=geMsg(r.error);if(gm)return err(gm,403);return err('Mission konnte nicht bestätigt werden: '+r.error.message,409);}
       await db.from('ge_acct').update({last_act:now155}).eq('name_l',a.name_l);
       if(to_l&&f.mission==='transport'&&to_l!==a.name_l)await event(to_l,{kind:'aidin',key:'aidin:'+r.data,from:a.name,to:f.to,res:f.cargo,arrive:Math.round(f.depart+f.dur),ally:!!b.ally});
@@ -370,9 +370,8 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
     if(P==='/api/rules/info'&&req.method==='POST'){const b=await jbody(req);const R=await rules155(),now=Date.now(),to=norm(b.to||'');
       const o:any={rules:{protect:!!R.protect,aid:!!R.aid,catchup:!!R.catchup},limits:{planet:3,acct:6,ally:10,windowH:24,neutralH:48}};
       if(to&&to!==a.name_l){const pubs=must(await db.from('ge_pub').select('name_l,data').in('name_l',[a.name_l,to])) as any[];if(!pubs.some((p:any)=>p.name_l===to))return err('Spieler unbekannt',404);
-        const dv=(l:string)=>Math.max(1,Math.floor(+(pubs.find((p:any)=>p.name_l===l)?.data?.devMax)||0));o.dev={me:dv(a.name_l),to:dv(to)};o.aidDir=o.dev.me>=o.dev.to;
-        const st:any=must(await db.rpc('ge_aid_state',{p_to:to,p_now:now}));let ref:any=st.ref;if(!ref||now-(+ref.t||0)>=DAY_MS)ref={...(await refOf(to)),t:null,fresh:1};
-        const u=st.used||{m:0,k:0,g:0};o.aid={ref,used:u,free:{m:Math.max(0,Math.floor(+ref.m)-(+u.m||0)),k:Math.max(0,Math.floor(+ref.k)-(+u.k||0)),g:Math.max(0,Math.floor(+ref.g)-(+u.g||0))},next:st.next||null};
+        const dv=(l:string)=>Math.max(1,Math.floor(+(pubs.find((p:any)=>p.name_l===l)?.data?.devMax)||0));o.dev={me:dv(a.name_l),to:dv(to)};o.aidDir=true;
+        const nx=must(await db.rpc('ge_aid_next',{p_from:a.name_l,p_now:now})) as any;o.aid={pct:20,cdH:48,next:nx?+nx:null};
         if(b.coord&&/^\d+:\d+:\d+$/.test(String(b.coord)))o.atk=must(await db.rpc('ge_atk_counts',{p_from:a.name_l,p_to:to,p_coord:String(b.coord),p_now:now}));o.block=await pvpBlock(a.name_l,to);}
       return J(o);}
     if (P === "/api/fleet/resolve" && req.method === "POST") {
@@ -503,7 +502,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
         tr.log.unshift({ t: now, kind: give ? "give" : "donate", by: me, to: give ? who.n : null, res, ships, dm }); tr.log = tr.log.slice(0, 100);
         if (!give) { tr.don[me] = tr.don[me] || { v: 0, dm: 0 }; tr.don[me].v += res.m + res.k + res.g + Object.entries(ships).reduce((s: number, [k, n]: any) => s + n * (GE.SHIP[k].c[0] + GE.SHIP[k].c[1] + GE.SHIP[k].c[2]), 0); tr.don[me].dm += dm; }
         const write = await stateWrite(acc, adv.prev, st);
-        const R155 = await rules155(); const ledger: any[] = (give && R155.aid && res.m + res.k + res.g > 0) ? [{ t: "aidnow", now: Date.now(), from_l: null, src: "treasury:" + al.cfg.id, to_l: acc.name_l, coord: `${pl.g}:${pl.s}:${pl.p}`, res, ref: refOfState(adv.next) }] : [];
+        const R155 = await rules155(); const ledger: any[] = []; void R155; // Tresor: keine Begrenzung (Sascha 16.10.)
         const tx = await db.rpc("ge_commit_game", { p_states: [write], p_meta: [...adv.metaWrites, { k: kb, before, value: tr }], p_debris: adv.debris, p_ledger: ledger });
         if (tx.error) { const gm = geMsg(tx.error); if (gm) return err(gm, 403); return err("Gleichzeitige Änderung – bitte erneut", 409); }
         if (give && who.n !== me) await event(norm(who.n), { kind: "allygive", tag: al.tag, from: me, res, ships });
