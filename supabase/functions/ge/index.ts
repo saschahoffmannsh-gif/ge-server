@@ -85,14 +85,14 @@ async function contextFor(l:string){const events:any={},results:any={},gifts:any
  for(const e of must(await db.from("ge_event").select("id,data").eq("name_l",l)) as any[])events[e.data.key||e.id]=e.data;
  for(const f of must(await db.from("ge_fleet").select("id,cid,data,status,result,arrive").eq("from_l",l)) as any[]){fleet[f.cid]=f;if(f.status==='done')results[f.id]=f.result;}
  for(const g of must(await db.from("ge_gift").select("id,dm").eq("name_l",l).not("claimed","is",null)) as any[])gifts[g.id]=g.dm;
- const acctRows=must(await db.from('ge_acct').select('name_l,name,home,created')) as any[];const slots:any={};for(const a of acctRows)if(a.name_l!==l)slots[a.home.join(':')]={kind:'player',real:1,player:a.name,prot:Date.now()<protEnd(a.created,null)};for(const p of must(await db.from("ge_pub").select("name_l,data")) as any[])if(p.name_l!==l)for(const q of p.data.planets||[])if(!q.moon)slots[`${q.g}:${q.s}:${q.p}`]={kind:'player',real:1,player:p.data.name,prot:Date.now()<protEnd(acctRows.find(a=>a.name_l===p.name_l)?.created||0,p.data.tutEnd)};
+ const acctRows=must(await db.from('ge_acct').select('name_l,name,home,created,kind')) as any[];const slots:any={};let ownDev=0;for(const a of acctRows)if(a.name_l!==l)slots[a.home.join(':')]={kind:'player',real:1,player:a.name,prot:Date.now()<protEnd(a.created,null)};for(const p of must(await db.from("ge_pub").select("name_l,data")) as any[])if(p.name_l===l)ownDev=+p.data?.devMax||0;else for(const q of p.data.planets||[])if(!q.moon)slots[`${q.g}:${q.s}:${q.p}`]={kind:'player',real:1,player:p.data.name,prot:Date.now()<protEnd(acctRows.find(a=>a.name_l===p.name_l)?.created||0,p.data.tutEnd)};
  for(const n of NPCS)slots[n.home.join(':')]=Date.now()>=n.join?{kind:'player',npcid:n.id,npcp:n.type,player:n.n}:{kind:'reserved',npcid:'reserved'};
  const incoming=must(await db.from('ge_fleet').select('*').eq('to_l',l).eq('status','out')) as any[];const debris:any={};for(const d of must(await db.from('ge_debris').select('*')) as any[])debris[d.coord]=d.data;
- const npcBefore=await meta('npcworld');return{events,results,gifts,fleet,slots,debris,incoming,gal:(await meta('gal:'+l))||{},npc:npcBefore||{},npcBefore};
+ const npcBefore=await meta('npcworld');const cu=await cuCtx(acctRows.find(a=>a.name_l===l)?.kind||'normal');return{events,results,gifts,fleet,slots,debris,incoming,gal:(await meta('gal:'+l))||{},npc:npcBefore||{},npcBefore,cu,dmax:ownDev};
 }
-function hydrate(st:any,ctx:any){st.debris=JSON.parse(JSON.stringify(ctx.debris));st.npc=JSON.parse(JSON.stringify(ctx.npc));for(const f of st.fleets||[]){const r=ctx.fleet[f.id];if(r){f.pvp=f.pvp||{};f.pvp.sid=r.id;}}return st;}
+function hydrate(st:any,ctx:any){st.cu=ctx.cu?JSON.parse(JSON.stringify(ctx.cu)):{on:0,why:'Aufholbonus serverseitig deaktiviert'};st.dmax=Math.max(+st.dmax||0,+ctx.dmax||0);st.debris=JSON.parse(JSON.stringify(ctx.debris));st.npc=JSON.parse(JSON.stringify(ctx.npc));for(const f of st.fleets||[]){const r=ctx.fleet[f.id];if(r){f.pvp=f.pvp||{};f.pvp.sid=r.id;}}return st;}
 function publication(st:any,a:any,old:any){const E=(globalThis as any).ENGINE.fork();E.load(st);const pts=E.calcPoints(st);let df=0;for(const id of st.order)for(const [k,n]of Object.entries(st.planets[id].def||{})){const c=GE.DEF[k].c;df+=(n as number)*(c[0]+c[1]+c[2])/1000;}const ps=st.order.map((i:string)=>st.planets[i]);
- return{name:a.name,home:a.home,tag:old?.tag||null,ally:old?.ally||null,pts:{b:pts.b,t:pts.t,f:Math.max(0,pts.f-Math.floor(df)),d:Math.floor(df)},planets:ps.map((p:any)=>({g:p.g,s:p.s,p:p.p,name:p.name,type:p.type,moon:!!p.moon})),snap:ps.filter((p:any)=>!p.moon).map((p:any)=>({g:p.g,s:p.s,p:p.p,r:p.r,ships:p.ships,def:p.def,core:p.core,radar:E.bEff(p,'radar')})),tech:{...st.tech},t:st.t,tutEnd:st.flags.tutEnd||null,prot:Date.now()<protEnd(a.created,st.flags.tutEnd),devMax:Math.max(old?.devMax||0,pts.dev),pve:!!st.flags.pveMode};}
+ return{name:a.name,home:a.home,tag:old?.tag||null,ally:old?.ally||null,pts:{b:pts.b,t:pts.t,f:Math.max(0,pts.f-Math.floor(df)),d:Math.floor(df)},planets:ps.map((p:any)=>({g:p.g,s:p.s,p:p.p,name:p.name,type:p.type,moon:!!p.moon})),snap:ps.filter((p:any)=>!p.moon).map((p:any)=>({g:p.g,s:p.s,p:p.p,r:p.r,ships:p.ships,def:p.def,core:p.core,radar:E.bEff(p,'radar')})),tech:{...st.tech},t:st.t,tutEnd:st.flags.tutEnd||null,prot:Date.now()<protEnd(a.created,st.flags.tutEnd),devMax:Math.max(old?.devMax||0,pts.dev,Math.floor(+st.dmax||0)),pve:!!st.flags.pveMode};}
 async function stateWrite(a:any,prev:any,st:any){for(const id of st.order)for(const r of ['m','k','g'])if(!Number.isFinite(st.planets[id].r[r])||st.planets[id].r[r]<0||st.planets[id].r[r]>Number.MAX_SAFE_INTEGER)throw new Error('Unsicherer Rohstoffbestand');const old=(must(await db.from('ge_pub').select('data').eq('name_l',a.name_l).maybeSingle()) as any)?.data;return{name_l:a.name_l,base:prev.rev,z:await gzip(JSON.stringify(st)),t:st.t,positions:st.order.map((i:string)=>st.planets[i]).filter((p:any)=>!p.moon).map((p:any)=>`${p.g}:${p.s}:${p.p}`),pub:publication(st,a,old)};}
 function debrisWrites(before:any,after:any){const out:any[]=[];for(const coord of new Set([...Object.keys(before),...Object.keys(after)])){if(JSON.stringify(before[coord]||null)!==JSON.stringify(after[coord]||null))out.push({coord,before:before[coord]||null,value:after[coord]||null});}return out;}
 // ---------- v62 Allianz: Ränge/Rechte, Wappen, Tresor, Shop ----------
@@ -186,6 +186,34 @@ async function savePoints(l: string) {const E=(globalThis as any).ENGINE.fork();
   try { const st = JSON.parse(await gunzip(s.z)); const d = E.devPoints(st); let f = 0, df = 0; const add = (o: any, T: any) => { let v = 0; for (const k in o || {}) { const u = T[k]; if (u) v += (+o[k] || 0) * (u.c[0] + u.c[1] + u.c[2]) / 1000; } return v; };
     for (const id of st.order || []) { const p = st.planets[id]; if (!p) continue; f += add(p.ships, GE.SHIP); df += add(p.def, GE.DEF); } for (const fl of st.fleets || []) if (!fl.npc) f += add(fl.ships, GE.SHIP);
     return { b: Math.floor(d.b), t: Math.floor(d.t), f: Math.floor(f), d: Math.floor(df) }; } catch (_e) { return null; } }
+// ---------- ZIP155: Regeln (nur serverseitig schaltbar), Aufholreferenz, Hilfsreferenz ----------
+const DAY_MS = 864e5, WEEK_MS = 7 * DAY_MS;
+async function rules155(): Promise<any> { return ((await meta("rules155")) || {}) as any; }
+const lastMonday = (t: number) => { const d = new Date(t); const dow = (d.getUTCDay() + 6) % 7; return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - dow * DAY_MS; };
+const CU_PARAMS = { v: 1, top: 20, min: 20, candidateAgeDays: 14, activityDays: 7, universeDays: 14, statistic: "median(10,11)", knots: [[0.1, 0.5], [0.25, 0.35], [0.5, 0.2], [0.75, 0]] };
+async function cuCompute(now: number, validFrom: number, late: boolean) {
+  let reason = "", r: number | null = null, active = false;
+  if (now - CFG.epoch < 14 * DAY_MS) reason = "Universum jünger als 14 Tage";
+  const accts = must(await db.from("ge_acct").select("name_l,created,kind,last_act")) as any[]; const pubs = must(await db.from("ge_pub").select("name_l,data")) as any[];
+  const dev = new Map(pubs.map((p: any) => [p.name_l, Math.floor(+p.data?.devMax || 0)]));
+  const cand = accts.filter((a) => (a.kind || "normal") === "normal" && now - (+a.created || 0) >= 14 * DAY_MS && a.last_act && now - +a.last_act <= 7 * DAY_MS && (dev.get(a.name_l) || 0) > 0)
+    .map((a) => ({ id: a.name_l, d: dev.get(a.name_l) || 0 })).sort((x, y) => y.d - x.d || (x.id < y.id ? -1 : 1));
+  const top = cand.slice(0, 20);
+  if (!reason && cand.length < 20) reason = `Es fehlen 20 geeignete aktive Konten (${cand.length}/20)`;
+  if (!reason) { active = true; r = (top[9].d + top[10].d) / 2; }
+  await db.rpc("ge_cu_insert", { p: { valid_from: validFrom, calculated_at: now, active, reason: reason + (late ? " · verspätet berechnet, erst ab Berechnung gültig" : ""), r, n: cand.length, ids: top, params: CU_PARAMS } });
+}
+async function cuEnsure(now = Date.now()) { const R = await rules155(); if (!R.catchup) return; const act = +R.activated || now; const b = Math.max(act, lastMonday(now));
+  const ex = must(await db.from("ge_cu_ref").select("valid_from").gte("valid_from", b).limit(1)) as any[]; if (ex.length) return;
+  const late = b !== act && now - b > 3600e3; await cuCompute(now, late ? now : b, late); }
+async function cuCtx(kind: string) { const R = await rules155(); const next = lastMonday(Date.now()) + WEEK_MS; if (!R.catchup) return { on: 0, why: "Aufholbonus serverseitig deaktiviert", next };
+  await cuEnsure(); if (kind !== "normal") return { on: 0, why: "Aufholbonus nur für normale Spielerkonten", next };
+  const rows = must(await db.from("ge_cu_ref").select("valid_from,valid_to,active,reason,r").order("valid_from")) as any[];
+  return { on: 1, next, segs: rows.map((x) => ({ a: +x.valid_from, b: x.valid_to == null ? null : +x.valid_to, R: +x.r || 0, act: !!x.active, why: x.reason || "" })) }; }
+// Hilfsreferenz P_help = bonusfreie Referenzproduktion (E.refProd: ohne Items/Aufholbonus) des Empfängers
+function refOfState(st: any) { const F = (globalThis as any).ENGINE.fork(); F.load(JSON.parse(JSON.stringify(st))); const r = F.refProd(); return { m: Math.floor(Math.max(0, r.m)), k: Math.floor(Math.max(0, r.k)), g: Math.floor(Math.max(0, r.g)) }; }
+async function refOf(l: string) { const st = await loadSave(l); return st ? refOfState(st) : { m: 0, k: 0, g: 0 }; }
+const geMsg = (e: any) => { const m = String(e?.message || ""); const i = m.indexOf("GE:"); return i >= 0 ? m.slice(i + 3) : null; };
 async function pvpBlock(fromL: string, toL: string): Promise<string | null> {
   const acc = must(await db.from("ge_acct").select("name_l,created").in("name_l", [fromL, toL])) as any[]; const now = Date.now();
   const A = acc.find((x) => x.name_l === fromL), B = acc.find((x) => x.name_l === toL); if (!A || !B) return "Ziel unbekannt";
@@ -195,6 +223,7 @@ async function pvpBlock(fromL: string, toL: string): Promise<string | null> {
   if (now < protEnd(+B.created || 0, te(toL))) return "Ziel steht unter Anfängerschutz";
   const dv = (l: string) => { const p = pubs.find((x) => x.name_l === l); return Math.max(1, +(p?.data?.devMax) || 0); };
   const a = dv(fromL), b = dv(toL); if (Math.max(a, b) / Math.min(a, b) > DEV_RATIO) return "Entwicklungsabstand zu groß (max. 5×)";
+  if ((await rules155()).protect) { const r = await db.rpc("ge_pair_block", { p_a: fromL, p_b: toL, p_now: now }); if (r.error) throw new Error(r.error.message); if (r.data) return r.data as string; }
   return null; }
 function stableRandom(seed:number){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
 async function resolve(row:any):Promise<any>{
@@ -232,8 +261,10 @@ async function resolve(row:any):Promise<any>{
    const coord=`${d.to.g}:${d.to.s}:${d.to.p}`;const deb=as.debris[coord]||(as.debris[coord]={m:0,k:0,nm:0,nk:0});deb.m+=B.debris.m;deb.k+=B.debris.k;if(row.to_npc)for(const [r,i]of [['m',0],['k',1]]as any[])for(const k in B.lossD)if(GE.SHIP[k])deb['n'+r]=(deb['n'+r]||0)+Math.round(B.lossD[k]*GE.SHIP[k].c[i]*.3);
    result={kind:'attack',endShips:B.endA,loot,battle:ba,debris:B.debris,winner:B.winner,defName,moon,gal:galA,galKey:'a'+row.id};
   }
+  const R155=await rules155(),ledger:any[]=[];if(row.to_l){if(row.mission==='attack'){if(blocked)ledger.push({t:'atk',fleet_id:row.id,set:'released',reason:'blocked: '+blocked,at:resolveAt});else ledger.push({t:'atk',fleet_id:row.id,set:'fought',at:resolveAt});}
+   if(R155.protect&&!blocked&&['attack','spy'].includes(row.mission))ledger.push({t:'pair',a:row.from_l,b:row.to_l,at:resolveAt});if(row.mission==='transport'&&row.to_l!==row.from_l)ledger.push({t:'aid',fleet_id:row.id,set:'delivered',at:resolveAt});}
   A.externalResults[row.id]=result;A.receiveFleet(af.id,row.id);if(D){ds.debris=JSON.parse(JSON.stringify(as.debris));ds.npc=JSON.parse(JSON.stringify(as.npc));}if(JSON.stringify(ac.npc)!==JSON.stringify(as.npc))metaWrites.push({k:'npcworld',before:ac.npcBefore,value:as.npc});const states=[await stateWrite(attacker,ar,as)];if(D)states.push(await stateWrite(defender,dr,ds));
-  const tx=await db.rpc('ge_commit_game',{p_states:states,p_fleet:{id:row.id,status:'busy',lease,result},p_events:events,p_meta:metaWrites,p_debris:debrisWrites(ac.debris,as.debris)});
+  const tx=await db.rpc('ge_commit_game',{p_states:states,p_fleet:{id:row.id,status:'busy',lease,result},p_events:events,p_meta:metaWrites,p_debris:debrisWrites(ac.debris,as.debris),p_ledger:ledger});
   if(!tx.error)return result;if(tx.error.code!=='40001')throw new Error(tx.error.message);
  }
  throw new Error('Gleichzeitiger Kampf – später erneut versuchen');
@@ -244,7 +275,8 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
   const P = new URL(req.url).pathname.replace(/^.*?\/api\//, "/api/");
   try {
     if (P === "/api/health") return J({ ok: true, service: "ge-supabase", version: VERSION, speed: CFG.speed, lastTick: await meta("snapT") });
-    if (P === "/api/tick") { // stündlich per pg_cron: Rang-Schnappschuss
+    if (P === "/api/tick") { // stündlich per pg_cron: Rang-Schnappschuss + ZIP155-Wochenreferenz
+      await cuEnsure();
       const due=must(await db.from('ge_fleet').select('*').or(`status.eq.out,and(status.eq.busy,busy_at.lt.${Date.now()-120000})`).lte('arrive',Date.now()).limit(50)) as any[];for(const f of due)await resolve(f);
       const u = await universe(); must(await db.from("ge_meta").upsert([{ k: "snap", v: u.ranking.map((x: any) => [x.id, x.tot]) }, { k: "snapT", v: u.t }]));
       return J({ ok: true, n: u.ranking.length });
@@ -289,7 +321,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
     if (P === "/api/save" && req.method === "GET") { const s = must(await db.from("ge_save").select("z,t,rev").eq("name_l", a.name_l).maybeSingle()) as any; return s ? J(s) : err("Kein Spielstand", 404); }
     if(P==='/api/save'&&req.method==='POST'){
       await resolveDue({to_l:a.name_l});
-      const b=await jbody(req,6_000_000);if((+b.cv||0)<60)return J({error:'Neue App-Version erforderlich',code:'reject'},409);
+      const b=await jbody(req,6_000_000);if((+b.cv||0)<61)return J({error:'Neue App-Version erforderlich',code:'reject'},409);
       if(typeof b.z!=='string'||b.z.length>5_000_000)return err('Ungültiger Spielstand');
       let nx:any;try{nx=JSON.parse(await gunzip(b.z));}catch(_){return err('Spielstand unlesbar');}
       const prev=await record(a.name_l);if(!Number.isSafeInteger(b.base)||b.base!==prev.rev)return J({error:'Spielstand veraltet',code:'reject'},409);
@@ -299,8 +331,10 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       // These flags are UI acknowledgements, never acquisition assertions.
       for(const k of ['rankSeen','galinfo','named','exported'])if(nx.flags?.[k])st.flags[k]=1;if(st.camp&&nx.camp)st.camp.skip=nx.camp.skip?1:0;
       let next:any;try{next=(globalThis as any).commandState(st,actions,maxT,ctx);}catch(e){return J({error:'Aktion abgelehnt: '+(e as Error).message,code:'reject'},409);}
-      const write=await stateWrite(a,prev,next),metaWrites:any[]=[];if(JSON.stringify(originalNpc)!==JSON.stringify(next.npc))metaWrites.push({k:'npcworld',before:ctx.npcBefore,value:next.npc});
-      const r=await db.rpc('ge_commit_game',{p_states:[write],p_fleet:actions.filter((x:any)=>x.type==='recall').map((x:any)=>ctx.fleet[x.args[0]]).filter((x:any)=>x&&x.status==='out').map((x:any)=>({id:x.id,status:'out',lease:null,nextStatus:'recalled'})),p_meta:metaWrites,p_debris:debrisWrites(ctx.debris,next.debris)});if(r.error)return J({error:'Gleichzeitige Aktion – aktueller Stand wird geladen',code:'reject'},409);
+      const write:any=await stateWrite(a,prev,next),metaWrites:any[]=[];if(JSON.stringify(originalNpc)!==JSON.stringify(next.npc))metaWrites.push({k:'npcworld',before:ctx.npcBefore,value:next.npc});
+      write.act=(+next.actionSeq||0)>(+st.actionSeq||0); // ZIP155 §2.2: nur neu bestätigte Spielbefehle zählen als Aktivität
+      const recalled=actions.filter((x:any)=>x.type==='recall').map((x:any)=>ctx.fleet[x.args[0]]).filter((x:any)=>x&&x.status==='out'),nowR=Date.now();
+      const r=await db.rpc('ge_commit_game',{p_states:[write],p_ledger:recalled.flatMap((x:any)=>[{t:'atk',fleet_id:x.id,set:'released',reason:'recall',at:nowR},{t:'aid',fleet_id:x.id,set:'released',reason:'recall',at:nowR}]),p_fleet:recalled.map((x:any)=>({id:x.id,status:'out',lease:null,nextStatus:'recalled'})),p_meta:metaWrites,p_debris:debrisWrites(ctx.debris,next.debris)});if(r.error)return J({error:'Gleichzeitige Aktion – aktueller Stand wird geladen',code:'reject'},409);
       return J({ok:true,z:write.z,t:next.t,rev:r.data[a.name_l],serverNow:Date.now()});
     }
     if(P==='/api/pub'&&req.method==='POST'){
@@ -316,7 +350,11 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       if(sl.real){to_l=norm(sl.player);if(f.mission!=='transport'){const b=await pvpBlock(a.name_l,to_l);if(b)return err(b,403);}}else{to_npc=sl.npcid;if(f.mission==='transport')return err('Transport nur zu Spielern');}
       const runtime=(globalThis as any).makeRuntime(st,ctx),pl=st.planets[f.from];
       const data={from:a.name,fromC:f.fromC,to:f.to,ships:f.ships,cargo:f.cargo,tech:runtime.techOf(),esp:(st.tech.espionage||0)+(runtime.cmdActive('technocrat')?2:0),depart:f.depart,cid,pct:f.pct,dur:f.dur,bonus:f.bonus||runtime.combatBonus(pl)};
-      const r=await db.rpc('ge_start_fleet',{p_name:a.name_l,p_base:prev.rev,p_cid:cid,p_target:to_l,p_npc:to_npc,p_mission:f.mission,p_data:data,p_arrive:Math.round(f.depart+f.dur)});if(r.error)return err('Mission konnte nicht bestätigt werden: '+r.error.message,409);return J({id:r.data});
+      const R155=await rules155(),now155=Date.now();let pr:any=null;if(to_l&&(R155.protect||R155.aid)){pr={now:now155,protect:!!R155.protect,aidOn:!!R155.aid,ally:!!b.ally};if(f.mission==='transport'&&to_l!==a.name_l&&R155.aid)pr.ref=await refOf(to_l);}
+      const r=await db.rpc('ge_start_fleet',{p_name:a.name_l,p_base:prev.rev,p_cid:cid,p_target:to_l,p_npc:to_npc,p_mission:f.mission,p_data:data,p_arrive:Math.round(f.depart+f.dur),p_rules:pr});if(r.error){const gm=geMsg(r.error);if(gm)return err(gm,403);return err('Mission konnte nicht bestätigt werden: '+r.error.message,409);}
+      await db.from('ge_acct').update({last_act:now155}).eq('name_l',a.name_l);
+      if(to_l&&f.mission==='transport'&&to_l!==a.name_l)await event(to_l,{kind:'aidin',key:'aidin:'+r.data,from:a.name,to:f.to,res:f.cargo,arrive:Math.round(f.depart+f.dur),ally:!!b.ally});
+      return J({id:r.data});
     }
     // Review V2 §7: friedliche Kernroute – 1 Stein je 7 reale Tage, frühestens nach 7 Kontotagen; Erfüllung aus dem akzeptierten Spielstand
     if(P==='/api/gal/peace'&&req.method==='POST'){
@@ -327,6 +365,15 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       if(!E.peaceInfo().done)return err('Projekt noch nicht erfüllt',409);const key='p'+(pm.n+1);gv[key]=1;
       const tx=await db.rpc('ge_commit_game',{p_meta:[{k:gk,before:gvRaw,value:gv},{k:pk,before:pmRaw,value:{n:pm.n+1,last:now}}]});if(tx.error)return err('Gleichzeitiger Anspruch – erneut abrufen',409);return J({key,n:1});
     }
+    // ZIP155 §9: Vorschau (garantiert keinen Platz/kein Budget – der Server reserviert erst beim Start)
+    if(P==='/api/rules/info'&&req.method==='POST'){const b=await jbody(req);const R=await rules155(),now=Date.now(),to=norm(b.to||'');
+      const o:any={rules:{protect:!!R.protect,aid:!!R.aid,catchup:!!R.catchup},limits:{planet:3,acct:6,ally:10,windowH:24,neutralH:48}};
+      if(to&&to!==a.name_l){const pubs=must(await db.from('ge_pub').select('name_l,data').in('name_l',[a.name_l,to])) as any[];if(!pubs.some((p:any)=>p.name_l===to))return err('Spieler unbekannt',404);
+        const dv=(l:string)=>Math.max(1,Math.floor(+(pubs.find((p:any)=>p.name_l===l)?.data?.devMax)||0));o.dev={me:dv(a.name_l),to:dv(to)};o.aidDir=o.dev.me>=o.dev.to;
+        const st:any=must(await db.rpc('ge_aid_state',{p_to:to,p_now:now}));let ref:any=st.ref;if(!ref||now-(+ref.t||0)>=DAY_MS)ref={...(await refOf(to)),t:null,fresh:1};
+        const u=st.used||{m:0,k:0,g:0};o.aid={ref,used:u,free:{m:Math.max(0,Math.floor(+ref.m)-(+u.m||0)),k:Math.max(0,Math.floor(+ref.k)-(+u.k||0)),g:Math.max(0,Math.floor(+ref.g)-(+u.g||0))},next:st.next||null};
+        if(b.coord&&/^\d+:\d+:\d+$/.test(String(b.coord)))o.atk=must(await db.rpc('ge_atk_counts',{p_from:a.name_l,p_to:to,p_coord:String(b.coord),p_now:now}));o.block=await pvpBlock(a.name_l,to);}
+      return J(o);}
     if (P === "/api/fleet/resolve" && req.method === "POST") {
       const b = await jbody(req, (P as string) === "/api/save" ? 6_000_000 : ACTION_MAX); const row = must(await db.from("ge_fleet").select("*").eq("id", +b.id).eq("from_l", a.name_l).maybeSingle()) as any;
       if (!row) return err("Flotte unbekannt", 404);
@@ -455,8 +502,9 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
         tr.log.unshift({ t: now, kind: give ? "give" : "donate", by: me, to: give ? who.n : null, res, ships, dm }); tr.log = tr.log.slice(0, 100);
         if (!give) { tr.don[me] = tr.don[me] || { v: 0, dm: 0 }; tr.don[me].v += res.m + res.k + res.g + Object.entries(ships).reduce((s: number, [k, n]: any) => s + n * (GE.SHIP[k].c[0] + GE.SHIP[k].c[1] + GE.SHIP[k].c[2]), 0); tr.don[me].dm += dm; }
         const write = await stateWrite(acc, adv.prev, st);
-        const tx = await db.rpc("ge_commit_game", { p_states: [write], p_meta: [...adv.metaWrites, { k: kb, before, value: tr }], p_debris: adv.debris });
-        if (tx.error) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        const R155 = await rules155(); const ledger: any[] = (give && R155.aid && res.m + res.k + res.g > 0) ? [{ t: "aidnow", now: Date.now(), from_l: null, src: "treasury:" + al.cfg.id, to_l: acc.name_l, coord: `${pl.g}:${pl.s}:${pl.p}`, res, ref: refOfState(adv.next) }] : [];
+        const tx = await db.rpc("ge_commit_game", { p_states: [write], p_meta: [...adv.metaWrites, { k: kb, before, value: tr }], p_debris: adv.debris, p_ledger: ledger });
+        if (tx.error) { const gm = geMsg(tx.error); if (gm) return err(gm, 403); return err("Gleichzeitige Änderung – bitte erneut", 409); }
         if (give && who.n !== me) await event(norm(who.n), { kind: "allygive", tag: al.tag, from: me, res, ships });
         await chatSys("ally:" + al.tag, give ? `${me} hat ${who.n} aus dem Tresor versorgt.` : `${me} hat in den Tresor gespendet.`);
         return J({ ok: true, treasury: tr, ...(who.n === me ? { z: write.z, rev: tx.data[acc.name_l] } : {}) });

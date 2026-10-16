@@ -155,3 +155,211 @@ update ge_ally set cfg = jsonb_build_object('id', substr(replace(gen_random_uuid
   'logo', '{"sh":0,"s":0,"c":0,"c2":7}'::jsonb) where not (cfg ? 'id');
 -- v64 Ränge R1–R5
 update ge_ally set members=(select coalesce(jsonb_agg(case when m->>'rank'='founder' or m->>'n'=founder then jsonb_set(m,'{rank}','"r5"') when m->>'rank'='officer' then jsonb_set(m,'{rank}','"r4"') when m->>'rank' in ('r1','r2','r3','r4','r5') then m else jsonb_set(m,'{rank}','"r1"') end),'[]'::jsonb) from jsonb_array_elements(members) m), cfg=(cfg-'ranks')||jsonb_build_object('rp','{"r4":["acc","kick","rank","msg","treas","shop"],"r3":["acc","msg"],"r2":[],"r1":[]}'::jsonb), ver=ver+1 where cfg->'rp' is null returning tag,members,cfg;
+
+-- ===================== ZIP155 (Punkte 1+2): Überfall-/Pushschutz, Hilfsbudget, Aufholbonus =====================
+-- Additiv, idempotent. Regeln werden ausschließlich serverseitig über ge_meta 'rules155' aktiviert.
+alter table ge_acct add column if not exists kind text not null default 'normal';
+alter table ge_acct add column if not exists last_act bigint;
+update ge_acct set kind='test' where name_l like 'zz%' and kind='normal';
+-- Allianzverlauf: stabile Allianz-ID (cfg.id), ein offenes Intervall je Konto, Tombstones bei Auflösung
+create table if not exists ge_ally_hist(id bigserial primary key, name_l text not null, ally_id text not null, tag text not null, joined_at bigint not null, left_at bigint, reason text);
+create unique index if not exists ge_ally_hist_open on ge_ally_hist(name_l) where left_at is null;
+create index if not exists ge_ally_hist_ally on ge_ally_hist(ally_id, name_l);
+create table if not exists ge_ally_tomb(ally_id text primary key, tag text not null, name text not null, deleted_at bigint not null);
+alter table ge_ally_hist enable row level security; alter table ge_ally_tomb enable row level security;
+create or replace function ge_now_ms() returns bigint language sql as $$ select (extract(epoch from clock_timestamp())*1000)::bigint $$;
+create or replace function ge_ally_hist_trg() returns trigger language plpgsql security definer set search_path=public as $$
+declare nm text; t bigint := ge_now_ms(); aid text;
+begin
+ if tg_op in ('UPDATE','DELETE') then
+  for nm in select lower(trim(m->>'n')) from jsonb_array_elements(old.members) m except select lower(trim(m->>'n')) from jsonb_array_elements(case when tg_op='DELETE' then '[]'::jsonb else new.members end) m loop
+   update ge_ally_hist set left_at=t, reason=case when tg_op='DELETE' then 'disband' else 'left' end where name_l=nm and left_at is null and ally_id=coalesce(old.cfg->>'id',old.tag);
+  end loop;
+  if tg_op='DELETE' then insert into ge_ally_tomb(ally_id,tag,name,deleted_at) values(coalesce(old.cfg->>'id',old.tag),old.tag,old.name,t) on conflict(ally_id) do nothing; return old; end if;
+ end if;
+ aid := coalesce(new.cfg->>'id', new.tag);
+ for nm in select lower(trim(m->>'n')) from jsonb_array_elements(new.members) m except select lower(trim(m->>'n')) from jsonb_array_elements(case when tg_op='INSERT' then '[]'::jsonb else old.members end) m loop
+  if exists(select 1 from ge_ally_hist where name_l=nm and left_at is null) then raise exception 'GE:Spieler ist bereits in einer Allianz' using errcode='23505'; end if;
+  insert into ge_ally_hist(name_l,ally_id,tag,joined_at) values(nm,aid,new.tag,t);
+ end loop;
+ return new;
+end $$;
+drop trigger if exists ge_ally_hist_t on ge_ally;
+create trigger ge_ally_hist_t after insert or update of members or delete on ge_ally for each row execute function ge_ally_hist_trg();
+-- Migration: aktuelle Mitgliedschaften ab Migrationszeitpunkt (keine erfundene Vorgeschichte)
+insert into ge_ally_hist(name_l,ally_id,tag,joined_at,reason)
+ select lower(trim(m->>'n')), coalesce(a.cfg->>'id',a.tag), a.tag, ge_now_ms(), 'migration' from ge_ally a cross join lateral jsonb_array_elements(a.members) m
+ where not exists(select 1 from ge_ally_hist h where h.name_l=lower(trim(m->>'n')) and h.left_at is null);
+-- Angriffsbuch und Hilfsbuch
+create table if not exists ge_atk(id bigserial primary key, fleet_id bigint unique not null, cid text, from_l text not null, to_l text not null, coord text not null, allys text[] not null default '{}', status text not null, reserved_at bigint not null, combat_at bigint, released_at bigint, reason text, grandfathered boolean not null default false);
+create index if not exists ge_atk_pl on ge_atk(from_l,to_l,coord,status); create index if not exists ge_atk_al on ge_atk using gin(allys);
+create table if not exists ge_aid(id bigserial primary key, fleet_id bigint unique, src text not null, from_l text, to_l text not null, coord text, m bigint not null default 0, k bigint not null default 0, g bigint not null default 0, d_from numeric, d_to numeric, ref jsonb, status text not null, reserved_at bigint not null, delivered_at bigint, released_at bigint, reason text, grandfathered boolean not null default false);
+create index if not exists ge_aid_to on ge_aid(to_l,status);
+create table if not exists ge_aidref(name_l text primary key, m numeric not null, k numeric not null, g numeric not null, t bigint not null);
+create table if not exists ge_cu_ref(valid_from bigint primary key, valid_to bigint, calculated_at bigint not null, active boolean not null, reason text, r numeric, n int, ids jsonb, params jsonb);
+alter table ge_atk enable row level security; alter table ge_aid enable row level security; alter table ge_aidref enable row level security; alter table ge_cu_ref enable row level security;
+-- Bestandsübernahme fliegender Flotten (Bestandsschutz, genau einmal)
+insert into ge_atk(fleet_id,cid,from_l,to_l,coord,allys,status,reserved_at,grandfathered,reason)
+ select f.id,f.cid,f.from_l,f.to_l,concat(f.data->'to'->>'g',':',f.data->'to'->>'s',':',f.data->'to'->>'p'),
+  coalesce((select array_agg(distinct h.ally_id) from ge_ally_hist h where h.name_l=f.from_l and h.left_at is null),'{}'),'reserved',ge_now_ms(),true,'migration_grandfathered'
+ from ge_fleet f where f.mission='attack' and f.to_l is not null and f.status in ('out','busy') on conflict(fleet_id) do nothing;
+insert into ge_aid(fleet_id,src,from_l,to_l,coord,m,k,g,status,reserved_at,grandfathered,reason)
+ select f.id,'fleet',f.from_l,f.to_l,concat(f.data->'to'->>'g',':',f.data->'to'->>'s',':',f.data->'to'->>'p'),
+  coalesce((f.data->'cargo'->>'m')::numeric,0)::bigint,coalesce((f.data->'cargo'->>'k')::numeric,0)::bigint,coalesce((f.data->'cargo'->>'g')::numeric,0)::bigint,'reserved',ge_now_ms(),true,'migration_grandfathered'
+ from ge_fleet f where f.mission='transport' and f.to_l is not null and f.to_l<>f.from_l and f.status in ('out','busy') on conflict(fleet_id) do nothing;
+insert into ge_meta(k,v) values('rules155', jsonb_build_object('v',1,'protect',true,'aid',true,'catchup',true,'activated',ge_now_ms())) on conflict(k) do nothing;
+
+-- Schutzprüfung zwischen zwei Konten (Allianz aktuell / 48-h-Neutralität / 5×) unter derselben Sperre wie Starts und Commits
+create or replace function ge_pair_block(p_a text,p_b text,p_now bigint) returns text language plpgsql security definer set search_path=public as $$
+declare da numeric; dbv numeric; ends bigint;
+begin
+ if exists(select 1 from ge_ally_hist x join ge_ally_hist y on x.ally_id=y.ally_id where x.name_l=p_a and y.name_l=p_b and x.left_at is null and y.left_at is null) then return 'Ziel ist in deiner Allianz'; end if;
+ select max(least(coalesce(x.left_at,9e15::bigint),coalesce(y.left_at,9e15::bigint))) into ends from ge_ally_hist x join ge_ally_hist y on x.ally_id=y.ally_id
+  where x.name_l=p_a and y.name_l=p_b and x.joined_at<coalesce(y.left_at,9e15::bigint) and y.joined_at<coalesce(x.left_at,9e15::bigint);
+ if ends is not null and ends<=p_now and p_now-ends<172800000 then return 'Neutralitätsfrist nach gemeinsamer Allianz (48 h) bis '||to_char(to_timestamp((ends+172800000)/1000.0) at time zone 'Europe/Berlin','DD.MM. HH24:MI'); end if;
+ select greatest(1,coalesce((data->>'devMax')::numeric,0)) into da from ge_pub where name_l=p_a; select greatest(1,coalesce((data->>'devMax')::numeric,0)) into dbv from ge_pub where name_l=p_b;
+ if greatest(coalesce(da,1),coalesce(dbv,1))/least(coalesce(da,1),coalesce(dbv,1))>5 then return 'Entwicklungsabstand zu groß (max. 5×)'; end if;
+ return null;
+end $$;
+create or replace function ge_atk_counts(p_from text,p_to text,p_coord text,p_now bigint) returns jsonb language sql security definer set search_path=public as $$
+ with live as (select * from ge_atk where from_l=p_from or to_l=p_to)
+ select jsonb_build_object(
+  'planet',(select count(*) from live where from_l=p_from and to_l=p_to and coord=p_coord and (status='reserved' or (status='fought' and combat_at>p_now-86400000))),
+  'acct',(select count(*) from live where from_l=p_from and to_l=p_to and (status='reserved' or (status='fought' and combat_at>p_now-86400000))),
+  'allys',coalesce((select jsonb_object_agg(al,(select count(*) from ge_atk z where z.to_l=p_to and al=any(z.allys) and (z.status='reserved' or (z.status='fought' and z.combat_at>p_now-86400000)))) from (select distinct ally_id al from ge_ally_hist where name_l=p_from and (left_at is null or left_at>p_now-172800000)) q),'{}'::jsonb),
+  'next',(select min(combat_at)+86400000 from live where from_l=p_from and to_l=p_to and status='fought' and combat_at>p_now-86400000))
+$$;
+create or replace function ge_aid_state(p_to text,p_now bigint) returns jsonb language sql security definer set search_path=public as $$
+ select jsonb_build_object('ref',(select jsonb_build_object('m',m,'k',k,'g',g,'t',t) from ge_aidref where name_l=p_to),
+  'used',(select jsonb_build_object('m',coalesce(sum(m),0),'k',coalesce(sum(k),0),'g',coalesce(sum(g),0)) from ge_aid where to_l=p_to and (status='reserved' or (status='delivered' and delivered_at>p_now-86400000))),
+  'next',(select min(delivered_at)+86400000 from ge_aid where to_l=p_to and status='delivered' and delivered_at>p_now-86400000))
+$$;
+-- Hilfsreservierung (gemeinsam für Flotten und Sofortwege); wirft GE:-Fehler bei Ablehnung
+create or replace function ge_aid_reserve(p jsonb,p_fleet bigint) returns void language plpgsql security definer set search_path=public as $$
+declare nowv bigint := (p->>'now')::bigint; ref ge_aidref%rowtype; um numeric; uk numeric; ug numeric; dfv numeric; dtv numeric; rm numeric; rk numeric; rg numeric; req jsonb := p->'res';
+begin
+ if p->>'from_l' is not null then
+  select greatest(1,coalesce((data->>'devMax')::numeric,0)) into dfv from ge_pub where name_l=p->>'from_l'; select greatest(1,coalesce((data->>'devMax')::numeric,0)) into dtv from ge_pub where name_l=p->>'to_l';
+  if coalesce(dfv,1)<coalesce(dtv,1) then raise exception 'GE:Hilfe nur an gleich starke oder schwächere Spieler (Entwicklung % < %)',floor(coalesce(dfv,1)),floor(coalesce(dtv,1)) using errcode='P0001'; end if;
+ end if;
+ select * into ref from ge_aidref where name_l=p->>'to_l' for update;
+ if ref.name_l is null or nowv-ref.t>=86400000 then
+  insert into ge_aidref(name_l,m,k,g,t) values(p->>'to_l',greatest(0,(p->'ref'->>'m')::numeric),greatest(0,(p->'ref'->>'k')::numeric),greatest(0,(p->'ref'->>'g')::numeric),nowv)
+   on conflict(name_l) do update set m=excluded.m,k=excluded.k,g=excluded.g,t=excluded.t;
+  select * into ref from ge_aidref where name_l=p->>'to_l';
+ end if;
+ select coalesce(sum(m),0),coalesce(sum(k),0),coalesce(sum(g),0) into um,uk,ug from ge_aid where to_l=p->>'to_l' and (status='reserved' or (status='delivered' and delivered_at>nowv-86400000));
+ rm:=floor(ref.m)-um; rk:=floor(ref.k)-uk; rg:=floor(ref.g)-ug;
+ if (req->>'m')::numeric>greatest(0,rm) or (req->>'k')::numeric>greatest(0,rk) or (req->>'g')::numeric>greatest(0,rg) then
+  raise exception 'GE:Hilfsbudget des Empfängers überschritten – frei: % Metall, % Kristall, % Gas (24 h, 1 h Produktion)',greatest(0,rm)::bigint,greatest(0,rk)::bigint,greatest(0,rg)::bigint using errcode='P0001'; end if;
+ insert into ge_aid(fleet_id,src,from_l,to_l,coord,m,k,g,d_from,d_to,ref,status,reserved_at,delivered_at)
+  values(p_fleet,coalesce(p->>'src','fleet'),p->>'from_l',p->>'to_l',p->>'coord',(req->>'m')::bigint,(req->>'k')::bigint,(req->>'g')::bigint,dfv,dtv,to_jsonb(ref),case when p_fleet is null then 'delivered' else 'reserved' end,nowv,case when p_fleet is null then nowv end);
+end $$;
+
+drop function if exists ge_start_fleet(text,bigint,text,text,text,text,jsonb,bigint);
+create or replace function ge_start_fleet(p_name text,p_base bigint,p_cid text,p_target text,p_npc text,p_mission text,p_data jsonb,p_arrive bigint,p_rules jsonb default null)
+returns bigint language plpgsql security definer set search_path=public as $$
+declare i bigint;r bigint;nowv bigint;why text;c jsonb;al text;coordv text;
+begin
+ perform pg_advisory_xact_lock(71941659);
+ select id into i from ge_fleet where from_l=p_name and cid=p_cid;if i is not null then return i;end if;
+ select rev into r from ge_save where name_l=p_name for update;if r is null or r<>p_base then raise exception 'state conflict' using errcode='40001';end if;
+ nowv:=coalesce((p_rules->>'now')::bigint,ge_now_ms());coordv:=concat(p_data->'to'->>'g',':',p_data->'to'->>'s',':',p_data->'to'->>'p');
+ if p_rules is not null and p_target is not null and p_mission in ('attack','spy') and coalesce((p_rules->>'protect')::boolean,false) then
+  why:=ge_pair_block(p_name,p_target,nowv);if why is not null then raise exception 'GE:%',why using errcode='P0001';end if;
+  if p_mission='attack' then
+   c:=ge_atk_counts(p_name,p_target,coordv,nowv);
+   if (c->>'planet')::int>=3 then raise exception 'GE:Höchstens 3 Angriffe auf denselben Planeten in 24 h' using errcode='P0001';end if;
+   if (c->>'acct')::int>=6 then raise exception 'GE:Höchstens 6 Angriffe auf dasselbe Konto in 24 h' using errcode='P0001';end if;
+   for al in select key from jsonb_each_text(c->'allys') where value::int>=10 loop raise exception 'GE:Deine Allianz (auch frühere der letzten 48 h) hat dieses Konto bereits 10× in 24 h angegriffen' using errcode='P0001';end loop;
+  end if;
+ end if;
+ if p_rules is not null and p_target is not null and p_mission='transport' and p_target<>p_name and coalesce((p_rules->>'aidOn')::boolean,false) and (p_rules->>'ally')::boolean is true then
+  if not exists(select 1 from ge_ally_hist x join ge_ally_hist y on x.ally_id=y.ally_id where x.name_l=p_name and y.name_l=p_target and x.left_at is null and y.left_at is null) then raise exception 'GE:Allianzlieferung nur an Mitglieder deiner Allianz' using errcode='P0001';end if;
+ end if;
+ insert into ge_fleet(from_l,to_l,to_npc,mission,data,arrive,cid)values(p_name,p_target,p_npc,p_mission,p_data,p_arrive,p_cid)returning id into i;
+ if p_rules is not null and p_target is not null and p_mission='attack' and coalesce((p_rules->>'protect')::boolean,false) then
+  insert into ge_atk(fleet_id,cid,from_l,to_l,coord,allys,status,reserved_at) values(i,p_cid,p_name,p_target,coordv,coalesce((select array_agg(key) from jsonb_each(c->'allys')),'{}'),'reserved',nowv);
+ end if;
+ if p_rules is not null and p_target is not null and p_mission='transport' and p_target<>p_name and coalesce((p_rules->>'aidOn')::boolean,false) then
+  perform ge_aid_reserve(jsonb_build_object('now',nowv,'from_l',p_name,'to_l',p_target,'coord',coordv,'res',p_data->'cargo','ref',p_rules->'ref','src','fleet'),i);
+ end if;
+ return i;
+end $$;
+revoke all on function ge_start_fleet(text,bigint,text,text,text,text,jsonb,bigint,jsonb) from public,anon,authenticated;
+grant execute on function ge_start_fleet(text,bigint,text,text,text,text,jsonb,bigint,jsonb) to service_role;
+
+-- Commit mit Buchungsübergängen (p_ledger): {t:'atk'|'aid', fleet_id, set:'fought'|'released'|'delivered', at, reason} | {t:'aidnow', ...} | {t:'pair', a, b}
+drop function if exists ge_commit_game(jsonb,jsonb,jsonb,jsonb,jsonb);
+create or replace function ge_commit_game(p_states jsonb default '[]', p_fleet jsonb default null,
+ p_events jsonb default '[]', p_meta jsonb default '[]', p_debris jsonb default '[]', p_ledger jsonb default '[]')
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare x jsonb; old jsonb; rev0 bigint; fr ge_fleet%rowtype; outv jsonb := '{}'; why text;
+begin
+ perform pg_advisory_xact_lock(71941659);
+ for x in select value from jsonb_array_elements(p_states) order by value->>'name_l' loop
+  select rev into rev0 from ge_save where name_l=x->>'name_l' for update;
+  if rev0 is null or rev0<>(x->>'base')::bigint then raise exception 'state conflict' using errcode='40001';end if;
+ end loop;
+ for x in select value from jsonb_array_elements(p_meta) loop
+  select v into old from ge_meta where k=x->>'k' for update;
+  if coalesce(old,'null'::jsonb)<>coalesce(x->'before','null'::jsonb) then raise exception 'ledger conflict' using errcode='40001';end if;
+ end loop;
+ for x in select value from jsonb_array_elements(p_debris) loop
+  select data into old from ge_debris where coord=x->>'coord' for update;
+  if coalesce(old,'null'::jsonb)<>coalesce(x->'before','null'::jsonb) then raise exception 'debris conflict' using errcode='40001';end if;
+ end loop;
+ for x in select value from jsonb_array_elements(case when p_fleet is null then '[]'::jsonb when jsonb_typeof(p_fleet)='array' then p_fleet else jsonb_build_array(p_fleet) end) loop
+  select * into fr from ge_fleet where id=(x->>'id')::bigint for update;
+  if fr.id is null or fr.status<>x->>'status' or fr.busy_at is distinct from (x->>'lease')::bigint then raise exception 'fleet conflict' using errcode='40001';end if;
+ end loop;
+ -- Kampf nur, wenn die Paarprüfung im selben Commit weiter gilt (z. B. gleichzeitiger Allianzeintritt)
+ for x in select value from jsonb_array_elements(p_ledger) where value->>'t'='pair' loop
+  why:=ge_pair_block(x->>'a',x->>'b',(x->>'at')::bigint);if why is not null then raise exception 'pair changed: %',why using errcode='40001';end if;
+ end loop;
+ for x in select value from jsonb_array_elements(p_ledger) where value->>'t'='aidnow' loop perform ge_aid_reserve(x,null); end loop;
+ for x in select value from jsonb_array_elements(p_states) loop
+  delete from ge_position where name_l=x->>'name_l';
+  insert into ge_position(coord,name_l) select q#>>'{}',x->>'name_l' from jsonb_array_elements(x->'positions') q;
+  update ge_save set z=x->>'z',t=(x->>'t')::bigint,rev=rev+1,updated=now() where name_l=x->>'name_l' returning rev into rev0;
+  if x ? 'pub' then insert into ge_pub(name_l,data,t) values(x->>'name_l',x->'pub',(x->>'t')::bigint) on conflict(name_l) do update set data=jsonb_set(excluded.data,'{devMax}',to_jsonb(greatest(coalesce((ge_pub.data->>'devMax')::numeric,0),coalesce((excluded.data->>'devMax')::numeric,0)))),t=excluded.t;end if;
+  if (x->>'act')::boolean is true then update ge_acct set last_act=(x->>'t')::bigint where name_l=x->>'name_l'; end if;
+  outv=jsonb_set(outv,array[x->>'name_l'],to_jsonb(rev0));
+ end loop;
+ for x in select value from jsonb_array_elements(p_meta) loop
+  insert into ge_meta(k,v)values(x->>'k',x->'value')on conflict(k)do update set v=excluded.v;
+ end loop;
+ for x in select value from jsonb_array_elements(p_debris) loop
+  if x->'value' is null or x->'value'='null'::jsonb then delete from ge_debris where coord=x->>'coord';
+  else insert into ge_debris(coord,data)values(x->>'coord',x->'value')on conflict(coord)do update set data=excluded.data;end if;
+ end loop;
+ for x in select value from jsonb_array_elements(p_events) loop
+  insert into ge_event(name_l,data,event_key)values(x->>'name_l',x->'data',x->>'key')on conflict(event_key)where event_key is not null do nothing;
+ end loop;
+ for x in select value from jsonb_array_elements(case when p_fleet is null then '[]'::jsonb when jsonb_typeof(p_fleet)='array' then p_fleet else jsonb_build_array(p_fleet) end) loop update ge_fleet set status=coalesce(x->>'nextStatus','done'),result=x->'result' where id=(x->>'id')::bigint;end loop;
+ -- Genau ein Übergang je Reservierung (nur aus 'reserved')
+ for x in select value from jsonb_array_elements(p_ledger) where value->>'t' in ('atk','aid') loop
+  if x->>'t'='atk' then
+   update ge_atk set status=x->>'set',combat_at=case when x->>'set'='fought' then (x->>'at')::bigint end,released_at=case when x->>'set'='released' then (x->>'at')::bigint end,reason=coalesce(x->>'reason',reason) where fleet_id=(x->>'fleet_id')::bigint and status='reserved';
+  else
+   update ge_aid set status=x->>'set',delivered_at=case when x->>'set'='delivered' then (x->>'at')::bigint end,released_at=case when x->>'set'='released' then (x->>'at')::bigint end,reason=coalesce(x->>'reason',reason) where fleet_id=(x->>'fleet_id')::bigint and status='reserved';
+  end if;
+ end loop;
+ return outv;
+end $$;
+revoke all on function ge_commit_game(jsonb,jsonb,jsonb,jsonb,jsonb,jsonb) from public,anon,authenticated;
+grant execute on function ge_commit_game(jsonb,jsonb,jsonb,jsonb,jsonb,jsonb) to service_role;
+revoke all on function ge_pair_block(text,text,bigint) from public,anon,authenticated; grant execute on function ge_pair_block(text,text,bigint) to service_role;
+revoke all on function ge_atk_counts(text,text,text,bigint) from public,anon,authenticated; grant execute on function ge_atk_counts(text,text,text,bigint) to service_role;
+revoke all on function ge_aid_state(text,bigint) from public,anon,authenticated; grant execute on function ge_aid_state(text,bigint) to service_role;
+revoke all on function ge_aid_reserve(jsonb,bigint) from public,anon,authenticated; grant execute on function ge_aid_reserve(jsonb,bigint) to service_role;
+-- Aufholreferenz: eine je Gültigkeitsbeginn (unique valid_from), Archiv wird nie überschrieben
+create or replace function ge_cu_insert(p jsonb) returns boolean language plpgsql security definer set search_path=public as $$
+begin
+ perform pg_advisory_xact_lock(71941659);
+ if exists(select 1 from ge_cu_ref where valid_from=(p->>'valid_from')::bigint) then return false; end if;
+ update ge_cu_ref set valid_to=(p->>'valid_from')::bigint where valid_to is null and valid_from<(p->>'valid_from')::bigint;
+ insert into ge_cu_ref(valid_from,valid_to,calculated_at,active,reason,r,n,ids,params) values((p->>'valid_from')::bigint,null,(p->>'calculated_at')::bigint,(p->>'active')::boolean,p->>'reason',(p->>'r')::numeric,(p->>'n')::int,p->'ids',p->'params');
+ return true;
+end $$;
+revoke all on function ge_cu_insert(jsonb) from public,anon,authenticated; grant execute on function ge_cu_insert(jsonb) to service_role;

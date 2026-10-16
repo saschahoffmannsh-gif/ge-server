@@ -154,7 +154,7 @@ E.prodInfo=function(pl){
  const uk=10*L('crystal_mine')*Math.pow(1.1,L('crystal_mine'))*P('crystal_mine');
  const ug=20*L('gas_mine')*Math.pow(1.1,L('gas_mine'))*P('gas_mine');
  const eUse=um+uk+ug; const f=eUse>0?Math.min(1,eProd/eUse):1;
- const geo=1+(cmdActive('geologist')?0.1:0)+buff('prod')+(S.ally&&S.ally.res?0.01*(S.ally.res.eco||0):0);
+ const geo=1+(cmdActive('geologist')?0.1:0)+buff('prod')+(S.ally&&S.ally.res?0.01*(S.ally.res.eco||0):0)+E.cuB(); // ZIP155 §2.4: Aufholbonus additiv in der Förderbonusgruppe (nicht in refProd/_nb)
  const pl_=E.tl('plasma');
  const m=(30+30*L('metal_mine')*Math.pow(1.1,L('metal_mine'))*P('metal_mine')*f*geo*(1+0.01*pl_+gemBonus(pl,'m')));
  const k=(15+20*L('crystal_mine')*Math.pow(1.1,L('crystal_mine'))*P('crystal_mine')*f*geo*(1+0.0066*pl_+gemBonus(pl,'k')));
@@ -163,6 +163,17 @@ E.prodInfo=function(pl){
  const sp=S.speed;
  return {m:m*sp,k:k*sp,g:g*sp,eProd,eUse,f,parts:{solar,fusion,sats,um,uk,ug,gasCons:gasCons*sp}};
 };
+// ===== ZIP155 §2: begrenzter Aufholbonus (Kurve, Referenz vom Server in S.cu, D = max(1, D_max)) =====
+E.CU={MAX:0.5,KNOTS:[[0.1,0.5],[0.25,0.35],[0.5,0.2],[0.75,0]]};
+E.cuCurve=function(x){if(!(x>=0))x=0;let b;if(x<=0.1)b=0.5;else if(x<0.25)b=0.5-(x-0.1);else if(x<0.5)b=0.35-0.6*(x-0.25);else if(x<0.75)b=0.2-0.8*(x-0.5);else b=0;return Math.max(0,Math.min(0.5,b))};
+E.cuSeg=function(t){const c=S.cu;if(!c||!c.on)return null;for(const g of c.segs||[])if(g.a<=t&&t<(g.b==null?Infinity:g.b))return g;return null};
+E.dmax=function(){return Math.max(1,Math.floor(S.dmax||0))};
+E.cuB=function(){if(E._nb)return 0;const g=E.cuSeg(now());if(!g||!g.act||!(g.R>0))return 0;return E.cuCurve(E.dmax()/g.R)};
+E.cuInfo=function(){const c=S.cu||null,g=c?E.cuSeg(now()):null;const b=E.cuB();let mine={m:0,k:0,g:0},extra={m:0,k:0,g:0};
+ try{for(const id of S.order){const p=S.planets[id];if(!p||p.moon)continue;const a=E.prodInfo(p);E._nb=1;let z;try{z=E.prodInfo(p)}finally{E._nb=0}for(const r of ['m','k','g'])extra[r]+=Math.max(0,a[r]-z[r])-0}}catch(e){}
+ const why=!c?'Aufholbonus: Serverdaten fehlen (Offline-Spiel)':!c.on?(c.why||'Aufholbonus für dieses Konto nicht vorgesehen'):!g?'Aufholbonus noch nicht aktiv':!g.act?('Aufholbonus noch nicht aktiv: '+(g.why||'Referenz fehlt')):null;
+ return{b,R:g&&g.R||0,D:E.dmax(),x:g&&g.R?E.dmax()/g.R:null,why,next:c&&c.next||null,extra}};
+function cuEdges(){const c=S.cu,o=[];if(c&&c.on)for(const g of c.segs||[]){o.push(g.a);if(g.b!=null)o.push(g.b)}return o}
 function produce(pl,dtH){
  if(dtH<=0||pl.moon)return; const pi=E.prodInfo(pl);
  for(const r of ['m','k','g']){const cap=E.storeCap(pl,r);const add=pi[r]*dtH;
@@ -676,6 +687,7 @@ function nebulaResolve(f){
 }
 // ---------- Piratenangriffe auf eigene Planeten ----------
 // Progression v1: Punkte aus abgeschlossenen Stufen (deterministisch, serverseitig nachrechenbar)
+E.dmaxUp=function(){try{const d=E.devPoints(S);S.dmax=Math.max(S.dmax||0,Math.floor(d.b+d.t))}catch(e){}return S.dmax}; // ZIP155: D_max monoton (Abriss senkt ihn nie)
 E.devPoints=function(st){st=st||S;let b=0,t=0;for(const id of st.order||[]){const p=st.planets[id];if(!p||!p.b)continue;for(const k in p.b){if(!GE.BUILD[k])continue;for(let L=1;L<=(p.b[k]||0);L++){const c=costOf(GE.BUILD[k],L);b+=(c[0]+c[1]+c[2])/1000}}}
  for(const k in st.tech||{}){if(!GE.TECH[k])continue;for(let L=1;L<=(st.tech[k]||0);L++){const c=tRawCost(k,L);t+=2*(c[0]+c[1]+c[2])/1000}}return{b,t}};
 E.fleetPoints=function(st){st=st||S;let fl=0;const add=(o,T)=>{for(const k in o||{}){const d=T[k];if(d)fl+=(+o[k]||0)*(d.c[0]+d.c[1]+d.c[2])/1000}};for(const id of st.order||[]){const p=st.planets[id];if(!p)continue;add(p.ships,GE.SHIP);add(p.def,GE.DEF)}for(const f of st.fleets||[])if(!f.npc)add(f.ships,GE.SHIP);for(const sv of st.saves||[])add(sv.ships,GE.SHIP);return fl}; // Review F24: Saveflug-Schiffe zählen
@@ -807,13 +819,14 @@ E.tick=function(to){to=to||now();let guard=0;const t0=S.t;
   if(boundary<=next){next=boundary;kind='window'} // Review F19: Boni enden ereignisgenau (Offline = viele kurze Ticks)
   const weekEnd=(Math.floor(S.t/(7*24*HOUR))+1)*7*24*HOUR;if(weekEnd<=next){next=weekEnd;kind='week'}
   if(S.tutorialPlan&&S.tutorialPlan.wake&&S.tutorialPlan.wake<=next){next=S.tutorialPlan.wake;kind='plan'}
+  for(const ce of cuEdges())if(ce>S.t&&ce<=next){next=ce;kind='cu'} // ZIP155 §2.6: Abschnittsgrenzen der Aufholreferenz
   next=Math.max(next,S.t);
   const dtH=(next-S.t)/HOUR;{const pc=E.clock,t0s=S.t;E.clock=()=>t0s;try{for(const id of S.order)produce(S.planets[id],dtH)}finally{E.clock=pc}}
   for(const id of S.order)progressYard(S.planets[id],next);
   S.t=next;
   const prev=E.clock;E.clock=()=>next; // Ereigniszeit als „jetzt“
   try{
-  if(kind==='week'){if(E.weekly&&E.tutDone())E.weekly();}else if(kind==='window')E.pve();else if(kind==='b')finishBuild(ref);else if(kind==='r')finishResearch();else if(kind==='f')processFleet(ref);
+  if(kind==='week'){if(E.weekly&&E.tutDone())E.weekly();}else if(kind==='window')E.pve();else if(kind==='b'){finishBuild(ref);E.dmaxUp()}else if(kind==='r'){finishResearch();E.dmaxUp()}else if(kind==='f')processFleet(ref);
   else if(kind==='timer'){S.buffs=S.buffs.filter(b=>b.end>next)}
   else if(kind==='raid'){launchRaid(next);scheduleRaid(next)}else if(kind==='save')saveReturn(ref);else if(kind==='nq'){S.nebQ.wait=0;nebQueueKick()}
   if(E.advanceTutorialPlan)E.advanceTutorialPlan();
