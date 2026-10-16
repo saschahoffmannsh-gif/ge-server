@@ -108,16 +108,19 @@ const ALLY_SHOP: any[] = [
 function allyDefaults(cfg: any) {
   const c: any = { ...(cfg || {}) }; if (!c.id) c.id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   if (!["open", "apply", "closed"].includes(c.mode)) c.mode = "apply";
-  if (!Array.isArray(c.ranks) || !c.ranks.length) c.ranks = [{ id: "officer", n: "Offizier", p: ["acc", "kick", "msg"] }, { id: "member", n: "Mitglied", p: [] }];
-  if (!c.ranks.some((r: any) => r.id === "member")) c.ranks.push({ id: "member", n: "Mitglied", p: [] });
+  // v63: feste Ränge R5 (Präsident) … R1; Rechte je Rang nur vom Präsidenten anpassbar (cfg.rp)
+  const rp: any = { ...ALLY_RP_DEF, ...(c.rp || {}) }; for (const k of ["r4", "r3", "r2", "r1"]) rp[k] = (Array.isArray(rp[k]) ? rp[k] : ALLY_RP_DEF[k]).filter((x: string) => ALLY_PERMS.includes(x)); c.rp = rp; delete c.ranks;
   if (!c.logo) c.logo = { sh: 0, s: 0, c: 0, c2: 7 }; return c;
 }
-function allyNorm(r: any) { const al = { ...r, apps: r.apps || [], cfg: allyDefaults(r.cfg) }; const ids = new Set(al.cfg.ranks.map((x: any) => x.id));
-  al.members = (r.members || []).map((m: any) => ({ ...m, rank: m.rank === "founder" || ids.has(m.rank) ? m.rank : "member" })); return al; }
+const ALLY_RP_DEF: any = { r4: ["acc", "kick", "rank", "msg", "treas", "shop"], r3: ["acc", "msg"], r2: [], r1: [] };
+const ALLY_RN: any = { r5: "Präsident", r4: "R4 · Offizier", r3: "R3 · Ausbilder", r2: "R2 · Veteran", r1: "R1 · Mitglied" };
+const ALLY_OLD: any = { founder: "r5", officer: "r4", member: "r1" };
+const lvlOf = (rank: string) => +(String(rank || "r1").slice(1)) || 1;
+function allyNorm(r: any) { const al = { ...r, apps: r.apps || [], cfg: allyDefaults(r.cfg) };
+  al.members = (r.members || []).map((m: any) => { let k = ALLY_OLD[m.rank] || m.rank; if (!/^r[1-5]$/.test(k)) k = "r1"; if (m.n === r.founder) k = "r5"; else if (k === "r5") k = "r4"; return { ...m, rank: k }; }); return al; }
 const allyRankOf = (al: any, n: string) => (al.members.find((m: any) => m.n === n) || {}).rank;
-const allyRankPerms = (al: any, rank: string) => rank === "founder" ? ALLY_PERMS : ((al.cfg.ranks.find((r: any) => r.id === rank) || {}).p || []);
+const allyRankPerms = (al: any, rank: string) => rank === "r5" ? ALLY_PERMS : (al.cfg.rp[rank] || []);
 const allyHas = (al: any, n: string, p: string) => allyRankPerms(al, allyRankOf(al, n)).includes(p);
-const allyCovers = (al: any, n: string, ps: string[]) => { const mine = allyRankPerms(al, allyRankOf(al, n)); return (ps || []).every((p) => mine.includes(p)); };
 // Optimistische Sperre über die Versionsspalte ver
 async function allyCas(al: any, up: any) { const r = must(await db.from("ge_ally").update({ ...up, cfg: up.cfg || al.cfg, ver: (+al.ver || 0) + 1 }).eq("tag", al.tag).eq("ver", +al.ver || 0).select("tag")) as any[]; return r.length > 0; }
 async function dropApps(name: string) { for (const r of must(await db.from("ge_ally").select("tag,apps,ver,cfg")) as any[]) if ((r.apps || []).some((x: any) => x.n === name)) await db.from("ge_ally").update({ apps: r.apps.filter((x: any) => x.n !== name), ver: (+r.ver || 0) + 1 }).eq("tag", r.tag).eq("ver", +r.ver || 0); }
@@ -158,7 +161,10 @@ async function personal(a: any) {
     events: ev.map((e) => ({ id: e.id, ...e.data })), ally: al ? await allyPersonal(al, a.name) : null };
 }
 async function allyPersonal(r: any, me: string) { const al = allyNorm(r); const tr = treasNorm(await meta("treas:" + al.cfg.id)); const perms = allyRankPerms(al, allyRankOf(al, me));
-  return { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members: al.members, apps: perms.includes("acc") ? al.apps : [], mode: al.cfg.mode, logo: al.cfg.logo, ranks: al.cfg.ranks, perms, rank: allyRankOf(al, me), cos: tr.cos, buffs: allyState(al, tr)!.buffs, shop: ALLY_SHOP, allPerms: ALLY_PERMS }; }
+  const pubs = must(await db.from("ge_pub").select("name_l,t,data")) as any[]; const pw: any = {}; for (const p of pubs) { const s = p.data?.pts || {}; pw[p.data?.name || p.name_l] = { pts: Math.round((+s.b || 0) + (+s.t || 0) + (+s.f || 0) + (+s.d || 0)), t: +p.t || 0 }; }
+  const members = al.members.map((m: any) => ({ ...m, pts: pw[m.n]?.pts || 0, seen: pw[m.n]?.t || 0 }));
+  const donTotal = Object.values(tr.don || {}).reduce((s: number, d: any) => s + (+d.v || 0), 0);
+  return { tag: al.tag, name: al.name, founder: al.founder, descr: al.descr, members, apps: perms.includes("acc") ? al.apps : [], mode: al.cfg.mode, logo: al.cfg.logo, rp: al.cfg.rp, rn: ALLY_RN, perms, rank: allyRankOf(al, me), cos: tr.cos, buffs: allyState(al, tr)!.buffs, shop: ALLY_SHOP, allPerms: ALLY_PERMS, donTotal, now: Date.now() }; }
 async function resolveDue(f: { to_l: string }) { const rows = must(await db.from("ge_fleet").select("*").eq("to_l", f.to_l).or(`status.eq.out,and(status.eq.busy,busy_at.lt.${Date.now()-120000})`).lte("arrive", Date.now())) as any[]; for (const r of rows) await resolve(r); }
 const val = (o: any, T: any) => { let v = 0; for (const k in o) { const d = T[k]; if (d) v += o[k] * (d.c[0] + d.c[1] + d.c[2]); } return v; };
 function npcTarget(id: string) { // NPC-Spieler: Rohstoffe aus dem Wirtschaftsmodell, Flotte/Verteidigung aus ihren Punkten
@@ -341,7 +347,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
         if (!/^[A-Z0-9]{2,5}$/.test(tag) || name.length < 3) return err("Name (3–30) und Kürzel (2–5 Buchstaben/Ziffern) angeben");
         if (await myAlly(me)) return err("Du bist bereits in einer Allianz");
         const cfg = allyDefaults({}); cfg.logo = logoClean(b.logo, []);
-        const r = await db.from("ge_ally").insert({ tag, name, founder: me, descr: clean(b.descr).slice(0, 300), members: [{ n: me, rank: "founder", t: now }], apps: [], created: now, cfg });
+        const r = await db.from("ge_ally").insert({ tag, name, founder: me, descr: clean(b.descr).slice(0, 300), members: [{ n: me, rank: "r5", t: now }], apps: [], created: now, cfg });
         if (r.error) return err(r.error.code === "23505" ? "Kürzel vergeben" : r.error.message, 409);
         await dropApps(me); await chatSys("ally:" + tag, `${me} hat die Allianz gegründet.`); return J({ ok: true, tag });
       }
@@ -349,7 +355,7 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
         const al0 = must(await db.from("ge_ally").select("*").eq("tag", String(b.tag || "").toUpperCase()).maybeSingle()) as any; if (!al0) return err("Allianz unbekannt");
         if (await myAlly(me)) return err("Du bist bereits in einer Allianz"); const al = allyNorm(al0); const msg = clean(b.msg).slice(0, 300);
         if (al.cfg.mode === "closed") return err("Diese Allianz nimmt derzeit niemanden auf", 403);
-        if (al.cfg.mode === "open") { if (!(await allyCas(al, { members: al.members.concat([{ n: me, rank: "member", t: now }]), apps: al.apps.filter((x: any) => x.n !== me) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        if (al.cfg.mode === "open") { if (!(await allyCas(al, { members: al.members.concat([{ n: me, rank: "r1", t: now }]), apps: al.apps.filter((x: any) => x.n !== me) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
           await dropApps(me); await chatSys("ally:" + al.tag, `${me} ist der Allianz beigetreten.`); return J({ ok: true, joined: true }); }
         const apps = al.apps.filter((x: any) => x.n !== me).concat([{ n: me, msg, t: now }]).slice(-50);
         if (!(await allyCas(al, { apps }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
@@ -366,51 +372,46 @@ Deno.serve(async (req) => {const E=(globalThis as any).ENGINE.fork();
       if (P === "/api/ally/decide") {
         if (!can("acc")) return err("Keine Berechtigung: Bewerbungen annehmen", 403);
         const ap = al.apps.find((x: any) => x.n === b.name); if (!ap) return err("Bewerbung nicht gefunden");
-        let members = al.members; if (b.accept) { if (await myAlly(b.name)) return err("Spieler ist schon in einer Allianz"); members = members.concat([{ n: ap.n, rank: "member", t: now }]); }
+        let members = al.members; if (b.accept) { if (await myAlly(b.name)) return err("Spieler ist schon in einer Allianz"); members = members.concat([{ n: ap.n, rank: "r1", t: now }]); }
         if (!(await allyCas(al, { apps: al.apps.filter((x: any) => x.n !== ap.n), members }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
         if (b.accept) await dropApps(ap.n);
         await event(norm(ap.n), { kind: "allydecision", tag: al.tag, name: al.name, accept: !!b.accept }); if (b.accept) await chatSys("ally:" + al.tag, `${ap.n} ist der Allianz beigetreten.`); return J({ ok: true });
       }
       if (P === "/api/ally/rank") {
+        // R5 vergibt R4–R1, R4 (mit Recht „Ränge“) vergibt bis R3 – immer nur an Mitglieder unterhalb des eigenen Rangs
         if (!can("rank")) return err("Keine Berechtigung: Ränge vergeben", 403);
-        const t = target(b.name); if (!t) return err("Mitglied unbekannt"); if (t.rank === "founder") return err("Der Gründer behält seinen Rang", 403); if (t.n === me) return err("Den eigenen Rang kann man nicht ändern", 403);
-        const nr = al.cfg.ranks.find((r: any) => r.id === b.rank); if (!nr) return err("Rang unbekannt");
-        if (!allyCovers(al, me, allyRankPerms(al, t.rank)) || !allyCovers(al, me, nr.p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403);
-        if (!(await allyCas(al, { members: al.members.map((m: any) => m.n === t.n ? { ...m, rank: nr.id } : m) }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
+        const t = target(b.name); if (!t) return err("Mitglied unbekannt"); if (t.n === me) return err("Den eigenen Rang kann man nicht ändern", 403);
+        const nr = String(b.rank || ""); if (!/^r[1-4]$/.test(nr)) return err("Rang unbekannt (R5 nur per Übergabe)");
+        const my = lvlOf(allyRankOf(al, me)); if (lvlOf(t.rank) >= my) return err("Nur Mitglieder unterhalb deines Rangs", 403); if (lvlOf(nr) >= my) return err("Du kannst höchstens bis R" + (my - 1) + " vergeben", 403);
+        if (nr === "r4" && al.members.filter((m: any) => m.rank === "r4" && m.n !== t.n).length >= 8) return err("Höchstens 8 × R4");
+        if (!(await allyCas(al, { members: al.members.map((m: any) => m.n === t.n ? { ...m, rank: nr } : m) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
+        await event(norm(t.n), { kind: "allyrank", tag: al.tag, rank: nr, by: me }); return J({ ok: true });
       }
-      if (P === "/api/ally/rankdef") {
-        if (!can("rank")) return err("Keine Berechtigung: Ränge bearbeiten", 403); const cfg = structuredClone(al.cfg);
+      if (P === "/api/ally/rights") {
+        if (allyRankOf(al, me) !== "r5") return err("Nur der Präsident (R5)", 403); const rk = String(b.rank || ""); if (!/^r[1-4]$/.test(rk)) return err("Rang unbekannt");
         const p: string[] = ([...new Set((Array.isArray(b.p) ? b.p : []).map(String))] as string[]).filter((x) => ALLY_PERMS.includes(x));
-        if (b.id) { const r = cfg.ranks.find((x: any) => x.id === b.id); if (!r) return err("Rang unbekannt"); if (!allyCovers(al, me, r.p)) return err("Dieser Rang hat mehr Rechte als du", 403);
-          if (b.del) { if (r.id === "member") return err("Der Standardrang bleibt bestehen"); cfg.ranks = cfg.ranks.filter((x: any) => x !== r);
-            const members = al.members.map((m: any) => m.rank === r.id ? { ...m, rank: "member" } : m); if (!(await allyCas(al, { cfg, members }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true }); }
-          if (allyRankOf(al, me) === r.id && !al.members.some((m: any) => m.n === me && m.rank === "founder")) return err("Den eigenen Rang kann man nicht bearbeiten", 403);
-          if (!allyCovers(al, me, p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403); r.n = clean(b.n).slice(0, 20) || r.n; r.p = p;
-        } else { if (cfg.ranks.length >= 10) return err("Höchstens 10 Ränge"); const n = clean(b.n).slice(0, 20); if (!n) return err("Rangname fehlt"); if (!allyCovers(al, me, p)) return err("Du kannst keine Rechte über deinen eigenen vergeben", 403);
-          cfg.ranks.push({ id: "r" + now.toString(36), n, p }); }
-        if (!(await allyCas(al, { cfg }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
+        const cfg = structuredClone(al.cfg); cfg.rp[rk] = p; if (!(await allyCas(al, { cfg }))) return err("Gleichzeitige Änderung – bitte erneut", 409); return J({ ok: true });
       }
       if (P === "/api/ally/kick") {
         if (!can("kick")) return err("Keine Berechtigung: Mitglieder entfernen", 403); const t = target(b.name); if (!t) return err("Mitglied unbekannt");
-        if (t.rank === "founder") return err("Der Gründer kann nicht entfernt werden", 403); if (t.n === me) return err("Zum Austreten „Allianz verlassen“ verwenden");
-        if (!allyCovers(al, me, allyRankPerms(al, t.rank))) return err("Mitglieder mit mehr Rechten kannst du nicht entfernen", 403);
+        if (t.n === me) return err("Zum Austreten „Allianz verlassen“ verwenden"); if (t.rank === "r5") return err("Der Präsident kann nicht entfernt werden", 403);
+        if (lvlOf(t.rank) >= lvlOf(allyRankOf(al, me))) return err("Nur Mitglieder unterhalb deines Rangs", 403);
         if (!(await allyCas(al, { members: al.members.filter((m: any) => m.n !== t.n) }))) return err("Gleichzeitige Änderung – bitte erneut", 409);
         await event(norm(t.n), { kind: "allykick", tag: al.tag }); await chatSys("ally:" + al.tag, `${t.n} wurde aus der Allianz entfernt.`); return J({ ok: true });
       }
       if (P === "/api/ally/leave") {
         const members = al.members.filter((m: any) => m.n !== me);
-        if (!members.length) { await allyDisband(al); return J({ ok: true, disbanded: true }); }
-        let founder = al.founder; if (al.founder === me) { members.sort((x: any, y: any) => allyRankPerms(al, y.rank).length - allyRankPerms(al, x.rank).length || x.t - y.t); members[0] = { ...members[0], rank: "founder" }; founder = members[0].n; }
-        if (!(await allyCas(al, { members, founder }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Allianz verlassen.` + (founder !== al.founder ? ` Neuer Gründer: ${founder}.` : "")); return J({ ok: true });
+        if (!members.length) { const tr = treasNorm(await meta("treas:" + al.cfg.id)); if (tr.r.m + tr.r.k + tr.r.g > 0 || Object.values(tr.ships).some((n: any) => n > 0)) return err("Der Tresor muss zuerst verteilt werden", 409); await allyDisband(al); return J({ ok: true, disbanded: true }); }
+        let founder = al.founder; if (al.founder === me) { members.sort((x: any, y: any) => lvlOf(y.rank) - lvlOf(x.rank) || x.t - y.t); members[0] = { ...members[0], rank: "r5" }; founder = members[0].n; }
+        if (!(await allyCas(al, { members, founder }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Allianz verlassen.` + (founder !== al.founder ? ` Neuer Präsident: ${founder}.` : "")); return J({ ok: true });
       }
       if (P === "/api/ally/handover") {
-        if (al.founder !== me) return err("Nur der Gründer", 403); const t = target(b.name); if (!t || t.n === me) return err("Mitglied wählen");
-        const best = [...al.cfg.ranks].sort((x: any, y: any) => y.p.length - x.p.length)[0];
-        const members = al.members.map((m: any) => m.n === t.n ? { ...m, rank: "founder" } : m.n === me ? { ...m, rank: best.id } : m);
-        if (!(await allyCas(al, { members, founder: t.n }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Führung an ${t.n} übergeben.`); return J({ ok: true });
+        if (allyRankOf(al, me) !== "r5") return err("Nur der Präsident (R5)", 403); const t = target(b.name); if (!t || t.n === me) return err("Mitglied wählen");
+        const members = al.members.map((m: any) => m.n === t.n ? { ...m, rank: "r5" } : m.n === me ? { ...m, rank: "r4" } : m);
+        if (!(await allyCas(al, { members, founder: t.n }))) return err("Gleichzeitige Änderung – bitte erneut", 409); await chatSys("ally:" + al.tag, `${me} hat die Präsidentschaft an ${t.n} übergeben.`); return J({ ok: true });
       }
       if (P === "/api/ally/disband") {
-        if (al.founder !== me) return err("Nur der Gründer", 403); if (String(b.confirm || "").toUpperCase() !== al.tag) return err("Zur Bestätigung das Kürzel eingeben");
+        if (allyRankOf(al, me) !== "r5") return err("Nur der Präsident (R5)", 403); if (String(b.confirm || "").toUpperCase() !== al.tag) return err("Zur Bestätigung das Kürzel eingeben");
         const tr = await meta("treas:" + al.cfg.id); if (tr && (tr.r.m + tr.r.k + tr.r.g > 0 || Object.values(tr.ships || {}).some((n: any) => n > 0))) return err("Der Tresor muss zuerst verteilt werden (Rohstoffe und Schiffe)", 409);
         for (const m of al.members) if (m.n !== me) await event(norm(m.n), { kind: "allydisband", tag: al.tag, name: al.name }); await allyDisband(al); return J({ ok: true });
       }

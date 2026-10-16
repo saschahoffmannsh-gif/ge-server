@@ -153,3 +153,5 @@ alter table ge_ally add column if not exists ver bigint not null default 0;
 update ge_ally set cfg = jsonb_build_object('id', substr(replace(gen_random_uuid()::text,'-',''),1,16), 'mode','apply',
   'ranks', '[{"id":"officer","n":"Offizier","p":["acc","kick","msg"]},{"id":"member","n":"Mitglied","p":[]}]'::jsonb,
   'logo', '{"sh":0,"s":0,"c":0,"c2":7}'::jsonb) where not (cfg ? 'id');
+-- v64 Ränge R1–R5
+update ge_ally set members=(select coalesce(jsonb_agg(case when m->>'rank'='founder' or m->>'n'=founder then jsonb_set(m,'{rank}','"r5"') when m->>'rank'='officer' then jsonb_set(m,'{rank}','"r4"') when m->>'rank' in ('r1','r2','r3','r4','r5') then m else jsonb_set(m,'{rank}','"r1"') end),'[]'::jsonb) from jsonb_array_elements(members) m), cfg=(cfg-'ranks')||jsonb_build_object('rp','{"r4":["acc","kick","rank","msg","treas","shop"],"r3":["acc","msg"],"r2":[],"r1":[]}'::jsonb), ver=ver+1 where cfg->'rp' is null returning tag,members,cfg;
